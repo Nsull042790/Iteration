@@ -15,15 +15,17 @@ class InputHandler {
         this.previousKeys = {};
 
         // Key mappings (rebindable in future)
+        // Left hand: WASD + Space for movement
+        // Right hand: Arrow keys for combat actions
         this.bindings = {
-            left: ['ArrowLeft', 'KeyA'],
-            right: ['ArrowRight', 'KeyD'],
-            up: ['ArrowUp', 'KeyW'],
-            down: ['ArrowDown', 'KeyS'],
-            jump: ['Space'],
-            attack: ['KeyJ', 'KeyZ'],
-            special: ['KeyK', 'KeyX'],
-            interact: ['KeyE'],
+            left: ['KeyA'],
+            right: ['KeyD'],
+            up: ['KeyW'],
+            down: ['KeyS'],
+            jump: ['Space', 'KeyW'],
+            attack: ['ArrowRight', 'ArrowUp'],
+            special: ['ArrowDown'],
+            interact: ['ArrowLeft', 'KeyE'],
             pause: ['Escape', 'KeyP']
         };
 

@@ -297,7 +297,7 @@ class HUD {
         ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
 
         ctx.fillText(
-            '[←→/AD] MOVE   [SPACE] JUMP   [J/Z] ATTACK   [K/X] SPECIAL   [E] INTERACT',
+            '[WASD] MOVE   [SPACE] JUMP   [↑→] ATTACK   [↓] SPECIAL   [←] INTERACT',
             this.width / 2,
             y
         );

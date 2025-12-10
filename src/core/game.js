@@ -74,19 +74,71 @@ class Game {
         this.camera.setTarget(this.player);
         this.camera.setBounds(0, 0, this.currentRoom.width, this.currentRoom.height);
 
-        // Show welcome message
-        this.hud.addMessage('SIMULATION INITIALIZED', 'system');
+        // Set initial state to waiting for controls modal
+        this.state = 'waiting';
 
-        // Set state to playing
-        this.state = 'playing';
-
-        // Hide loading screen
+        // Hide loading screen and show controls modal
         setTimeout(() => {
             const loadingScreen = document.getElementById('loading-screen');
             if (loadingScreen) {
                 loadingScreen.classList.add('hidden');
             }
+
+            // Check if user wants to skip controls modal
+            this.setupControlsModal();
         }, 1500);
+    }
+
+    /**
+     * Setup controls modal with localStorage support
+     */
+    setupControlsModal() {
+        const modal = document.getElementById('controls-modal');
+        const startButton = document.getElementById('start-button');
+        const dontShowCheckbox = document.getElementById('dont-show-again');
+
+        // Check localStorage for preference
+        const skipControls = localStorage.getItem('iteration_skip_controls') === 'true';
+
+        if (skipControls) {
+            // Skip modal, start game immediately
+            modal.classList.add('hidden');
+            this.startGame();
+            return;
+        }
+
+        // Show modal
+        modal.classList.remove('hidden');
+
+        // Handle start button click
+        startButton.addEventListener('click', () => {
+            // Save preference if checkbox is checked
+            if (dontShowCheckbox.checked) {
+                localStorage.setItem('iteration_skip_controls', 'true');
+            }
+
+            // Hide modal and start game
+            modal.classList.add('hidden');
+            this.startGame();
+        });
+
+        // Also allow pressing Space or Enter to start
+        const handleKeyStart = (e) => {
+            if (this.state === 'waiting' && (e.code === 'Space' || e.code === 'Enter')) {
+                e.preventDefault();
+                startButton.click();
+                window.removeEventListener('keydown', handleKeyStart);
+            }
+        };
+        window.addEventListener('keydown', handleKeyStart);
+    }
+
+    /**
+     * Start the actual gameplay
+     */
+    startGame() {
+        this.state = 'playing';
+        this.hud.addMessage('SIMULATION INITIALIZED', 'system');
     }
 
     /**

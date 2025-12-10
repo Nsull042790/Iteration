@@ -15,7 +15,7 @@ class Game {
         this.hud = new HUD(canvas);
 
         // Game state
-        this.state = 'loading'; // loading, menu, playing, paused, gameover
+        this.state = 'loading'; // loading, title, controls, playing, paused, gameover
         this.isPaused = false;
 
         // Timing
@@ -32,12 +32,14 @@ class Game {
         // Game objects
         this.player = null;
         this.currentRoom = null;
+        this.enemies = [];
         this.cycles = new CyclesSystem();
 
         // Run data
         this.currentZone = 'TRAINING GRID';
         this.roomNumber = 1;
         this.showControls = true;
+        this.killCount = 0;
 
         // Initialize
         this.init();
@@ -74,25 +76,79 @@ class Game {
         this.camera.setTarget(this.player);
         this.camera.setBounds(0, 0, this.currentRoom.width, this.currentRoom.height);
 
-        // Set initial state to waiting for controls modal
-        this.state = 'waiting';
+        // Spawn test enemies
+        this.spawnEnemies();
 
-        // Hide loading screen and show controls modal
+        // Hide loading screen and show title screen
         setTimeout(() => {
             const loadingScreen = document.getElementById('loading-screen');
             if (loadingScreen) {
                 loadingScreen.classList.add('hidden');
             }
 
-            // Check if user wants to skip controls modal
-            this.setupControlsModal();
+            // Show title screen
+            this.showTitleScreen();
         }, 1500);
     }
 
     /**
-     * Setup controls modal with localStorage support
+     * Spawn enemies in the room
      */
-    setupControlsModal() {
+    spawnEnemies() {
+        this.enemies = [];
+
+        // Spawn some test enemies at various positions
+        const enemyPositions = [
+            { x: 400, y: 500 },
+            { x: 700, y: 400 },
+            { x: 900, y: 500 },
+            { x: 1100, y: 400 },
+            { x: 1300, y: 500 }
+        ];
+
+        for (const pos of enemyPositions) {
+            const enemy = new Enemy(pos.x, pos.y);
+            this.enemies.push(enemy);
+        }
+    }
+
+    /**
+     * Show title screen
+     */
+    showTitleScreen() {
+        this.state = 'title';
+
+        const titleScreen = document.getElementById('title-screen');
+        const titleBtn = document.getElementById('title-start-btn');
+
+        titleScreen.classList.remove('hidden');
+
+        // Handle button click
+        const handleTitleClick = () => {
+            titleScreen.classList.add('hidden');
+            titleBtn.removeEventListener('click', handleTitleClick);
+            this.showControlsModal();
+        };
+
+        titleBtn.addEventListener('click', handleTitleClick);
+
+        // Handle key press
+        const handleTitleKey = (e) => {
+            if (this.state === 'title' && (e.code === 'Space' || e.code === 'Enter')) {
+                e.preventDefault();
+                titleBtn.click();
+                window.removeEventListener('keydown', handleTitleKey);
+            }
+        };
+        window.addEventListener('keydown', handleTitleKey);
+    }
+
+    /**
+     * Show controls modal
+     */
+    showControlsModal() {
+        this.state = 'controls';
+
         const modal = document.getElementById('controls-modal');
         const startButton = document.getElementById('start-button');
         const dontShowCheckbox = document.getElementById('dont-show-again');
@@ -101,36 +157,33 @@ class Game {
         const skipControls = localStorage.getItem('iteration_skip_controls') === 'true';
 
         if (skipControls) {
-            // Skip modal, start game immediately
-            modal.classList.add('hidden');
             this.startGame();
             return;
         }
 
-        // Show modal
         modal.classList.remove('hidden');
 
         // Handle start button click
-        startButton.addEventListener('click', () => {
-            // Save preference if checkbox is checked
+        const handleStart = () => {
             if (dontShowCheckbox.checked) {
                 localStorage.setItem('iteration_skip_controls', 'true');
             }
-
-            // Hide modal and start game
             modal.classList.add('hidden');
+            startButton.removeEventListener('click', handleStart);
             this.startGame();
-        });
+        };
 
-        // Also allow pressing Space or Enter to start
-        const handleKeyStart = (e) => {
-            if (this.state === 'waiting' && (e.code === 'Space' || e.code === 'Enter')) {
+        startButton.addEventListener('click', handleStart);
+
+        // Handle key press
+        const handleControlsKey = (e) => {
+            if (this.state === 'controls' && (e.code === 'Space' || e.code === 'Enter')) {
                 e.preventDefault();
                 startButton.click();
-                window.removeEventListener('keydown', handleKeyStart);
+                window.removeEventListener('keydown', handleControlsKey);
             }
         };
-        window.addEventListener('keydown', handleKeyStart);
+        window.addEventListener('keydown', handleControlsKey);
     }
 
     /**
@@ -210,7 +263,7 @@ class Game {
         // Update input state
         this.input.update();
 
-        // Don't update game logic if paused
+        // Don't update game logic if paused or not playing
         if (this.isPaused || this.state !== 'playing') {
             return;
         }
@@ -257,7 +310,40 @@ class Game {
             if (this.player.y > this.currentRoom.height + 100) {
                 this.handlePlayerDeath();
             }
+
+            // Check attack hits on enemies
+            this.checkAttackHits();
         }
+
+        // Update enemies
+        for (const enemy of this.enemies) {
+            if (enemy.active) {
+                enemy.update(deltaTime, this.player);
+
+                // Apply gravity to enemies
+                this.physics.applyGravity(enemy);
+
+                // Resolve enemy collisions with platforms
+                if (this.currentRoom) {
+                    this.physics.resolveCollisions(
+                        enemy,
+                        this.currentRoom.getActivePlatforms()
+                    );
+                }
+
+                // Check if enemy hits player
+                if (this.player.active && enemy.collidesWith(this.player)) {
+                    if (this.player.takeDamage(enemy.damage)) {
+                        this.cycles.applyDamagePenalty();
+                        this.camera.addShake(5, 10);
+                        this.renderer.flash(GAME_CONFIG.COLORS.MAGENTA, 0.3);
+                    }
+                }
+            }
+        }
+
+        // Remove dead enemies
+        this.enemies = this.enemies.filter(e => e.active);
 
         // Update room
         if (this.currentRoom) {
@@ -285,6 +371,38 @@ class Game {
     }
 
     /**
+     * Check if player's attack hits enemies
+     */
+    checkAttackHits() {
+        if (!this.player.isAttacking) return;
+
+        const attackBounds = this.player.getAttackBounds();
+        if (!attackBounds) return;
+
+        for (const enemy of this.enemies) {
+            if (!enemy.active || enemy.invincibilityFrames > 0) continue;
+
+            const enemyBounds = enemy.getBounds();
+
+            if (Utils.rectsOverlap(attackBounds, enemyBounds)) {
+                // Hit the enemy
+                const killed = enemy.takeDamage(25);
+
+                if (killed) {
+                    // Gain cycles from kill
+                    this.cycles.gain(50);
+                    this.killCount++;
+                    this.hud.addMessage(`+50 CYCLES`, 'success');
+                }
+
+                // Visual feedback
+                this.camera.addShake(3, 5);
+                this.renderer.flash(GAME_CONFIG.COLORS.CYAN, 0.2);
+            }
+        }
+    }
+
+    /**
      * Render game
      */
     render() {
@@ -296,6 +414,11 @@ class Game {
         // Render room
         if (this.currentRoom) {
             this.currentRoom.render(ctx, this.camera);
+        }
+
+        // Render enemies
+        for (const enemy of this.enemies) {
+            enemy.render(ctx, this.camera);
         }
 
         // Render player
@@ -367,11 +490,13 @@ class Game {
             `Velocity: (${this.player.velocityX.toFixed(2)}, ${this.player.velocityY.toFixed(2)})`,
             `Grounded: ${this.player.isGrounded}`,
             `State: ${this.player.state}`,
-            `Cycles: ${this.cycles.getCycles()}`
+            `Attacking: ${this.player.isAttacking}`,
+            `Cycles: ${this.cycles.getCycles()}`,
+            `Enemies: ${this.enemies.length}`
         ];
 
         debugInfo.forEach((text, i) => {
-            ctx.fillText(text, 10, this.canvas.height - 100 + i * 14);
+            ctx.fillText(text, 10, this.canvas.height - 120 + i * 14);
         });
 
         ctx.restore();
@@ -419,6 +544,9 @@ class Game {
 
         // Reset cycles
         this.cycles.reset();
+
+        // Respawn enemies
+        this.spawnEnemies();
 
         // Reset camera
         this.camera.setTarget(this.player);

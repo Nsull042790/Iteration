@@ -9,6 +9,8 @@
 <body>
     <div id="game-container">
         <canvas id="game-canvas"></canvas>
+
+        <!-- Loading Screen -->
         <div id="loading-screen">
             <div class="loading-text">INITIALIZING SIMULATION...</div>
             <div class="loading-bar">
@@ -16,8 +18,55 @@
             </div>
         </div>
 
+        <!-- Title Screen -->
+        <div id="title-screen" class="screen hidden">
+            <div class="terminal-window">
+                <div class="terminal-header">
+                    <div class="terminal-dots">
+                        <span class="dot red"></span>
+                        <span class="dot yellow"></span>
+                        <span class="dot cyan"></span>
+                    </div>
+                    <div class="terminal-title">SIMULATION.exe</div>
+                </div>
+                <div class="terminal-body">
+                    <div class="terminal-lines">
+                        <div class="terminal-line">> LOADING SIMULATION...</div>
+                        <div class="terminal-line highlight">> BLADE PROTOCOL: ACTIVE</div>
+                        <div class="terminal-line">> INITIALIZING:</div>
+                    </div>
+
+                    <div class="game-logo">
+                        <div class="logo-text" data-text="ITERATION">ITERATION</div>
+                        <div class="logo-subtitle">// BREAK THE LOOP</div>
+                    </div>
+
+                    <div class="game-premise">
+                        <p>You are a combat AI trapped in a training simulation.</p>
+                        <p>Each run is an <span class="highlight-text">iteration</span>—the system is trying to create the perfect killer.</p>
+                        <p>Your weapon evolves. Ghosts of past runs haunt you. The simulation adapts.</p>
+                        <p class="highlight-text">Reach the core. Break the loop.</p>
+                    </div>
+
+                    <div class="terminal-footer">
+                        <div class="footer-item">> CYCLES: <span class="cyan">1000</span></div>
+                        <div class="footer-item">STATUS: <span class="cyan">READY</span></div>
+                        <div class="footer-item">GHOSTS: <span class="cyan">0</span></div>
+                        <div class="footer-item">BLADE: <span class="magenta">STANDARD</span></div>
+                        <div class="footer-item version">v0.0.1</div>
+                    </div>
+                </div>
+            </div>
+
+            <button id="title-start-btn" class="glitch-btn">
+                <span class="btn-content">[ ENTER SIMULATION ]</span>
+            </button>
+
+            <div class="title-hint">Press SPACE or ENTER to begin</div>
+        </div>
+
         <!-- Controls Modal -->
-        <div id="controls-modal" class="modal">
+        <div id="controls-modal" class="screen hidden">
             <div class="modal-content">
                 <div class="modal-header">
                     <div class="modal-title">CONTROL PROTOCOL</div>
@@ -98,6 +147,7 @@
     <script src="src/core/camera.js"></script>
     <script src="src/entities/entity.js"></script>
     <script src="src/entities/player.js"></script>
+    <script src="src/entities/enemy.js"></script>
     <script src="src/levels/platform.js"></script>
     <script src="src/levels/room.js"></script>
     <script src="src/systems/cycles.js"></script>

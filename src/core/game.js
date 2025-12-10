@@ -33,13 +33,27 @@ class Game {
         this.player = null;
         this.currentRoom = null;
         this.enemies = [];
+        this.boss = null;
+        this.interactables = [];
         this.cycles = new CyclesSystem();
+
+        // Level progression
+        this.currentLevel = 1;
+        this.maxEnemiesInLevel = 5;
+        this.enemiesKilledInLevel = 0;
+        this.bossSpawned = false;
+        this.levelComplete = false;
+
+        // Zone progression
+        this.zones = ['TRAINING GRID', 'COMBAT SIMULATION', 'ADAPTATION CHAMBER', 'THE CORE'];
+        this.currentZoneIndex = 0;
 
         // Run data
         this.currentZone = 'TRAINING GRID';
         this.roomNumber = 1;
         this.showControls = true;
         this.killCount = 0;
+        this.totalKills = 0;
 
         // Initialize
         this.init();
@@ -76,8 +90,9 @@ class Game {
         this.camera.setTarget(this.player);
         this.camera.setBounds(0, 0, this.currentRoom.width, this.currentRoom.height);
 
-        // Spawn test enemies
+        // Spawn enemies and interactables
         this.spawnEnemies();
+        this.spawnInteractables();
 
         // Hide loading screen and show title screen
         setTimeout(() => {
@@ -92,24 +107,160 @@ class Game {
     }
 
     /**
-     * Spawn enemies in the room
+     * Spawn enemies in the room based on level
      */
     spawnEnemies() {
         this.enemies = [];
+        this.boss = null;
+        this.bossSpawned = false;
+        this.levelComplete = false;
+        this.enemiesKilledInLevel = 0;
 
-        // Spawn some test enemies at various positions
-        const enemyPositions = [
-            { x: 400, y: 500 },
-            { x: 700, y: 400 },
-            { x: 900, y: 500 },
-            { x: 1100, y: 400 },
-            { x: 1300, y: 500 }
-        ];
+        // Calculate enemy count based on level
+        this.maxEnemiesInLevel = 3 + Math.floor(this.currentLevel * 1.5);
 
-        for (const pos of enemyPositions) {
-            const enemy = new Enemy(pos.x, pos.y);
+        // Generate enemy positions spread across the room
+        const roomWidth = this.currentRoom ? this.currentRoom.width : 1600;
+        const startX = 300;
+        const spacing = (roomWidth - 400) / this.maxEnemiesInLevel;
+
+        for (let i = 0; i < this.maxEnemiesInLevel; i++) {
+            const x = startX + i * spacing + Utils.random(-50, 50);
+            const y = Utils.random(350, 500);
+
+            const enemy = new Enemy(x, y);
+
+            // Scale enemy stats with level
+            const levelMultiplier = 1 + (this.currentLevel - 1) * 0.2;
+            enemy.health = Math.floor(enemy.health * levelMultiplier);
+            enemy.maxHealth = enemy.health;
+            enemy.damage = Math.floor(enemy.damage * levelMultiplier);
+            enemy.speed = enemy.speed * (1 + (this.currentLevel - 1) * 0.1);
+
             this.enemies.push(enemy);
         }
+    }
+
+    /**
+     * Spawn interactable objects in the room
+     */
+    spawnInteractables() {
+        this.interactables = [];
+
+        const roomWidth = this.currentRoom ? this.currentRoom.width : 1600;
+
+        // Spawn a few chests
+        const chestCount = Utils.randomInt(1, 3);
+        for (let i = 0; i < chestCount; i++) {
+            const x = Utils.random(200, roomWidth - 200);
+            const y = 520; // Ground level
+            const chest = new Interactable(x, y, 'chest');
+            this.interactables.push(chest);
+        }
+
+        // Spawn a terminal with lore
+        if (Math.random() > 0.5) {
+            const terminal = new Interactable(Utils.random(400, roomWidth - 400), 508, 'terminal');
+            this.interactables.push(terminal);
+        }
+
+        // Spawn a health station occasionally
+        if (Math.random() > 0.7) {
+            const healthStation = new Interactable(Utils.random(300, roomWidth - 300), 500, 'health_station');
+            this.interactables.push(healthStation);
+        }
+
+        // Spawn a cycle node
+        if (Math.random() > 0.6) {
+            const cycleNode = new Interactable(Utils.random(500, roomWidth - 500), 520, 'cycle_node');
+            this.interactables.push(cycleNode);
+        }
+    }
+
+    /**
+     * Spawn boss for current level
+     */
+    spawnBoss() {
+        if (this.bossSpawned) return;
+
+        this.bossSpawned = true;
+
+        // Generate boss name based on level
+        const bossNames = [
+            'GUARDIAN ALPHA',
+            'SENTINEL PRIME',
+            'ENFORCER OMEGA',
+            'CORE DEFENDER',
+            'SYSTEM OVERLORD'
+        ];
+        const bossName = bossNames[Math.min(this.currentLevel - 1, bossNames.length - 1)];
+
+        // Show boss warning
+        this.hud.showBossWarning(bossName);
+
+        // Camera shake
+        this.camera.addShake(10, 60);
+        this.renderer.flash(GAME_CONFIG.COLORS.MAGENTA, 0.5);
+
+        // Spawn boss after warning animation
+        setTimeout(() => {
+            const roomWidth = this.currentRoom ? this.currentRoom.width : 1600;
+            const bossX = roomWidth - 200;
+            const bossY = 400;
+
+            this.boss = new Boss(bossX, bossY, this.currentLevel);
+            this.boss.name = bossName;
+            this.hud.addMessage(`THREAT DETECTED: ${this.boss.name}`, 'warning');
+        }, 2000);
+    }
+
+    /**
+     * Handle level completion
+     */
+    completeLevel() {
+        if (this.levelComplete) return;
+
+        this.levelComplete = true;
+        this.currentLevel++;
+        this.roomNumber++;
+
+        // Zone progression every 3 levels
+        if (this.currentLevel % 3 === 1 && this.currentLevel > 1) {
+            this.currentZoneIndex = Math.min(this.currentZoneIndex + 1, this.zones.length - 1);
+            this.currentZone = this.zones[this.currentZoneIndex];
+            this.hud.addMessage(`ENTERING: ${this.currentZone}`, 'system');
+        }
+
+        // Bonus cycles for completing level
+        const levelBonus = 100 + this.currentLevel * 25;
+        this.cycles.gain(levelBonus);
+        this.hud.addMessage(`LEVEL COMPLETE! +${levelBonus} CYCLES`, 'success');
+
+        // Spawn exit portal
+        const roomWidth = this.currentRoom ? this.currentRoom.width : 1600;
+        const exitPortal = new Interactable(roomWidth - 100, 476, 'exit_portal');
+        this.interactables.push(exitPortal);
+    }
+
+    /**
+     * Progress to next level
+     */
+    nextLevel() {
+        this.renderer.flash('#ffffff', 0.5);
+
+        setTimeout(() => {
+            // Reset room
+            this.spawnEnemies();
+            this.spawnInteractables();
+
+            // Reset player position
+            this.player.x = this.currentRoom.spawnPoint.x;
+            this.player.y = this.currentRoom.spawnPoint.y;
+            this.player.velocityX = 0;
+            this.player.velocityY = 0;
+
+            this.hud.addMessage(`LEVEL ${this.currentLevel} - ${this.currentZone}`, 'system');
+        }, 500);
     }
 
     /**
@@ -342,8 +493,92 @@ class Game {
             }
         }
 
-        // Remove dead enemies
+        // Remove dead enemies and track kills
+        const prevEnemyCount = this.enemies.length;
         this.enemies = this.enemies.filter(e => e.active);
+        const killedThisFrame = prevEnemyCount - this.enemies.length;
+        if (killedThisFrame > 0) {
+            this.enemiesKilledInLevel += killedThisFrame;
+        }
+
+        // Check if all enemies killed - spawn boss
+        if (this.enemies.length === 0 && !this.bossSpawned && !this.levelComplete) {
+            this.spawnBoss();
+        }
+
+        // Update boss
+        if (this.boss && this.boss.active) {
+            this.boss.update(deltaTime, this.player);
+
+            // Apply gravity to boss
+            this.physics.applyGravity(this.boss);
+
+            // Resolve boss collisions with platforms
+            if (this.currentRoom) {
+                this.physics.resolveCollisions(
+                    this.boss,
+                    this.currentRoom.getActivePlatforms()
+                );
+            }
+
+            // Check if boss hits player
+            if (this.player.active && this.boss.collidesWith(this.player)) {
+                if (this.player.takeDamage(this.boss.damage)) {
+                    this.cycles.applyDamagePenalty();
+                    this.camera.addShake(8, 15);
+                    this.renderer.flash(GAME_CONFIG.COLORS.MAGENTA, 0.4);
+                }
+            }
+
+            // Check for boss projectiles hitting player
+            for (const proj of this.boss.projectiles) {
+                if (proj.active && this.player.active) {
+                    const projBounds = { x: proj.x - 8, y: proj.y - 8, width: 16, height: 16 };
+                    if (Utils.rectsOverlap(projBounds, this.player.getBounds())) {
+                        proj.active = false;
+                        if (this.player.takeDamage(this.boss.damage * 0.5)) {
+                            this.cycles.applyDamagePenalty();
+                            this.camera.addShake(4, 8);
+                        }
+                    }
+                }
+            }
+        }
+
+        // Check for boss death
+        if (this.boss && !this.boss.active && !this.levelComplete) {
+            // Boss defeated!
+            this.cycles.gain(this.boss.cycleReward);
+            this.hud.addMessage(`${this.boss.name} DESTROYED! +${this.boss.cycleReward} CYCLES`, 'success');
+            this.totalKills++;
+            this.completeLevel();
+        }
+
+        // Update interactables
+        for (const interactable of this.interactables) {
+            interactable.update(deltaTime);
+            interactable.checkPlayerProximity(this.player);
+        }
+
+        // Handle interaction
+        if (this.input.isActionJustPressed('interact')) {
+            for (const interactable of this.interactables) {
+                if (interactable.playerNearby && !interactable.used) {
+                    const result = interactable.interact(this.player, this);
+
+                    if (result) {
+                        if (result.type === 'portal') {
+                            this.nextLevel();
+                        } else if (result.type === 'lore') {
+                            this.hud.addMessage(result.message, 'lore');
+                        } else {
+                            this.hud.addMessage(result.message, 'success');
+                        }
+                    }
+                    break;
+                }
+            }
+        }
 
         // Update room
         if (this.currentRoom) {
@@ -379,6 +614,7 @@ class Game {
         const attackBounds = this.player.getAttackBounds();
         if (!attackBounds) return;
 
+        // Check regular enemies
         for (const enemy of this.enemies) {
             if (!enemy.active || enemy.invincibilityFrames > 0) continue;
 
@@ -392,12 +628,27 @@ class Game {
                     // Gain cycles from kill
                     this.cycles.gain(50);
                     this.killCount++;
+                    this.totalKills++;
                     this.hud.addMessage(`+50 CYCLES`, 'success');
                 }
 
                 // Visual feedback
                 this.camera.addShake(3, 5);
                 this.renderer.flash(GAME_CONFIG.COLORS.CYAN, 0.2);
+            }
+        }
+
+        // Check boss
+        if (this.boss && this.boss.active && this.boss.invincibilityFrames <= 0) {
+            const bossBounds = this.boss.getBounds();
+
+            if (Utils.rectsOverlap(attackBounds, bossBounds)) {
+                // Hit the boss
+                const killed = this.boss.takeDamage(20);
+
+                // Visual feedback
+                this.camera.addShake(5, 8);
+                this.renderer.flash(GAME_CONFIG.COLORS.CYAN, 0.3);
             }
         }
     }
@@ -416,9 +667,19 @@ class Game {
             this.currentRoom.render(ctx, this.camera);
         }
 
+        // Render interactables
+        for (const interactable of this.interactables) {
+            interactable.render(ctx, this.camera);
+        }
+
         // Render enemies
         for (const enemy of this.enemies) {
             enemy.render(ctx, this.camera);
+        }
+
+        // Render boss
+        if (this.boss) {
+            this.boss.render(ctx, this.camera);
         }
 
         // Render player
@@ -432,6 +693,12 @@ class Game {
             cycles: this.cycles,
             currentZone: this.currentZone,
             currentRoom: `ROOM ${Utils.padNumber(this.roomNumber, 2)}`,
+            currentLevel: this.currentLevel,
+            enemiesKilled: this.enemiesKilledInLevel,
+            totalEnemies: this.maxEnemiesInLevel,
+            bossSpawned: this.bossSpawned,
+            boss: this.boss,
+            levelComplete: this.levelComplete,
             showControls: this.showControls
         });
 
@@ -534,6 +801,13 @@ class Game {
      * Reset the current run
      */
     resetRun() {
+        // Reset level progression
+        this.currentLevel = 1;
+        this.roomNumber = 1;
+        this.currentZoneIndex = 0;
+        this.currentZone = this.zones[0];
+        this.killCount = 0;
+
         // Reset player
         this.player.active = true;
         this.player.health = this.player.maxHealth;
@@ -545,8 +819,9 @@ class Game {
         // Reset cycles
         this.cycles.reset();
 
-        // Respawn enemies
+        // Respawn enemies and interactables
         this.spawnEnemies();
+        this.spawnInteractables();
 
         // Reset camera
         this.camera.setTarget(this.player);

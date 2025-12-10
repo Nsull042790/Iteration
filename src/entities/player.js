@@ -36,9 +36,12 @@ class Player extends Entity {
         this.maxTrailLength = 5;
 
         // Blade (starts basic, evolves)
-        this.bladeType = 'basic';
+        this.bladeType = 'BASIC';
         this.bladeLength = 40;
         this.bladeAngle = 0;
+        this.bladeColor = GAME_CONFIG.COLORS.BLADE; // Can be updated by blade evolution
+        this.bladeGlow = GAME_CONFIG.COLORS.BLADE;
+        this.bladeDamageMultiplier = 1.0;
     }
 
     /**
@@ -326,26 +329,28 @@ class Player extends Entity {
         ctx.translate(centerX + (this.facingRight ? 10 : -10), handY);
         ctx.rotate(Utils.degToRad(this.bladeAngle));
 
-        // Blade glow
-        ctx.shadowColor = GAME_CONFIG.COLORS.BLADE;
+        // Blade glow - uses dynamic color from blade evolution
+        ctx.shadowColor = this.bladeGlow;
         ctx.shadowBlur = this.isAttacking ? 25 : 15;
 
-        // Blade body
+        // Blade body - uses dynamic color from blade evolution
         const gradient = ctx.createLinearGradient(0, 0, this.bladeLength, 0);
-        gradient.addColorStop(0, GAME_CONFIG.COLORS.BLADE);
-        gradient.addColorStop(1, 'rgba(0, 240, 255, 0.3)');
+        gradient.addColorStop(0, this.bladeColor);
+        gradient.addColorStop(0.7, this.bladeColor);
+        gradient.addColorStop(1, 'rgba(255, 255, 255, 0.3)');
 
         ctx.fillStyle = gradient;
         ctx.beginPath();
-        ctx.moveTo(0, -2);
+        ctx.moveTo(0, -3);
         ctx.lineTo(this.bladeLength, 0);
-        ctx.lineTo(0, 2);
+        ctx.lineTo(0, 3);
         ctx.closePath();
         ctx.fill();
 
-        // Blade core
+        // Blade core (white center line)
         ctx.strokeStyle = '#ffffff';
         ctx.lineWidth = 1;
+        ctx.shadowBlur = 5;
         ctx.beginPath();
         ctx.moveTo(2, 0);
         ctx.lineTo(this.bladeLength - 5, 0);

@@ -218,11 +218,15 @@ class HUD {
         const x = this.padding;
         const y = this.padding + 50;
 
+        // Get blade color from evolution system or default
+        const bladeColor = bladeEvolution ? bladeEvolution.getBladeColor() : GAME_CONFIG.COLORS.BLADE;
+        const bladeName = bladeEvolution ? bladeEvolution.getBladeName() : player.bladeType;
+
         ctx.save();
 
-        // Blade icon (simplified sword shape)
-        ctx.strokeStyle = GAME_CONFIG.COLORS.BLADE;
-        ctx.shadowColor = GAME_CONFIG.COLORS.BLADE;
+        // Blade icon (simplified sword shape) - uses evolution color
+        ctx.strokeStyle = bladeColor;
+        ctx.shadowColor = bladeColor;
         ctx.shadowBlur = 10;
         ctx.lineWidth = 2;
 
@@ -235,17 +239,19 @@ class HUD {
         ctx.stroke();
 
         // Handle
-        ctx.fillStyle = GAME_CONFIG.COLORS.CYAN_DIM;
+        ctx.fillStyle = bladeColor;
+        ctx.globalAlpha = 0.5;
         ctx.fillRect(x - 5, y + 7, 8, 6);
+        ctx.globalAlpha = 1;
 
-        // Label
+        // Label - show blade tier name
         ctx.font = '10px "Courier New", monospace';
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+        ctx.fillStyle = bladeColor;
         ctx.textAlign = 'left';
-        ctx.shadowBlur = 0;
-        ctx.fillText('BLADE: ' + player.bladeType.toUpperCase(), x + 45, y + 14);
+        ctx.shadowBlur = 5;
+        ctx.fillText('BLADE: ' + bladeName, x + 45, y + 14);
 
-        // Evolution progress bar (if available)
+        // Evolution progress bar
         if (bladeEvolution) {
             const barX = x + 45;
             const barY = y + 20;
@@ -253,11 +259,29 @@ class HUD {
             const barHeight = 4;
             const progress = bladeEvolution.getProgress();
 
+            // Background
+            ctx.shadowBlur = 0;
             ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
             ctx.fillRect(barX, barY, barWidth, barHeight);
 
-            ctx.fillStyle = GAME_CONFIG.COLORS.CYAN;
+            // Progress fill with blade color
+            ctx.fillStyle = bladeColor;
+            ctx.shadowColor = bladeColor;
+            ctx.shadowBlur = 5;
             ctx.fillRect(barX, barY, barWidth * progress, barHeight);
+
+            // XP text if not max tier
+            if (!bladeEvolution.isMaxTier()) {
+                ctx.font = '8px "Courier New", monospace';
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+                ctx.shadowBlur = 0;
+                const xpToNext = bladeEvolution.getXPToNextTier();
+                ctx.fillText(`${xpToNext} XP TO NEXT`, barX, barY + 12);
+            } else {
+                ctx.font = '8px "Courier New", monospace';
+                ctx.fillStyle = bladeColor;
+                ctx.fillText('MAX EVOLUTION', barX, barY + 12);
+            }
         }
 
         ctx.restore();
@@ -288,7 +312,7 @@ class HUD {
         // Version number
         ctx.font = '10px "Courier New", monospace';
         ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
-        ctx.fillText('v0.0.3', x, y + 44);
+        ctx.fillText('v0.0.4', x, y + 44);
 
         ctx.restore();
     }

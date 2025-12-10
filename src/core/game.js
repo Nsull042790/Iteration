@@ -36,6 +36,7 @@ class Game {
         this.boss = null;
         this.interactables = [];
         this.cycles = new CyclesSystem();
+        this.bladeEvolution = new BladeEvolution();
 
         // Level progression
         this.currentLevel = 1;
@@ -568,6 +569,10 @@ class Game {
             this.cycles.gain(this.boss.cycleReward);
             this.hud.addMessage(`${this.boss.name} DESTROYED! +${this.boss.cycleReward} CYCLES`, 'success');
             this.totalKills++;
+
+            // Gain blade XP from boss kill
+            this.addBladeXP(50);
+
             this.completeLevel();
         }
 
@@ -605,6 +610,9 @@ class Game {
         // Update cycles
         this.cycles.update();
 
+        // Update blade evolution
+        this.bladeEvolution.update();
+
         // Check for cycle depletion
         if (this.cycles.isDepleted()) {
             this.handleCycleDepletion();
@@ -631,6 +639,10 @@ class Game {
         const attackBounds = this.player.getAttackBounds();
         if (!attackBounds) return;
 
+        // Get damage with blade multiplier
+        const baseDamage = 25;
+        const damage = Math.floor(baseDamage * this.bladeEvolution.getDamageMultiplier());
+
         // Check regular enemies
         for (const enemy of this.enemies) {
             if (!enemy.active || enemy.invincibilityFrames > 0) continue;
@@ -638,8 +650,8 @@ class Game {
             const enemyBounds = enemy.getBounds();
 
             if (Utils.rectsOverlap(attackBounds, enemyBounds)) {
-                // Hit the enemy
-                const killed = enemy.takeDamage(25);
+                // Hit the enemy with blade damage
+                const killed = enemy.takeDamage(damage);
 
                 if (killed) {
                     // Gain cycles from kill
@@ -647,11 +659,14 @@ class Game {
                     this.killCount++;
                     this.totalKills++;
                     this.hud.addMessage(`+50 CYCLES`, 'success');
+
+                    // Gain blade XP from kill
+                    this.addBladeXP(10);
                 }
 
-                // Visual feedback
+                // Visual feedback - use blade color
                 this.camera.addShake(3, 5);
-                this.renderer.flash(GAME_CONFIG.COLORS.CYAN, 0.2);
+                this.renderer.flash(this.bladeEvolution.getBladeColor(), 0.2);
             }
         }
 
@@ -660,13 +675,44 @@ class Game {
             const bossBounds = this.boss.getBounds();
 
             if (Utils.rectsOverlap(attackBounds, bossBounds)) {
-                // Hit the boss
-                const killed = this.boss.takeDamage(20);
+                // Hit the boss with blade damage
+                const bossDamage = Math.floor(20 * this.bladeEvolution.getDamageMultiplier());
+                const killed = this.boss.takeDamage(bossDamage);
 
-                // Visual feedback
+                // Visual feedback - use blade color
                 this.camera.addShake(5, 8);
-                this.renderer.flash(GAME_CONFIG.COLORS.CYAN, 0.3);
+                this.renderer.flash(this.bladeEvolution.getBladeColor(), 0.3);
             }
+        }
+    }
+
+    /**
+     * Add blade XP and handle evolution
+     */
+    addBladeXP(amount) {
+        const evolved = this.bladeEvolution.addXP(amount);
+
+        if (evolved) {
+            // Blade evolved! Show effects
+            const newTier = this.bladeEvolution.getCurrentTier();
+            this.hud.addMessage(`BLADE EVOLVED: ${newTier.name}`, 'evolution');
+            this.renderer.flash(newTier.color, 0.6);
+            this.camera.addShake(8, 30);
+
+            // Update player blade visuals
+            this.updatePlayerBlade();
+        }
+    }
+
+    /**
+     * Update player's blade color and stats from evolution system
+     */
+    updatePlayerBlade() {
+        if (this.player) {
+            this.player.bladeType = this.bladeEvolution.getBladeName();
+            this.player.bladeColor = this.bladeEvolution.getBladeColor();
+            this.player.bladeGlow = this.bladeEvolution.getGlowColor();
+            this.player.bladeDamageMultiplier = this.bladeEvolution.getDamageMultiplier();
         }
     }
 
@@ -708,6 +754,7 @@ class Game {
         this.hud.render(ctx, {
             player: this.player,
             cycles: this.cycles,
+            bladeEvolution: this.bladeEvolution,
             currentZone: this.currentZone,
             currentRoom: `ROOM ${Utils.padNumber(this.roomNumber, 2)}`,
             currentLevel: this.currentLevel,
@@ -840,6 +887,10 @@ class Game {
 
         // Reset cycles
         this.cycles.reset();
+
+        // Reset blade evolution
+        this.bladeEvolution.reset();
+        this.updatePlayerBlade();
 
         // Respawn enemies and interactables
         this.spawnEnemies();

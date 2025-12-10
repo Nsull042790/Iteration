@@ -65,6 +65,40 @@
             <div class="title-hint">Press SPACE or ENTER to begin</div>
         </div>
 
+        <!-- Game Over Modal -->
+        <div id="gameover-modal" class="screen hidden">
+            <div class="modal-content gameover-content">
+                <div class="modal-header">
+                    <div class="modal-title gameover-title">ITERATION FAILED</div>
+                    <div class="modal-subtitle">// SIMULATION TERMINATED</div>
+                </div>
+
+                <div class="gameover-stats">
+                    <div class="stat-item">
+                        <span class="stat-label">LEVEL REACHED</span>
+                        <span class="stat-value" id="gameover-level">1</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">ENEMIES DESTROYED</span>
+                        <span class="stat-value" id="gameover-kills">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">BLADE TIER</span>
+                        <span class="stat-value" id="gameover-blade">BASIC</span>
+                    </div>
+                </div>
+
+                <div class="modal-footer gameover-footer">
+                    <button id="restart-button" class="start-btn restart-btn">
+                        <span class="btn-text">RESTART ITERATION</span>
+                        <span class="btn-icon">↻</span>
+                    </button>
+                </div>
+
+                <div class="gameover-hint">Press SPACE or ENTER to restart</div>
+            </div>
+        </div>
+
         <!-- Controls Modal -->
         <div id="controls-modal" class="screen hidden">
             <div class="modal-content">

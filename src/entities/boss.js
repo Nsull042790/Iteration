@@ -21,15 +21,22 @@ class Boss extends Entity {
         this.cycleReward = Math.floor(200 * levelMultiplier);
 
         // AI State
-        this.aiState = 'idle'; // idle, chase, attack, special, stunned
+        this.aiState = 'idle'; // idle, chase, attack, special, stunned, reposition
         this.stateTimer = 0;
         this.attackCooldown = 0;
         this.specialCooldown = 0;
+        this.repositionCooldown = 0;
 
         // Attack patterns
         this.currentPattern = 0;
-        this.patterns = ['charge', 'slam', 'projectile'];
+        this.patterns = ['charge', 'slam', 'projectile', 'leap'];
         this.patternTimer = 0;
+
+        // Movement behavior
+        this.moveDirection = 1;
+        this.strafeTimer = 0;
+        this.jumpCooldown = 0;
+        this.aggressionLevel = 1 + level * 0.2; // Increases with level
 
         // Combat
         this.invincibilityFrames = 0;
@@ -85,6 +92,9 @@ class Boss extends Entity {
         if (this.attackCooldown > 0) this.attackCooldown--;
         if (this.specialCooldown > 0) this.specialCooldown--;
         if (this.stunTimer > 0) this.stunTimer--;
+        if (this.repositionCooldown > 0) this.repositionCooldown--;
+        if (this.jumpCooldown > 0) this.jumpCooldown--;
+        this.strafeTimer++;
 
         // Animation
         this.animTimer++;
@@ -126,32 +136,67 @@ class Boss extends Entity {
         const dx = (player.x + player.width / 2) - (this.x + this.width / 2);
         const dy = (player.y + player.height / 2) - (this.y + this.height / 2);
         const distToPlayer = Math.sqrt(dx * dx + dy * dy);
+        const healthPercent = this.health / this.maxHealth;
 
         this.facingRight = dx > 0;
-
         this.stateTimer++;
+
+        // Random jumps while moving (more frequent at low health)
+        if (this.isGrounded && this.jumpCooldown <= 0 && Math.random() < 0.02 * this.aggressionLevel) {
+            this.velocityY = -10;
+            this.jumpCooldown = 60;
+        }
 
         switch (this.aiState) {
             case 'idle':
-                // Brief pause between actions
-                if (this.stateTimer > 30) {
-                    this.chooseNextAction(distToPlayer);
+                // Shorter idle at low health
+                const idleTime = healthPercent < 0.5 ? 15 : 25;
+                if (this.stateTimer > idleTime) {
+                    this.chooseNextAction(distToPlayer, healthPercent);
                 }
+                // Still move while idle (strafe)
+                this.applyStrafing(dx, distToPlayer);
                 break;
 
             case 'chase':
-                // Move toward player
-                this.velocityX += Math.sign(dx) * 0.3;
-                this.velocityX = Utils.clamp(this.velocityX, -this.speed, this.speed);
+                // Aggressive chase with acceleration
+                const chaseAccel = 0.4 * this.aggressionLevel;
+                this.velocityX += Math.sign(dx) * chaseAccel;
+                this.velocityX = Utils.clamp(this.velocityX, -this.speed * 1.5, this.speed * 1.5);
 
-                if (distToPlayer < 100 || this.stateTimer > 120) {
+                // Jump to reach player if they're above
+                if (dy < -50 && this.isGrounded && this.jumpCooldown <= 0) {
+                    this.velocityY = -12;
+                    this.jumpCooldown = 30;
+                }
+
+                if (distToPlayer < 120 || this.stateTimer > 90) {
                     this.aiState = 'attack';
                     this.stateTimer = 0;
                 }
                 break;
 
+            case 'reposition':
+                // Move away from player then attack
+                const retreatDir = dx > 0 ? -1 : 1;
+                this.velocityX += retreatDir * 0.5;
+                this.velocityX = Utils.clamp(this.velocityX, -this.speed * 1.2, this.speed * 1.2);
+
+                // Jump while repositioning
+                if (this.isGrounded && Math.random() < 0.05) {
+                    this.velocityY = -8;
+                }
+
+                if (this.stateTimer > 40 || distToPlayer > 300) {
+                    this.aiState = 'attack';
+                    this.currentPattern = 2; // Projectile after reposition
+                    this.stateTimer = 0;
+                    this.patternTimer = 0;
+                }
+                break;
+
             case 'attack':
-                this.executeAttack(player);
+                this.executeAttack(player, dx, dy);
                 break;
 
             case 'special':
@@ -161,27 +206,67 @@ class Boss extends Entity {
     }
 
     /**
+     * Apply strafing movement
+     */
+    applyStrafing(dx, distToPlayer) {
+        // Change strafe direction periodically
+        if (this.strafeTimer > 60) {
+            this.moveDirection *= -1;
+            this.strafeTimer = 0;
+        }
+
+        // Strafe perpendicular to player
+        if (distToPlayer < 250 && distToPlayer > 80) {
+            this.velocityX += this.moveDirection * 0.2;
+            this.velocityX = Utils.clamp(this.velocityX, -this.speed * 0.8, this.speed * 0.8);
+        }
+    }
+
+    /**
      * Choose next action based on situation
      */
-    chooseNextAction(distToPlayer) {
-        // Choose attack pattern based on health and distance
-        const healthPercent = this.health / this.maxHealth;
+    chooseNextAction(distToPlayer, healthPercent) {
+        // More aggressive at low health
+        const enraged = healthPercent < 0.3;
+        const cooldownReduction = enraged ? 0.5 : 1;
 
-        if (healthPercent < 0.3 && this.specialCooldown <= 0) {
-            // Enraged mode - more specials
-            this.aiState = 'special';
-            this.currentPattern = 2; // projectile
-            this.specialCooldown = 180;
-        } else if (distToPlayer > 200 && this.specialCooldown <= 0) {
-            // Far away - use projectile
-            this.aiState = 'special';
-            this.currentPattern = 2;
-            this.specialCooldown = 120;
-        } else if (distToPlayer < 150 && this.attackCooldown <= 0) {
-            // Close - use melee
+        // Random reposition to keep player on their toes
+        if (this.repositionCooldown <= 0 && Math.random() < 0.15) {
+            this.aiState = 'reposition';
+            this.repositionCooldown = 120;
+            this.stateTimer = 0;
+            return;
+        }
+
+        if (enraged && this.specialCooldown <= 0) {
+            // Enraged mode - rapid attacks
+            const rand = Math.random();
+            if (rand < 0.4) {
+                this.aiState = 'attack';
+                this.currentPattern = 3; // leap attack
+                this.attackCooldown = 30 * cooldownReduction;
+            } else {
+                this.aiState = 'special';
+                this.currentPattern = 2; // projectile
+                this.specialCooldown = 90 * cooldownReduction;
+            }
+        } else if (distToPlayer > 250 && this.specialCooldown <= 0) {
+            // Far away - leap or projectile
+            this.aiState = Math.random() > 0.5 ? 'attack' : 'special';
+            this.currentPattern = this.aiState === 'attack' ? 3 : 2;
+            this.specialCooldown = 100;
+        } else if (distToPlayer < 180 && this.attackCooldown <= 0) {
+            // Close - varied melee attacks
             this.aiState = 'attack';
-            this.currentPattern = Math.random() > 0.5 ? 0 : 1; // charge or slam
-            this.attackCooldown = 60;
+            const rand = Math.random();
+            if (rand < 0.35) {
+                this.currentPattern = 0; // charge
+            } else if (rand < 0.7) {
+                this.currentPattern = 1; // slam
+            } else {
+                this.currentPattern = 3; // leap
+            }
+            this.attackCooldown = 45 * cooldownReduction;
         } else {
             this.aiState = 'chase';
         }
@@ -193,18 +278,18 @@ class Boss extends Entity {
     /**
      * Execute melee attack
      */
-    executeAttack(player) {
+    executeAttack(player, dx, dy) {
         this.patternTimer++;
 
         if (this.currentPattern === 0) {
             // Charge attack
-            if (this.patternTimer < 30) {
-                // Wind up
+            if (this.patternTimer < 20) {
+                // Wind up (shorter)
                 this.velocityX *= 0.9;
                 this.shakeAmount = 3;
-            } else if (this.patternTimer < 50) {
-                // Charge!
-                this.velocityX = (this.facingRight ? 1 : -1) * this.speed * 3;
+            } else if (this.patternTimer < 45) {
+                // Charge! (faster)
+                this.velocityX = (this.facingRight ? 1 : -1) * this.speed * 3.5;
                 this.spawnChargeParticles();
             } else {
                 this.aiState = 'idle';
@@ -212,17 +297,48 @@ class Boss extends Entity {
             }
         } else if (this.currentPattern === 1) {
             // Ground slam
-            if (this.patternTimer < 40) {
-                // Jump up
+            if (this.patternTimer < 25) {
+                // Jump up (faster)
                 if (this.patternTimer === 1) {
-                    this.velocityY = -12;
+                    this.velocityY = -14;
                 }
-            } else if (this.patternTimer === 40) {
+                // Track player horizontally during jump
+                if (dx) {
+                    this.velocityX += Math.sign(dx) * 0.3;
+                    this.velocityX = Utils.clamp(this.velocityX, -this.speed, this.speed);
+                }
+            } else if (this.patternTimer === 25) {
                 // Slam down
-                this.velocityY = 15;
-            } else if (this.patternTimer > 45 && this.isGrounded) {
+                this.velocityY = 18;
+            } else if (this.patternTimer > 30 && this.isGrounded) {
                 // Impact
                 this.shakeAmount = 10;
+                this.spawnSlamParticles();
+                this.aiState = 'idle';
+                this.stateTimer = 0;
+            }
+        } else if (this.currentPattern === 3) {
+            // Leap attack - jump toward player
+            if (this.patternTimer === 1) {
+                // Calculate jump trajectory toward player
+                const jumpPower = -15;
+                const horizontalPower = Math.sign(dx || 1) * Math.min(Math.abs(dx) * 0.03, this.speed * 2);
+                this.velocityY = jumpPower;
+                this.velocityX = horizontalPower;
+            } else if (this.patternTimer < 60) {
+                // In air - spawn particles
+                if (this.patternTimer % 5 === 0) {
+                    this.spawnChargeParticles();
+                }
+                // Slam down when above or past player
+                if (this.patternTimer > 20 && this.velocityY > 0) {
+                    this.velocityY = Math.max(this.velocityY, 12);
+                }
+            }
+
+            if (this.patternTimer > 15 && this.isGrounded) {
+                // Landed - create impact
+                this.shakeAmount = 8;
                 this.spawnSlamParticles();
                 this.aiState = 'idle';
                 this.stateTimer = 0;

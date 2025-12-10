@@ -234,11 +234,18 @@ class Room {
 }
 
 /**
- * Create a test room for development
+ * Create a test room for development (legacy)
  */
 function createTestRoom() {
+    return generateRandomRoom(1);
+}
+
+/**
+ * Generate a random room with procedural platform placement
+ */
+function generateRandomRoom(level = 1) {
     const room = new Room(GAME_CONFIG.ROOM.WIDTH * 1.5, GAME_CONFIG.ROOM.HEIGHT);
-    room.name = 'TEST CHAMBER';
+    room.name = 'COMBAT ZONE ' + level;
 
     // Floor with grid style
     room.createPlatform(0, room.height - 32, room.width, 32, { style: 'grid' });
@@ -247,41 +254,85 @@ function createTestRoom() {
     room.createPlatform(-32, 0, 32, room.height, { style: 'solid' });
     room.createPlatform(room.width, 0, 32, room.height, { style: 'solid' });
 
-    // Platforms for testing jumps
-    room.createPlatform(200, room.height - 150, 200, 24, { style: 'solid' });
-    room.createPlatform(500, room.height - 250, 150, 24, { style: 'solid' });
-    room.createPlatform(750, room.height - 180, 180, 24, { style: 'solid' });
+    // Platform generation parameters
+    const platformCount = 8 + Math.floor(level * 0.5); // More platforms at higher levels
+    const minPlatformWidth = 80;
+    const maxPlatformWidth = 200;
+    const minHeight = 100;
+    const maxHeight = 450;
+    const styles = ['solid', 'solid', 'grid', 'energy']; // Weighted toward solid
 
-    // One-way platform
-    room.createPlatform(350, room.height - 350, 120, 16, {
-        style: 'energy',
-        oneWay: true
-    });
+    // Track placed platforms to avoid overlap
+    const placedPlatforms = [];
 
-    // Higher platforms
-    room.createPlatform(100, room.height - 400, 150, 24, { style: 'grid' });
-    room.createPlatform(600, room.height - 420, 200, 24, { style: 'solid' });
+    // Create platforms in zones to ensure good distribution
+    const zoneCount = 6;
+    const zoneWidth = room.width / zoneCount;
 
-    // Moving platform
-    room.createPlatform(950, room.height - 300, 100, 20, {
-        style: 'energy',
-        moving: true,
-        moveEndX: 1150,
-        moveEndY: room.height - 300,
-        moveSpeed: 1.5
-    });
+    for (let zone = 0; zone < zoneCount; zone++) {
+        // 1-2 platforms per zone
+        const platformsInZone = zone === 0 ? 1 : Utils.randomInt(1, 2);
 
-    // Extended area platforms
-    room.createPlatform(1200, room.height - 200, 180, 24, { style: 'solid' });
-    room.createPlatform(1450, room.height - 320, 150, 24, { style: 'grid' });
-    room.createPlatform(1300, room.height - 450, 120, 24, { style: 'solid' });
+        for (let p = 0; p < platformsInZone; p++) {
+            if (placedPlatforms.length >= platformCount) break;
 
-    // Small stepping platforms
-    room.createPlatform(850, room.height - 100, 60, 20, { style: 'solid' });
-    room.createPlatform(1000, room.height - 150, 60, 20, { style: 'solid' });
-    room.createPlatform(1100, room.height - 100, 60, 20, { style: 'solid' });
+            // Random position within zone
+            const width = Utils.randomInt(minPlatformWidth, maxPlatformWidth);
+            const x = zone * zoneWidth + Utils.random(20, zoneWidth - width - 20);
+            const height = Utils.random(minHeight, maxHeight);
+            const y = room.height - height;
 
-    // Set spawn point
+            // Check for overlap with existing platforms
+            let overlaps = false;
+            for (const existing of placedPlatforms) {
+                if (Math.abs(x - existing.x) < width + 40 &&
+                    Math.abs(y - existing.y) < 80) {
+                    overlaps = true;
+                    break;
+                }
+            }
+
+            if (!overlaps) {
+                const style = styles[Utils.randomInt(0, styles.length - 1)];
+                const isOneWay = style === 'energy' && Math.random() > 0.5;
+
+                room.createPlatform(x, y, width, 24, {
+                    style: style,
+                    oneWay: isOneWay
+                });
+
+                placedPlatforms.push({ x, y, width });
+            }
+        }
+    }
+
+    // Add 1-2 moving platforms at higher levels
+    if (level >= 2) {
+        const movingCount = Math.min(level - 1, 2);
+        for (let i = 0; i < movingCount; i++) {
+            const startX = Utils.random(300, room.width - 400);
+            const y = room.height - Utils.random(200, 350);
+            const moveDistance = Utils.random(150, 250);
+
+            room.createPlatform(startX, y, 100, 20, {
+                style: 'energy',
+                moving: true,
+                moveEndX: startX + moveDistance,
+                moveEndY: y,
+                moveSpeed: 1 + level * 0.2
+            });
+        }
+    }
+
+    // Add some small stepping platforms
+    const stepCount = Utils.randomInt(2, 4);
+    for (let i = 0; i < stepCount; i++) {
+        const x = Utils.random(200, room.width - 200);
+        const y = room.height - Utils.random(80, 150);
+        room.createPlatform(x, y, Utils.randomInt(50, 80), 20, { style: 'solid' });
+    }
+
+    // Set spawn point (always near left side)
     room.setSpawnPoint(100, room.height - 100);
 
     return room;

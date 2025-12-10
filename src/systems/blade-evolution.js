@@ -8,14 +8,14 @@ class BladeEvolution {
         this.xp = 0;
         this.currentTier = 0;
 
-        // Blade tiers with colors and thresholds
+        // Blade tiers with colors and thresholds (faster progression)
         this.tiers = [
             { name: 'BASIC', xpRequired: 0, color: '#00f0ff', glowColor: '#00f0ff' },
-            { name: 'CHARGED', xpRequired: 100, color: '#00ff88', glowColor: '#00ff88' },
-            { name: 'ENHANCED', xpRequired: 250, color: '#ffdd00', glowColor: '#ffdd00' },
-            { name: 'OVERCLOCKED', xpRequired: 500, color: '#ff8800', glowColor: '#ff8800' },
-            { name: 'CORRUPTED', xpRequired: 800, color: '#ff00ff', glowColor: '#ff00ff' },
-            { name: 'TRANSCENDED', xpRequired: 1200, color: '#ffffff', glowColor: '#ff00ff' }
+            { name: 'CHARGED', xpRequired: 30, color: '#00ff88', glowColor: '#00ff88' },
+            { name: 'ENHANCED', xpRequired: 80, color: '#ffdd00', glowColor: '#ffdd00' },
+            { name: 'OVERCLOCKED', xpRequired: 150, color: '#ff8800', glowColor: '#ff8800' },
+            { name: 'CORRUPTED', xpRequired: 250, color: '#ff00ff', glowColor: '#ff00ff' },
+            { name: 'TRANSCENDED', xpRequired: 400, color: '#ffffff', glowColor: '#ff00ff' }
         ];
 
         // Damage multipliers per tier

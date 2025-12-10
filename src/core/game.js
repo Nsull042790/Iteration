@@ -250,7 +250,13 @@ class Game {
         this.renderer.flash('#ffffff', 0.5);
 
         setTimeout(() => {
-            // Reset room
+            // Generate new random room for this level
+            this.currentRoom = generateRandomRoom(this.currentLevel);
+
+            // Update camera bounds for new room
+            this.camera.setBounds(0, 0, this.currentRoom.width, this.currentRoom.height);
+
+            // Spawn enemies and interactables for new room
             this.spawnEnemies();
             this.spawnInteractables();
 
@@ -841,14 +847,51 @@ class Game {
         if (!this.player.active) return;
 
         this.player.active = false;
+        this.state = 'gameover';
 
         this.renderer.flash(GAME_CONFIG.COLORS.MAGENTA, 0.8);
         this.renderer.glitch(2, 30);
         this.hud.addMessage('ITERATION FAILED', 'warning');
-        this.hud.addMessage('RESTARTING SIMULATION...', 'system');
 
-        // Reset after delay
-        setTimeout(() => this.resetRun(), 2000);
+        // Show game over modal after a brief delay
+        setTimeout(() => this.showGameOverModal(), 1000);
+    }
+
+    /**
+     * Show game over modal
+     */
+    showGameOverModal() {
+        const modal = document.getElementById('gameover-modal');
+        const restartButton = document.getElementById('restart-button');
+        const levelEl = document.getElementById('gameover-level');
+        const killsEl = document.getElementById('gameover-kills');
+        const bladeEl = document.getElementById('gameover-blade');
+
+        // Update stats
+        levelEl.textContent = this.currentLevel;
+        killsEl.textContent = this.totalKills;
+        bladeEl.textContent = this.bladeEvolution.getBladeName();
+
+        modal.classList.remove('hidden');
+
+        // Handle restart button click
+        const handleRestart = () => {
+            modal.classList.add('hidden');
+            restartButton.removeEventListener('click', handleRestart);
+            window.removeEventListener('keydown', handleRestartKey);
+            this.resetRun();
+        };
+
+        // Handle key press
+        const handleRestartKey = (e) => {
+            if (this.state === 'gameover' && (e.code === 'Space' || e.code === 'Enter')) {
+                e.preventDefault();
+                handleRestart();
+            }
+        };
+
+        restartButton.addEventListener('click', handleRestart);
+        window.addEventListener('keydown', handleRestartKey);
     }
 
     /**
@@ -859,10 +902,10 @@ class Game {
             this.renderer.flash(GAME_CONFIG.COLORS.CYCLES_CRITICAL, 0.6);
             this.renderer.glitch(1.5, 20);
             this.hud.addMessage('CYCLES DEPLETED', 'warning');
-            this.hud.addMessage('SIMULATION TERMINATED', 'system');
 
             this.player.active = false;
-            setTimeout(() => this.resetRun(), 2000);
+            this.state = 'gameover';
+            setTimeout(() => this.showGameOverModal(), 1000);
         }
     }
 
@@ -870,12 +913,16 @@ class Game {
      * Reset the current run
      */
     resetRun() {
+        // Reset game state
+        this.state = 'playing';
+
         // Reset level progression
         this.currentLevel = 1;
         this.roomNumber = 1;
         this.currentZoneIndex = 0;
         this.currentZone = this.zones[0];
         this.killCount = 0;
+        this.totalKills = 0;
 
         // Reset player
         this.player.active = true;
@@ -891,6 +938,14 @@ class Game {
         // Reset blade evolution
         this.bladeEvolution.reset();
         this.updatePlayerBlade();
+
+        // Generate fresh random room
+        this.currentRoom = generateRandomRoom(1);
+        this.camera.setBounds(0, 0, this.currentRoom.width, this.currentRoom.height);
+
+        // Update player spawn position for new room
+        this.player.x = this.currentRoom.spawnPoint.x;
+        this.player.y = this.currentRoom.spawnPoint.y;
 
         // Respawn enemies and interactables
         this.spawnEnemies();

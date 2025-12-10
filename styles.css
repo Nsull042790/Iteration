@@ -648,6 +648,90 @@ body {
 }
 
 /* ============================================
+   Game Over Modal
+   ============================================ */
+
+#gameover-modal {
+    background-color: rgba(5, 5, 8, 0.95);
+}
+
+.gameover-content {
+    border-color: #ff00aa;
+    box-shadow:
+        0 0 30px rgba(255, 0, 170, 0.3),
+        inset 0 0 60px rgba(255, 0, 170, 0.05);
+}
+
+.gameover-title {
+    color: #ff00aa !important;
+    text-shadow: 0 0 20px rgba(255, 0, 170, 0.5) !important;
+    animation: glitchTitle 2s infinite;
+}
+
+@keyframes glitchTitle {
+    0%, 90%, 100% { transform: translate(0); }
+    92% { transform: translate(-2px, 1px); }
+    94% { transform: translate(2px, -1px); }
+    96% { transform: translate(-1px, 2px); }
+}
+
+.gameover-stats {
+    display: flex;
+    justify-content: space-around;
+    margin: 30px 0;
+    padding: 20px 0;
+    border-top: 1px solid rgba(255, 0, 170, 0.3);
+    border-bottom: 1px solid rgba(255, 0, 170, 0.3);
+}
+
+.stat-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.stat-label {
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.5);
+    letter-spacing: 2px;
+}
+
+.stat-value {
+    font-size: 28px;
+    font-weight: bold;
+    color: #00f0ff;
+    text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+}
+
+.gameover-footer {
+    justify-content: center;
+    border-top: none;
+}
+
+.restart-btn {
+    background: linear-gradient(135deg, #ff00aa 0%, #aa0066 100%);
+    box-shadow:
+        0 4px 0 #660044,
+        0 0 20px rgba(255, 0, 170, 0.3);
+}
+
+.restart-btn:hover {
+    box-shadow:
+        0 2px 0 #660044,
+        0 0 30px rgba(255, 0, 170, 0.5);
+}
+
+.gameover-hint {
+    text-align: center;
+    margin-top: 20px;
+    color: rgba(255, 255, 255, 0.3);
+    font-size: 12px;
+    letter-spacing: 2px;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+/* ============================================
    Glow effects
    ============================================ */
 

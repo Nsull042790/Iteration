@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ITERATION</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="game-container">
+        <canvas id="game-canvas"></canvas>
+        <div id="loading-screen">
+            <div class="loading-text">INITIALIZING SIMULATION...</div>
+            <div class="loading-bar">
+                <div class="loading-progress"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Core Systems -->
+    <script src="src/utils/helpers.js"></script>
+    <script src="src/core/constants.js"></script>
+    <script src="src/core/input.js"></script>
+    <script src="src/core/physics.js"></script>
+    <script src="src/core/camera.js"></script>
+    <script src="src/entities/entity.js"></script>
+    <script src="src/entities/player.js"></script>
+    <script src="src/levels/platform.js"></script>
+    <script src="src/levels/room.js"></script>
+    <script src="src/systems/cycles.js"></script>
+    <script src="src/ui/hud.js"></script>
+    <script src="src/core/renderer.js"></script>
+    <script src="src/core/game.js"></script>
+    <script src="main.js"></script>
+</body>
+</html>

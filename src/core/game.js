@@ -493,6 +493,10 @@ class Game {
                         this.cycles.applyDamagePenalty();
                         this.camera.addShake(5, 10);
                         this.renderer.flash(GAME_CONFIG.COLORS.MAGENTA, 0.3);
+                        // Check for death immediately after taking damage
+                        if (this.player.health <= 0) {
+                            this.handlePlayerDeath();
+                        }
                     }
                 }
             }
@@ -532,6 +536,10 @@ class Game {
                     this.cycles.applyDamagePenalty();
                     this.camera.addShake(8, 15);
                     this.renderer.flash(GAME_CONFIG.COLORS.MAGENTA, 0.4);
+                    // Check for death immediately after taking damage
+                    if (this.player.health <= 0) {
+                        this.handlePlayerDeath();
+                    }
                 }
             }
 
@@ -544,6 +552,10 @@ class Game {
                         if (this.player.takeDamage(this.boss.damage * 0.5)) {
                             this.cycles.applyDamagePenalty();
                             this.camera.addShake(4, 8);
+                            // Check for death immediately after taking damage
+                            if (this.player.health <= 0) {
+                                this.handlePlayerDeath();
+                            }
                         }
                     }
                 }

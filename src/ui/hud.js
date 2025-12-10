@@ -285,6 +285,11 @@ class HUD {
         ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
         ctx.fillText(room || 'ROOM 01', x, y + 28);
 
+        // Version number
+        ctx.font = '10px "Courier New", monospace';
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+        ctx.fillText('v0.0.3', x, y + 44);
+
         ctx.restore();
     }
 
@@ -371,7 +376,7 @@ class HUD {
         const barWidth = 400;
         const barHeight = 16;
         const x = (this.width - barWidth) / 2;
-        const y = 80;
+        const y = 110; // Moved down to avoid overlapping with cycles display
 
         const healthPercent = boss.health / boss.maxHealth;
 

@@ -462,6 +462,11 @@ class Game {
                 this.handlePlayerDeath();
             }
 
+            // Check for death by health depletion
+            if (this.player.health <= 0) {
+                this.handlePlayerDeath();
+            }
+
             // Check attack hits on enemies
             this.checkAttackHits();
         }
@@ -773,6 +778,11 @@ class Game {
      * Handle player death
      */
     handlePlayerDeath() {
+        // Prevent multiple death triggers
+        if (!this.player.active) return;
+
+        this.player.active = false;
+
         this.renderer.flash(GAME_CONFIG.COLORS.MAGENTA, 0.8);
         this.renderer.glitch(2, 30);
         this.hud.addMessage('ITERATION FAILED', 'warning');

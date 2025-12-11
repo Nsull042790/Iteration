@@ -37,11 +37,17 @@ class Player extends Entity {
 
         // Blade (starts basic, evolves)
         this.bladeType = 'BASIC';
-        this.bladeLength = 40;
+        this.bladeLength = 38;
         this.bladeAngle = 0;
-        this.bladeColor = GAME_CONFIG.COLORS.BLADE; // Can be updated by blade evolution
+        this.bladeColor = GAME_CONFIG.COLORS.BLADE;
         this.bladeGlow = GAME_CONFIG.COLORS.BLADE;
         this.bladeDamageMultiplier = 1.0;
+
+        // Blade visual data (updated by evolution)
+        this.bladeVisuals = null;
+        this.bladeParticles = [];
+        this.bladeSwingTrail = [];
+        this.bladePulsePhase = 0;
     }
 
     /**
@@ -131,6 +137,9 @@ class Player extends Entity {
         this.applyFriction();
         this.updatePosition();
 
+        // Update blade pulse phase
+        this.bladePulsePhase += 0.15;
+
         // Update attack state
         if (this.isAttacking) {
             this.attackFrame++;
@@ -140,6 +149,25 @@ class Player extends Entity {
                 ? -45 + (attackProgress * 135)
                 : 225 - (attackProgress * 135);
 
+            // Spawn blade particles during swing (if tier supports it)
+            if (this.bladeVisuals && this.bladeVisuals.hasParticles) {
+                this.spawnBladeParticles();
+            }
+
+            // Add to swing trail for higher tiers
+            if (this.bladeVisuals && this.bladeVisuals.hasTrail) {
+                this.bladeSwingTrail.push({
+                    x: this.x + this.width / 2,
+                    y: this.y + 20,
+                    angle: this.bladeAngle,
+                    alpha: 1,
+                    length: this.bladeLength
+                });
+                if (this.bladeSwingTrail.length > 6) {
+                    this.bladeSwingTrail.shift();
+                }
+            }
+
             if (this.attackFrame >= this.attackDuration) {
                 this.isAttacking = false;
                 this.attackFrame = 0;
@@ -147,7 +175,12 @@ class Player extends Entity {
         } else {
             // Idle blade position
             this.bladeAngle = this.facingRight ? 30 : 150;
+            // Clear swing trail when not attacking
+            this.bladeSwingTrail = [];
         }
+
+        // Update blade particles
+        this.updateBladeParticles();
 
         // Update invincibility
         if (this.invincibilityFrames > 0) {
@@ -251,11 +284,17 @@ class Player extends Entity {
         // Draw trail (afterimages)
         this.renderTrail(ctx, camera);
 
+        // Draw blade swing trail (behind player)
+        this.renderBladeSwingTrail(ctx, camera);
+
         // Draw player body (humanoid silhouette)
         this.renderBody(ctx, screenPos);
 
         // Draw blade
         this.renderBlade(ctx, screenPos);
+
+        // Draw blade particles (on top)
+        this.renderBladeParticles(ctx, camera);
 
         // Debug: draw hitbox
         if (GAME_CONFIG.DEBUG) {
@@ -319,11 +358,13 @@ class Player extends Entity {
     }
 
     /**
-     * Render the blade
+     * Render the blade based on current evolution tier
      */
     renderBlade(ctx, screenPos) {
         const centerX = screenPos.x + this.width / 2;
         const handY = screenPos.y + 20;
+        const v = this.bladeVisuals || { shape: 'stick', length: 38, width: 3, glowIntensity: 12, coreWidth: 1 };
+        const pulse = Math.sin(this.bladePulsePhase) * 0.15 + 0.85;
 
         ctx.save();
 
@@ -331,32 +372,454 @@ class Player extends Entity {
         ctx.translate(centerX + (this.facingRight ? 10 : -10), handY);
         ctx.rotate(Utils.degToRad(this.bladeAngle));
 
-        // Blade glow - uses dynamic color from blade evolution
+        // Blade glow
         ctx.shadowColor = this.bladeGlow;
-        ctx.shadowBlur = this.isAttacking ? 25 : 15;
+        ctx.shadowBlur = (this.isAttacking ? v.glowIntensity * 1.5 : v.glowIntensity) * pulse;
 
-        // Blade body - uses dynamic color from blade evolution
-        const gradient = ctx.createLinearGradient(0, 0, this.bladeLength, 0);
+        // Render based on blade shape/tier
+        switch (v.shape) {
+            case 'stick':
+                this.renderStickBlade(ctx, v, pulse);
+                break;
+            case 'blade':
+                this.renderChargedBlade(ctx, v, pulse);
+                break;
+            case 'sword':
+                this.renderSwordBlade(ctx, v, pulse);
+                break;
+            case 'heatsword':
+                this.renderHeatSword(ctx, v, pulse);
+                break;
+            case 'corrupt':
+                this.renderCorruptBlade(ctx, v, pulse);
+                break;
+            case 'laser':
+                this.renderLaserBlade(ctx, v, pulse);
+                break;
+            default:
+                this.renderStickBlade(ctx, v, pulse);
+        }
+
+        ctx.restore();
+    }
+
+    /**
+     * Tier 0: Basic energy stick
+     */
+    renderStickBlade(ctx, v, pulse) {
+        const gradient = ctx.createLinearGradient(0, 0, v.length, 0);
         gradient.addColorStop(0, this.bladeColor);
-        gradient.addColorStop(0.7, this.bladeColor);
+        gradient.addColorStop(0.8, this.bladeColor);
         gradient.addColorStop(1, 'rgba(255, 255, 255, 0.3)');
 
         ctx.fillStyle = gradient;
         ctx.beginPath();
-        ctx.moveTo(0, -3);
-        ctx.lineTo(this.bladeLength, 0);
-        ctx.lineTo(0, 3);
+        ctx.moveTo(0, -v.width);
+        ctx.lineTo(v.length, 0);
+        ctx.lineTo(0, v.width);
         ctx.closePath();
         ctx.fill();
 
-        // Blade core (white center line)
+        // Core line
         ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = 1;
-        ctx.shadowBlur = 5;
+        ctx.lineWidth = v.coreWidth;
         ctx.beginPath();
         ctx.moveTo(2, 0);
-        ctx.lineTo(this.bladeLength - 5, 0);
+        ctx.lineTo(v.length - 5, 0);
         ctx.stroke();
+    }
+
+    /**
+     * Tier 1: Charged blade with crackling
+     */
+    renderChargedBlade(ctx, v, pulse) {
+        const gradient = ctx.createLinearGradient(0, 0, v.length, 0);
+        gradient.addColorStop(0, this.bladeColor);
+        gradient.addColorStop(0.7, this.bladeColor);
+        gradient.addColorStop(1, '#ffffff');
+
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.moveTo(0, -v.width);
+        ctx.lineTo(v.length * 0.3, -v.width * 1.2);
+        ctx.lineTo(v.length, 0);
+        ctx.lineTo(v.length * 0.3, v.width * 1.2);
+        ctx.lineTo(0, v.width);
+        ctx.closePath();
+        ctx.fill();
+
+        // Crackling effect
+        if (v.crackling && this.isAttacking) {
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 1;
+            ctx.globalAlpha = 0.7;
+            for (let i = 0; i < 3; i++) {
+                const startX = Utils.random(5, v.length * 0.6);
+                const crackle = Utils.random(-8, 8);
+                ctx.beginPath();
+                ctx.moveTo(startX, 0);
+                ctx.lineTo(startX + 8, crackle);
+                ctx.lineTo(startX + 12, crackle * 0.5);
+                ctx.stroke();
+            }
+            ctx.globalAlpha = 1;
+        }
+
+        // Core
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = v.coreWidth;
+        ctx.beginPath();
+        ctx.moveTo(2, 0);
+        ctx.lineTo(v.length - 5, 0);
+        ctx.stroke();
+    }
+
+    /**
+     * Tier 2: Enhanced sword with guard
+     */
+    renderSwordBlade(ctx, v, pulse) {
+        // Blade body - wider sword shape
+        const gradient = ctx.createLinearGradient(0, 0, v.length, 0);
+        gradient.addColorStop(0, this.bladeColor);
+        gradient.addColorStop(0.5, this.bladeColor);
+        gradient.addColorStop(1, '#ffffff');
+
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.moveTo(8, -v.width * 0.5);
+        ctx.lineTo(v.length * 0.2, -v.width);
+        ctx.lineTo(v.length * 0.8, -v.width * 0.8);
+        ctx.lineTo(v.length, 0);
+        ctx.lineTo(v.length * 0.8, v.width * 0.8);
+        ctx.lineTo(v.length * 0.2, v.width);
+        ctx.lineTo(8, v.width * 0.5);
+        ctx.closePath();
+        ctx.fill();
+
+        // Guard
+        if (v.hasGuard) {
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(-2, -8, 10, 16);
+
+            ctx.fillStyle = this.bladeColor;
+            ctx.fillRect(0, -6, 6, 12);
+        }
+
+        // Core glow
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = v.coreWidth;
+        ctx.globalAlpha = pulse;
+        ctx.beginPath();
+        ctx.moveTo(10, 0);
+        ctx.lineTo(v.length - 8, 0);
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+    }
+
+    /**
+     * Tier 3: Overclocked heat sword with segments
+     */
+    renderHeatSword(ctx, v, pulse) {
+        const segmentCount = v.segments || 3;
+        const segmentLength = v.length / segmentCount;
+
+        // Draw segments with gaps
+        for (let i = 0; i < segmentCount; i++) {
+            const startX = i * segmentLength + (i * 3);
+            const segWidth = segmentLength - 2;
+            const taperFactor = 1 - (i * 0.15);
+
+            ctx.fillStyle = this.bladeColor;
+            ctx.shadowBlur = v.glowIntensity * pulse;
+
+            ctx.beginPath();
+            ctx.moveTo(startX, -v.width * taperFactor);
+            ctx.lineTo(startX + segWidth, -v.width * taperFactor * 0.8);
+            ctx.lineTo(startX + segWidth, v.width * taperFactor * 0.8);
+            ctx.lineTo(startX, v.width * taperFactor);
+            ctx.closePath();
+            ctx.fill();
+
+            // Heat glow between segments
+            if (i < segmentCount - 1) {
+                ctx.fillStyle = '#ffffff';
+                ctx.globalAlpha = 0.5 + pulse * 0.5;
+                ctx.beginPath();
+                ctx.arc(startX + segWidth + 1.5, 0, 3, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.globalAlpha = 1;
+            }
+        }
+
+        // Guard
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(-2, -10, 8, 20);
+        ctx.fillStyle = this.bladeColor;
+        ctx.fillRect(-1, -8, 6, 16);
+
+        // Heat distortion particles
+        if (v.heatDistortion && this.isAttacking) {
+            ctx.globalAlpha = 0.4;
+            for (let i = 0; i < 4; i++) {
+                const px = Utils.random(10, v.length);
+                const py = Utils.random(-12, 12);
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath();
+                ctx.arc(px, py, 2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.globalAlpha = 1;
+        }
+    }
+
+    /**
+     * Tier 4: Corrupted jagged blade
+     */
+    renderCorruptBlade(ctx, v, pulse) {
+        // Glitch offset for corrupt effect
+        const glitchX = v.glitchEffect ? (Math.random() - 0.5) * 3 : 0;
+        const glitchY = v.glitchEffect ? (Math.random() - 0.5) * 3 : 0;
+
+        ctx.save();
+        ctx.translate(glitchX, glitchY);
+
+        // Jagged blade shape
+        ctx.fillStyle = this.bladeColor;
+        ctx.beginPath();
+        ctx.moveTo(0, -v.width * 0.5);
+
+        // Jagged top edge
+        for (let i = 1; i <= 5; i++) {
+            const x = (v.length / 5) * i;
+            const y = -v.width * (1 - i * 0.1) + (i % 2 === 0 ? -4 : 4);
+            ctx.lineTo(x, y);
+        }
+
+        ctx.lineTo(v.length, 0);
+
+        // Jagged bottom edge
+        for (let i = 5; i >= 1; i--) {
+            const x = (v.length / 5) * i;
+            const y = v.width * (1 - i * 0.1) + (i % 2 === 0 ? 4 : -4);
+            ctx.lineTo(x, y);
+        }
+
+        ctx.lineTo(0, v.width * 0.5);
+        ctx.closePath();
+        ctx.fill();
+
+        // Corruption veins
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1;
+        ctx.globalAlpha = 0.6 + pulse * 0.4;
+        for (let i = 0; i < 3; i++) {
+            const startX = Utils.random(5, v.length * 0.4);
+            ctx.beginPath();
+            ctx.moveTo(startX, 0);
+            let px = startX;
+            for (let j = 0; j < 4; j++) {
+                px += Utils.random(8, 15);
+                const py = Utils.random(-v.width, v.width);
+                ctx.lineTo(px, py);
+            }
+            ctx.stroke();
+        }
+        ctx.globalAlpha = 1;
+
+        ctx.restore();
+
+        // Glitch echo (second render with offset)
+        if (v.glitchEffect && Math.random() > 0.7) {
+            ctx.globalAlpha = 0.3;
+            ctx.translate(Utils.random(-5, 5), Utils.random(-3, 3));
+            ctx.fillStyle = '#00ffff';
+            ctx.beginPath();
+            ctx.moveTo(0, -v.width * 0.4);
+            ctx.lineTo(v.length, 0);
+            ctx.lineTo(0, v.width * 0.4);
+            ctx.closePath();
+            ctx.fill();
+            ctx.globalAlpha = 1;
+        }
+    }
+
+    /**
+     * Tier 5: Transcended laser beam
+     */
+    renderLaserBlade(ctx, v, pulse) {
+        const beamPulse = Math.sin(this.bladePulsePhase * 2) * 0.3 + 0.7;
+
+        // Rainbow color shift for transcended
+        let color1 = this.bladeColor;
+        let color2 = v.secondaryColor || '#00ffff';
+        if (v.rainbow) {
+            const hueShift = (this.bladePulsePhase * 20) % 360;
+            color2 = `hsl(${hueShift}, 100%, 70%)`;
+        }
+
+        // Outer glow beam
+        ctx.shadowBlur = v.glowIntensity * 1.5;
+        ctx.shadowColor = this.bladeGlow;
+
+        const gradient = ctx.createLinearGradient(0, 0, v.length, 0);
+        gradient.addColorStop(0, color1);
+        gradient.addColorStop(0.3, color1);
+        gradient.addColorStop(0.6, color2);
+        gradient.addColorStop(1, '#ffffff');
+
+        // Main beam body
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.moveTo(0, -v.width * 0.3);
+        ctx.lineTo(v.length * 0.1, -v.width * beamPulse);
+        ctx.lineTo(v.length * 0.9, -v.width * 0.6 * beamPulse);
+        ctx.lineTo(v.length, 0);
+        ctx.lineTo(v.length * 0.9, v.width * 0.6 * beamPulse);
+        ctx.lineTo(v.length * 0.1, v.width * beamPulse);
+        ctx.lineTo(0, v.width * 0.3);
+        ctx.closePath();
+        ctx.fill();
+
+        // Pulsing core
+        if (v.pulsingCore) {
+            const coreGradient = ctx.createLinearGradient(0, 0, v.length, 0);
+            coreGradient.addColorStop(0, '#ffffff');
+            coreGradient.addColorStop(0.5, '#ffffff');
+            coreGradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+
+            ctx.fillStyle = coreGradient;
+            ctx.globalAlpha = 0.6 + beamPulse * 0.4;
+            ctx.beginPath();
+            ctx.moveTo(5, -v.coreWidth);
+            ctx.lineTo(v.length - 5, 0);
+            ctx.lineTo(5, v.coreWidth);
+            ctx.closePath();
+            ctx.fill();
+            ctx.globalAlpha = 1;
+        }
+
+        // Energy rings along beam
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1.5;
+        ctx.globalAlpha = beamPulse * 0.8;
+        for (let i = 1; i <= 3; i++) {
+            const ringX = (v.length / 4) * i;
+            const ringSize = (v.width * 0.4) * (1 - i * 0.15);
+            ctx.beginPath();
+            ctx.ellipse(ringX, 0, 3, ringSize, 0, 0, Math.PI * 2);
+            ctx.stroke();
+        }
+        ctx.globalAlpha = 1;
+
+        // Emitter base
+        ctx.fillStyle = '#333344';
+        ctx.fillRect(-4, -6, 8, 12);
+        ctx.fillStyle = this.bladeGlow;
+        ctx.globalAlpha = pulse;
+        ctx.fillRect(-2, -4, 4, 8);
+        ctx.globalAlpha = 1;
+    }
+
+    /**
+     * Spawn blade particles during attack
+     */
+    spawnBladeParticles() {
+        if (!this.bladeVisuals) return;
+
+        const particleCount = this.bladeVisuals.particleCount || 1;
+        if (Math.random() > 0.4) return; // Don't spawn every frame
+
+        for (let i = 0; i < particleCount; i++) {
+            const angle = Utils.degToRad(this.bladeAngle);
+            const dist = Utils.random(10, this.bladeLength);
+            const handX = this.x + this.width / 2 + (this.facingRight ? 10 : -10);
+            const handY = this.y + 20;
+
+            this.bladeParticles.push({
+                x: handX + Math.cos(angle) * dist,
+                y: handY + Math.sin(angle) * dist,
+                vx: Utils.random(-2, 2),
+                vy: Utils.random(-3, -1),
+                life: Utils.randomInt(15, 30),
+                maxLife: 30,
+                size: Utils.random(2, 5)
+            });
+        }
+    }
+
+    /**
+     * Update blade particles
+     */
+    updateBladeParticles() {
+        for (let i = this.bladeParticles.length - 1; i >= 0; i--) {
+            const p = this.bladeParticles[i];
+            p.x += p.vx;
+            p.y += p.vy;
+            p.vy += 0.1; // Slight gravity
+            p.life--;
+
+            if (p.life <= 0) {
+                this.bladeParticles.splice(i, 1);
+            }
+        }
+    }
+
+    /**
+     * Render blade particles
+     */
+    renderBladeParticles(ctx, camera) {
+        if (this.bladeParticles.length === 0) return;
+
+        ctx.save();
+
+        for (const p of this.bladeParticles) {
+            const screenPos = camera.worldToScreen(p.x, p.y);
+            const alpha = p.life / p.maxLife;
+
+            ctx.fillStyle = this.bladeColor;
+            ctx.globalAlpha = alpha;
+            ctx.shadowColor = this.bladeGlow;
+            ctx.shadowBlur = 8;
+
+            ctx.beginPath();
+            ctx.arc(screenPos.x, screenPos.y, p.size * alpha, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        ctx.restore();
+    }
+
+    /**
+     * Render blade swing trail
+     */
+    renderBladeSwingTrail(ctx, camera) {
+        if (this.bladeSwingTrail.length === 0) return;
+
+        ctx.save();
+
+        for (let i = 0; i < this.bladeSwingTrail.length; i++) {
+            const trail = this.bladeSwingTrail[i];
+            const screenPos = camera.worldToScreen(trail.x, trail.y - 20);
+            const alpha = (i / this.bladeSwingTrail.length) * 0.4;
+
+            ctx.save();
+            ctx.globalAlpha = alpha;
+            ctx.translate(screenPos.x + (this.facingRight ? 10 : -10), screenPos.y + 20);
+            ctx.rotate(Utils.degToRad(trail.angle));
+
+            ctx.fillStyle = this.bladeColor;
+            ctx.shadowColor = this.bladeGlow;
+            ctx.shadowBlur = 5;
+
+            ctx.beginPath();
+            ctx.moveTo(0, -2);
+            ctx.lineTo(trail.length * 0.8, 0);
+            ctx.lineTo(0, 2);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.restore();
+        }
 
         ctx.restore();
     }

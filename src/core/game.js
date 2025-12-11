@@ -743,6 +743,8 @@ class Game {
             this.player.bladeColor = this.bladeEvolution.getBladeColor();
             this.player.bladeGlow = this.bladeEvolution.getGlowColor();
             this.player.bladeDamageMultiplier = this.bladeEvolution.getDamageMultiplier();
+            this.player.bladeVisuals = this.bladeEvolution.getVisuals();
+            this.player.bladeLength = this.bladeEvolution.getBladeLength();
         }
     }
 

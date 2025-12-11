@@ -20,8 +20,9 @@ class Platform {
         this.active = true;
 
         // Visual style
-        this.style = options.style || 'solid'; // solid, grid, energy
+        this.style = options.style || 'solid'; // solid, grid, energy, circuit, hex
         this.glowIntensity = options.glowIntensity || 1;
+        this.accentColor = options.accentColor || null;
 
         // Moving platform properties
         if (this.moving) {
@@ -105,6 +106,15 @@ class Platform {
                 break;
             case 'energy':
                 this.renderEnergy(ctx, screenPos, pulse);
+                break;
+            case 'circuit':
+                this.renderCircuit(ctx, screenPos, pulse);
+                break;
+            case 'hex':
+                this.renderHex(ctx, screenPos, pulse);
+                break;
+            case 'neon':
+                this.renderNeon(ctx, screenPos, pulse);
                 break;
             default:
                 this.renderSolid(ctx, screenPos, pulse);
@@ -237,6 +247,187 @@ class Platform {
             ctx.lineTo(screenPos.x + x - this.height, screenPos.y + this.height);
             ctx.stroke();
         }
+    }
+
+    /**
+     * Render circuit board style platform
+     */
+    renderCircuit(ctx, screenPos, pulse) {
+        const color = this.accentColor || GAME_CONFIG.COLORS.CYAN;
+
+        // Dark background
+        ctx.fillStyle = '#0a0a12';
+        ctx.fillRect(screenPos.x, screenPos.y, this.width, this.height);
+
+        // Circuit traces
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        ctx.globalAlpha = 0.6 * pulse;
+
+        // Horizontal traces
+        const traceSpacing = 8;
+        for (let y = traceSpacing; y < this.height; y += traceSpacing) {
+            if (Math.random() > 0.3) {
+                ctx.beginPath();
+                ctx.moveTo(screenPos.x, screenPos.y + y);
+                ctx.lineTo(screenPos.x + this.width, screenPos.y + y);
+                ctx.stroke();
+            }
+        }
+
+        // Connection nodes
+        ctx.fillStyle = color;
+        ctx.shadowColor = color;
+        ctx.shadowBlur = 8;
+        ctx.globalAlpha = pulse;
+
+        const nodeSpacing = 24;
+        for (let x = nodeSpacing / 2; x < this.width; x += nodeSpacing) {
+            for (let y = this.height / 2; y < this.height; y += nodeSpacing) {
+                // Pulsing nodes
+                const nodePulse = Math.sin(this.pulsePhase + x * 0.1) > 0.5;
+                if (nodePulse) {
+                    ctx.beginPath();
+                    ctx.arc(screenPos.x + x, screenPos.y + y, 2, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+        }
+
+        // Glowing top edge
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 3;
+        ctx.shadowBlur = 12;
+        ctx.globalAlpha = pulse;
+        ctx.beginPath();
+        ctx.moveTo(screenPos.x, screenPos.y);
+        ctx.lineTo(screenPos.x + this.width, screenPos.y);
+        ctx.stroke();
+
+        // Corner brackets
+        ctx.lineWidth = 2;
+        const bracketSize = 8;
+        ctx.beginPath();
+        ctx.moveTo(screenPos.x, screenPos.y + bracketSize);
+        ctx.lineTo(screenPos.x, screenPos.y);
+        ctx.lineTo(screenPos.x + bracketSize, screenPos.y);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(screenPos.x + this.width - bracketSize, screenPos.y);
+        ctx.lineTo(screenPos.x + this.width, screenPos.y);
+        ctx.lineTo(screenPos.x + this.width, screenPos.y + bracketSize);
+        ctx.stroke();
+    }
+
+    /**
+     * Render hexagonal pattern platform
+     */
+    renderHex(ctx, screenPos, pulse) {
+        const color = this.accentColor || '#ff00aa';
+
+        // Dark base
+        ctx.fillStyle = '#0d0815';
+        ctx.fillRect(screenPos.x, screenPos.y, this.width, this.height);
+
+        // Hex pattern
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 1;
+        ctx.globalAlpha = 0.4;
+
+        const hexSize = 12;
+        const hexHeight = hexSize * Math.sqrt(3);
+        const hexWidth = hexSize * 2;
+
+        for (let row = 0; row < Math.ceil(this.height / hexHeight) + 1; row++) {
+            for (let col = 0; col < Math.ceil(this.width / (hexWidth * 0.75)) + 1; col++) {
+                const offsetX = (row % 2) * (hexWidth * 0.375);
+                const cx = screenPos.x + col * hexWidth * 0.75 + offsetX;
+                const cy = screenPos.y + row * hexHeight * 0.5;
+
+                if (cx > screenPos.x - hexSize && cx < screenPos.x + this.width + hexSize) {
+                    ctx.beginPath();
+                    for (let i = 0; i < 6; i++) {
+                        const angle = (i * Math.PI) / 3;
+                        const hx = cx + Math.cos(angle) * hexSize * 0.4;
+                        const hy = cy + Math.sin(angle) * hexSize * 0.4;
+                        if (i === 0) ctx.moveTo(hx, hy);
+                        else ctx.lineTo(hx, hy);
+                    }
+                    ctx.closePath();
+                    ctx.stroke();
+                }
+            }
+        }
+
+        // Glowing border
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        ctx.shadowColor = color;
+        ctx.shadowBlur = 15 * pulse;
+        ctx.globalAlpha = pulse;
+        ctx.strokeRect(screenPos.x, screenPos.y, this.width, this.height);
+
+        // Top glow line
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(screenPos.x, screenPos.y);
+        ctx.lineTo(screenPos.x + this.width, screenPos.y);
+        ctx.stroke();
+    }
+
+    /**
+     * Render neon light style platform
+     */
+    renderNeon(ctx, screenPos, pulse) {
+        const color = this.accentColor || '#00ff88';
+
+        // Transparent base with slight tint
+        ctx.fillStyle = 'rgba(0, 255, 136, 0.1)';
+        ctx.fillRect(screenPos.x, screenPos.y, this.width, this.height);
+
+        // Multiple glow layers for neon effect
+        ctx.strokeStyle = color;
+        ctx.shadowColor = color;
+
+        // Outer glow
+        ctx.lineWidth = 6;
+        ctx.shadowBlur = 30 * pulse;
+        ctx.globalAlpha = 0.3 * pulse;
+        ctx.strokeRect(screenPos.x, screenPos.y, this.width, this.height);
+
+        // Mid glow
+        ctx.lineWidth = 3;
+        ctx.shadowBlur = 15 * pulse;
+        ctx.globalAlpha = 0.6 * pulse;
+        ctx.strokeRect(screenPos.x, screenPos.y, this.width, this.height);
+
+        // Inner bright line
+        ctx.lineWidth = 1;
+        ctx.shadowBlur = 8;
+        ctx.globalAlpha = pulse;
+        ctx.strokeStyle = '#ffffff';
+        ctx.strokeRect(screenPos.x + 1, screenPos.y + 1, this.width - 2, this.height - 2);
+
+        // Bright top edge
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        ctx.shadowBlur = 20;
+        ctx.beginPath();
+        ctx.moveTo(screenPos.x, screenPos.y);
+        ctx.lineTo(screenPos.x + this.width, screenPos.y);
+        ctx.stroke();
+
+        // End caps (bright dots)
+        ctx.fillStyle = '#ffffff';
+        ctx.shadowColor = color;
+        ctx.shadowBlur = 15;
+        ctx.beginPath();
+        ctx.arc(screenPos.x, screenPos.y, 3, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(screenPos.x + this.width, screenPos.y, 3, 0, Math.PI * 2);
+        ctx.fill();
     }
 
     /**

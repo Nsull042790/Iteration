@@ -38,6 +38,16 @@ class Boss extends Entity {
         this.jumpCooldown = 0;
         this.aggressionLevel = 1 + level * 0.2; // Increases with level
 
+        // Hovering/flying behavior for free movement
+        this.canHover = true;
+        this.isHovering = false;
+        this.hoverTimer = 0;
+        this.hoverTargetY = 0;
+        this.hoverCooldown = 0;
+        this.stuckTimer = 0;
+        this.lastX = x;
+        this.lastY = y;
+
         // Combat
         this.invincibilityFrames = 0;
         this.hitFlash = 0;
@@ -195,8 +205,18 @@ class Boss extends Entity {
             this.updateAI(player);
         }
 
-        // Apply friction
-        this.applyFriction();
+        // Update hover behavior
+        this.updateHover(player);
+
+        // Detect if stuck
+        this.detectStuck();
+
+        // Apply friction (reduced while hovering)
+        if (!this.isHovering) {
+            this.applyFriction();
+        } else {
+            this.velocityX *= 0.92; // Lighter friction while hovering
+        }
 
         // Update position
         this.updatePosition();
@@ -251,6 +271,16 @@ class Boss extends Entity {
                     this.jumpCooldown = 30;
                 }
 
+                // If player is much higher and we can't reach, hover up
+                if (dy < -100 && !this.isHovering && this.hoverCooldown <= 0 && this.stateTimer > 30) {
+                    this.startHover(player.y - 50);
+                }
+
+                // Continue hovering toward player horizontally
+                if (this.isHovering) {
+                    this.hoverTargetY = player.y;
+                }
+
                 if (distToPlayer < 120 || this.stateTimer > 90) {
                     this.aiState = 'attack';
                     this.stateTimer = 0;
@@ -284,6 +314,67 @@ class Boss extends Entity {
                 this.executeSpecial(player);
                 break;
         }
+    }
+
+    /**
+     * Update hovering behavior
+     */
+    updateHover(player) {
+        if (!this.canHover) return;
+
+        if (this.hoverCooldown > 0) this.hoverCooldown--;
+
+        if (this.isHovering) {
+            this.hoverTimer--;
+
+            // Float toward target Y
+            const targetDiff = this.hoverTargetY - this.y;
+            this.velocityY = targetDiff * 0.08;
+
+            // Add slight bobbing
+            this.velocityY += Math.sin(this.pulsePhase * 2) * 0.3;
+
+            // Disable gravity while hovering
+            this.velocityY = Utils.clamp(this.velocityY, -6, 6);
+
+            // End hover
+            if (this.hoverTimer <= 0) {
+                this.isHovering = false;
+                this.hoverCooldown = 180; // 3 second cooldown
+            }
+        }
+    }
+
+    /**
+     * Detect if boss is stuck and initiate hover
+     */
+    detectStuck() {
+        const moved = Math.abs(this.x - this.lastX) + Math.abs(this.y - this.lastY);
+
+        if (moved < 2 && !this.isHovering && !this.isEntering) {
+            this.stuckTimer++;
+
+            // If stuck for too long, start hovering to break free
+            if (this.stuckTimer > 60 && this.hoverCooldown <= 0) {
+                this.startHover();
+            }
+        } else {
+            this.stuckTimer = 0;
+        }
+
+        this.lastX = this.x;
+        this.lastY = this.y;
+    }
+
+    /**
+     * Start hovering toward player
+     */
+    startHover(targetY = null) {
+        this.isHovering = true;
+        this.hoverTimer = 120; // 2 seconds of hover
+        this.hoverTargetY = targetY !== null ? targetY : this.y - 150;
+        this.velocityY = -8; // Initial lift
+        this.stuckTimer = 0;
     }
 
     /**

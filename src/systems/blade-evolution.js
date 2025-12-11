@@ -8,18 +8,114 @@ class BladeEvolution {
         this.xp = 0;
         this.currentTier = 0;
 
-        // Blade tiers with colors and thresholds (faster progression)
+        // Blade tiers with colors, thresholds, and visual properties
         this.tiers = [
-            { name: 'BASIC', xpRequired: 0, color: '#00f0ff', glowColor: '#00f0ff' },
-            { name: 'CHARGED', xpRequired: 30, color: '#00ff88', glowColor: '#00ff88' },
-            { name: 'ENHANCED', xpRequired: 80, color: '#ffdd00', glowColor: '#ffdd00' },
-            { name: 'OVERCLOCKED', xpRequired: 150, color: '#ff8800', glowColor: '#ff8800' },
-            { name: 'CORRUPTED', xpRequired: 250, color: '#ff00ff', glowColor: '#ff00ff' },
-            { name: 'TRANSCENDED', xpRequired: 400, color: '#ffffff', glowColor: '#ff00ff' }
+            {
+                name: 'BASIC',
+                xpRequired: 0,
+                color: '#00f0ff',
+                glowColor: '#00f0ff',
+                damageMultiplier: 1.0,
+                // Visual properties
+                shape: 'stick',         // Simple energy stick
+                length: 38,
+                width: 3,
+                glowIntensity: 12,
+                hasTrail: false,
+                hasParticles: false,
+                coreWidth: 1
+            },
+            {
+                name: 'CHARGED',
+                xpRequired: 30,
+                color: '#00ff88',
+                glowColor: '#00ff88',
+                damageMultiplier: 1.1,
+                // Visual properties
+                shape: 'blade',         // Wider, more defined edge
+                length: 42,
+                width: 4,
+                glowIntensity: 16,
+                hasTrail: true,
+                hasParticles: false,
+                coreWidth: 1.5,
+                crackling: true         // Electric crackle effect
+            },
+            {
+                name: 'ENHANCED',
+                xpRequired: 80,
+                color: '#ffdd00',
+                glowColor: '#ffdd00',
+                damageMultiplier: 1.25,
+                // Visual properties
+                shape: 'sword',         // Proper sword shape with guard
+                length: 46,
+                width: 5,
+                glowIntensity: 20,
+                hasTrail: true,
+                hasParticles: true,
+                particleCount: 2,
+                coreWidth: 2,
+                hasGuard: true
+            },
+            {
+                name: 'OVERCLOCKED',
+                xpRequired: 150,
+                color: '#ff8800',
+                glowColor: '#ff8800',
+                damageMultiplier: 1.4,
+                // Visual properties
+                shape: 'heatsword',     // Heated segmented blade
+                length: 50,
+                width: 6,
+                glowIntensity: 25,
+                hasTrail: true,
+                hasParticles: true,
+                particleCount: 3,
+                coreWidth: 2,
+                hasGuard: true,
+                segments: 3,            // Segmented blade sections
+                heatDistortion: true
+            },
+            {
+                name: 'CORRUPTED',
+                xpRequired: 250,
+                color: '#ff00ff',
+                glowColor: '#ff00ff',
+                damageMultiplier: 1.6,
+                // Visual properties
+                shape: 'corrupt',       // Jagged, unstable energy
+                length: 54,
+                width: 7,
+                glowIntensity: 30,
+                hasTrail: true,
+                hasParticles: true,
+                particleCount: 4,
+                coreWidth: 2.5,
+                glitchEffect: true,     // Visual glitching
+                jagged: true
+            },
+            {
+                name: 'TRANSCENDED',
+                xpRequired: 400,
+                color: '#ffffff',
+                glowColor: '#ff00ff',
+                secondaryColor: '#00ffff',
+                damageMultiplier: 2.0,
+                // Visual properties
+                shape: 'laser',         // Pure energy laser beam
+                length: 60,
+                width: 8,
+                glowIntensity: 40,
+                hasTrail: true,
+                hasParticles: true,
+                particleCount: 6,
+                coreWidth: 3,
+                isLaser: true,          // Full laser beam
+                pulsingCore: true,
+                rainbow: true           // Subtle color shift
+            }
         ];
-
-        // Damage multipliers per tier
-        this.damageMultipliers = [1.0, 1.1, 1.25, 1.4, 1.6, 2.0];
 
         // Evolution animation
         this.evolutionTimer = 0;
@@ -62,7 +158,21 @@ class BladeEvolution {
      * Get damage multiplier
      */
     getDamageMultiplier() {
-        return this.damageMultipliers[this.currentTier];
+        return this.tiers[this.currentTier].damageMultiplier;
+    }
+
+    /**
+     * Get full visual data for current tier
+     */
+    getVisuals() {
+        return this.tiers[this.currentTier];
+    }
+
+    /**
+     * Get blade length for current tier
+     */
+    getBladeLength() {
+        return this.tiers[this.currentTier].length;
     }
 
     /**

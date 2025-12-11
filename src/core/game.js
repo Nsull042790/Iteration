@@ -246,16 +246,36 @@ class Game {
         this.cycles.gain(levelBonus);
         this.hud.addMessage(`LEVEL COMPLETE! +${levelBonus} CYCLES`, 'success');
 
-        // Spawn exit portal
-        const roomWidth = this.currentRoom ? this.currentRoom.width : 1600;
-        const exitPortal = new Interactable(roomWidth - 100, 476, 'exit_portal');
+        // Spawn exit portal near the player's position
+        const portalX = Math.min(this.player.x + 150, this.currentRoom.width - 150);
+        const portalY = this.player.y - 20; // Slightly above player
+        const exitPortal = new Interactable(portalX, portalY, 'exit_portal');
         this.interactables.push(exitPortal);
+
+        // Show prominent message
+        this.hud.addMessage('>>> PORTAL OPENED - Press E to proceed <<<', 'evolution');
+
+        // Auto-proceed to next level after 5 seconds
+        this.autoProgressTimer = setTimeout(() => {
+            if (this.levelComplete) {
+                this.nextLevel();
+            }
+        }, 5000);
     }
 
     /**
      * Progress to next level
      */
     nextLevel() {
+        // Clear auto-progress timer if it exists
+        if (this.autoProgressTimer) {
+            clearTimeout(this.autoProgressTimer);
+            this.autoProgressTimer = null;
+        }
+
+        // Reset level complete flag
+        this.levelComplete = false;
+
         this.renderer.flash('#ffffff', 0.5);
 
         setTimeout(() => {

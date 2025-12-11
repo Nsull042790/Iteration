@@ -4,7 +4,7 @@
  */
 
 class Interactable {
-    constructor(x, y, type = 'chest') {
+    constructor(x, y, type = 'chest', options = {}) {
         this.x = x;
         this.y = y;
         this.width = 40;
@@ -14,16 +14,17 @@ class Interactable {
         this.active = true;
         this.used = false;
         this.playerNearby = false;
+        this.autoCollect = false; // Set by type if auto-pickup
 
         // Animation
         this.pulsePhase = Math.random() * Math.PI * 2;
         this.openProgress = 0;
 
         // Type-specific setup
-        this.setupType();
+        this.setupType(options);
     }
 
-    setupType() {
+    setupType(options = {}) {
         switch (this.type) {
             case 'chest':
                 this.width = 48;
@@ -57,6 +58,13 @@ class Interactable {
                 this.width = 64;
                 this.height = 80;
                 this.interactPrompt = 'PROCEED';
+                break;
+
+            case 'health_potion':
+                this.width = 24;
+                this.height = 28;
+                this.healAmount = options.healAmount || 25;
+                this.autoCollect = true; // No button press needed
                 break;
         }
     }
@@ -185,6 +193,35 @@ class Interactable {
     }
 
     /**
+     * Collect auto-pickup items (health potions)
+     */
+    collect(player, game) {
+        if (this.used || !this.autoCollect) return null;
+
+        this.used = true;
+
+        if (this.type === 'health_potion') {
+            const healed = Math.min(this.healAmount, player.maxHealth - player.health);
+            player.health += healed;
+            return { type: 'success', message: `+${this.healAmount} HP` };
+        }
+
+        return null;
+    }
+
+    /**
+     * Check if player is touching this item (for auto-collect)
+     */
+    checkCollision(player) {
+        if (!player || this.used || !this.autoCollect) return false;
+
+        return player.x < this.x + this.width &&
+               player.x + player.width > this.x &&
+               player.y < this.y + this.height &&
+               player.y + player.height > this.y;
+    }
+
+    /**
      * Update interactable
      */
     update(deltaTime) {
@@ -221,10 +258,13 @@ class Interactable {
             case 'exit_portal':
                 this.renderExitPortal(ctx, screenPos);
                 break;
+            case 'health_potion':
+                this.renderHealthPotion(ctx, screenPos);
+                break;
         }
 
-        // Render interaction prompt
-        if (this.playerNearby && !this.used) {
+        // Render interaction prompt (not for auto-collect items)
+        if (this.playerNearby && !this.used && !this.autoCollect) {
             this.renderPrompt(ctx, screenPos);
         }
 
@@ -416,6 +456,68 @@ class Interactable {
             ctx.arc(ox, oy, 2, 0, Math.PI * 2);
             ctx.fill();
         }
+    }
+
+    renderHealthPotion(ctx, screenPos) {
+        if (this.used) return;
+
+        const pulse = Math.sin(this.pulsePhase * 1.5) * 0.3 + 0.7;
+        const bob = Math.sin(this.pulsePhase) * 3; // Floating bob effect
+        const centerX = screenPos.x + this.width / 2;
+        const centerY = screenPos.y + this.height / 2 + bob;
+
+        // Glow effect
+        ctx.shadowColor = GAME_CONFIG.COLORS.HEALTH;
+        ctx.shadowBlur = 15 * pulse;
+
+        // Potion bottle body
+        ctx.fillStyle = '#1a0a0a';
+        ctx.beginPath();
+        ctx.ellipse(centerX, centerY + 4, 10, 12, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Liquid inside
+        const gradient = ctx.createLinearGradient(centerX - 8, centerY + 14, centerX - 8, centerY - 4);
+        gradient.addColorStop(0, GAME_CONFIG.COLORS.HEALTH);
+        gradient.addColorStop(0.5, '#ff4444');
+        gradient.addColorStop(1, '#ff8888');
+
+        ctx.fillStyle = gradient;
+        ctx.globalAlpha = pulse;
+        ctx.beginPath();
+        ctx.ellipse(centerX, centerY + 5, 7, 9, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Bottle neck
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = '#2a1a1a';
+        ctx.fillRect(centerX - 4, centerY - 12, 8, 6);
+
+        // Cork
+        ctx.fillStyle = '#8B4513';
+        ctx.fillRect(centerX - 3, centerY - 15, 6, 4);
+
+        // Shine highlight
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+        ctx.globalAlpha = pulse * 0.6;
+        ctx.beginPath();
+        ctx.ellipse(centerX - 3, centerY + 2, 2, 4, -0.3, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Sparkle particles
+        ctx.fillStyle = '#ffffff';
+        ctx.globalAlpha = pulse * 0.8;
+        for (let i = 0; i < 3; i++) {
+            const angle = this.pulsePhase * 2 + (i * Math.PI * 2 / 3);
+            const dist = 14 + Math.sin(this.pulsePhase + i) * 3;
+            const px = centerX + Math.cos(angle) * dist;
+            const py = centerY + Math.sin(angle) * dist;
+            ctx.beginPath();
+            ctx.arc(px, py, 1.5, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        ctx.globalAlpha = 1;
     }
 
     renderPrompt(ctx, screenPos) {

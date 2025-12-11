@@ -176,6 +176,15 @@ class Game {
             const cycleNode = new Interactable(Utils.random(500, roomWidth - 500), 520, 'cycle_node');
             this.interactables.push(cycleNode);
         }
+
+        // Spawn health potions (2-4 per level)
+        const potionCount = Utils.randomInt(2, 4);
+        for (let i = 0; i < potionCount; i++) {
+            const x = Utils.random(150, roomWidth - 150);
+            const y = 530; // Ground level
+            const potion = new Interactable(x, y, 'health_potion', { healAmount: 25 });
+            this.interactables.push(potion);
+        }
     }
 
     /**
@@ -573,8 +582,11 @@ class Game {
         if (this.boss && !this.boss.active && !this.levelComplete) {
             // Boss defeated!
             this.cycles.gain(this.boss.cycleReward);
-            this.hud.addMessage(`${this.boss.name} DESTROYED! +${this.boss.cycleReward} CYCLES`, 'success');
             this.totalKills++;
+
+            // Full heal on boss kill
+            this.player.health = this.player.maxHealth;
+            this.hud.addMessage(`${this.boss.name} DESTROYED! +${this.boss.cycleReward} CYCLES +FULL HEAL`, 'success');
 
             // Gain blade XP from boss kill
             this.addBladeXP(50);
@@ -586,6 +598,14 @@ class Game {
         for (const interactable of this.interactables) {
             interactable.update(deltaTime);
             interactable.checkPlayerProximity(this.player);
+
+            // Auto-collect items (health potions)
+            if (interactable.autoCollect && interactable.checkCollision(this.player)) {
+                const result = interactable.collect(this.player, this);
+                if (result) {
+                    this.hud.addMessage(result.message, 'success');
+                }
+            }
         }
 
         // Handle interaction
@@ -664,7 +684,11 @@ class Game {
                     this.cycles.gain(50);
                     this.killCount++;
                     this.totalKills++;
-                    this.hud.addMessage(`+50 CYCLES`, 'success');
+
+                    // Heal player on kill
+                    const healAmount = 10;
+                    this.player.health = Math.min(this.player.health + healAmount, this.player.maxHealth);
+                    this.hud.addMessage(`+50 CYCLES +${healAmount} HP`, 'success');
 
                     // Gain blade XP from kill
                     this.addBladeXP(10);
@@ -843,11 +867,13 @@ class Game {
      * Handle player death
      */
     handlePlayerDeath() {
-        // Prevent multiple death triggers
-        if (!this.player.active) return;
+        // Prevent multiple death triggers - check both active and state
+        if (this.state === 'gameover') return;
 
         this.player.active = false;
         this.state = 'gameover';
+
+        console.log('DEATH TRIGGERED - showing game over');
 
         this.renderer.flash(GAME_CONFIG.COLORS.MAGENTA, 0.8);
         this.renderer.glitch(2, 30);

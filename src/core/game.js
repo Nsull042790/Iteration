@@ -10,6 +10,7 @@ class Game {
         // Core systems
         this.renderer = new Renderer(canvas);
         this.input = new InputHandler();
+        this.input.initTouchControls(); // Initialize mobile touch controls
         this.physics = new Physics();
         this.camera = new Camera(GAME_CONFIG.CANVAS_WIDTH, GAME_CONFIG.CANVAS_HEIGHT);
         this.hud = new HUD(canvas);
@@ -156,7 +157,6 @@ class Game {
         this.maxEnemiesInLevel = 3 + Math.floor(this.currentLevel * 1.5);
 
         // Generate enemy positions spread across the room
-        const roomWidth = this.currentRoom ? this.currentRoom.width : 1600;
         const startX = 300;
         const spacing = (roomWidth - 400) / this.maxEnemiesInLevel;
 
@@ -861,7 +861,7 @@ class Game {
                         this.renderer.flash(GAME_CONFIG.COLORS.MAGENTA, 0.3);
                         // Check for death immediately after taking damage
                         if (this.player.health <= 0) {
-                            this.handlePlayerDeath();
+                            this.handlePlayerDeath('enemy');
                         }
                     }
                 }

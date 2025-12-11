@@ -1,6 +1,6 @@
 /**
  * ITERATION - Input Handler
- * Handles keyboard input with buffering support
+ * Handles keyboard and touch input with buffering support
  */
 
 class InputHandler {
@@ -13,6 +13,13 @@ class InputHandler {
         this.justReleased = {};
         // Previous frame's key state
         this.previousKeys = {};
+
+        // Touch controls (initialized later)
+        this.touchControls = null;
+
+        // Touch action states for just pressed detection
+        this.touchJustPressed = {};
+        this.previousTouchState = {};
 
         // Key mappings (rebindable in future)
         // Left hand: WASD + Space for movement
@@ -34,6 +41,13 @@ class InputHandler {
         this.jumpBufferMax = GAME_CONFIG.PLAYER.JUMP_BUFFER;
 
         this._setupListeners();
+    }
+
+    /**
+     * Initialize touch controls (called after TouchControls class is available)
+     */
+    initTouchControls() {
+        this.touchControls = new TouchControls(this);
     }
 
     _setupListeners() {
@@ -69,7 +83,7 @@ class InputHandler {
      * Update input state - call once per frame at start of update
      */
     update() {
-        // Calculate just pressed/released
+        // Calculate just pressed/released for keyboard
         this.justPressed = {};
         this.justReleased = {};
 
@@ -79,6 +93,20 @@ class InputHandler {
             }
             if (!this.keys[key] && this.previousKeys[key]) {
                 this.justReleased[key] = true;
+            }
+        }
+
+        // Update touch just pressed detection
+        this.touchJustPressed = {};
+        if (this.touchControls && this.touchControls.enabled) {
+            const touchActions = ['attack', 'jump', 'interact', 'weapon1', 'weapon2', 'weapon3'];
+            for (const action of touchActions) {
+                const current = this.touchControls.buttons[action];
+                const previous = this.previousTouchState[action] || false;
+                if (current && !previous) {
+                    this.touchJustPressed[action] = true;
+                }
+                this.previousTouchState[action] = current;
             }
         }
 
@@ -97,18 +125,44 @@ class InputHandler {
      * Check if an action is currently held
      */
     isActionHeld(action) {
+        // Check keyboard
         const keys = this.bindings[action];
-        if (!keys) return false;
-        return keys.some(key => this.keys[key]);
+        if (keys && keys.some(key => this.keys[key])) {
+            return true;
+        }
+
+        // Check touch controls
+        if (this.touchControls && this.touchControls.enabled) {
+            if (action === 'attack' && this.touchControls.isAttackPressed()) return true;
+            if (action === 'jump' && this.touchControls.isJumpPressed()) return true;
+            if (action === 'interact' && this.touchControls.isInteractPressed()) return true;
+            if (action === 'left' && this.touchControls.getHorizontal() < 0) return true;
+            if (action === 'right' && this.touchControls.getHorizontal() > 0) return true;
+            if (action === 'up' && this.touchControls.getVertical() < 0) return true;
+            if (action === 'down' && this.touchControls.getVertical() > 0) return true;
+        }
+
+        return false;
     }
 
     /**
      * Check if an action was just pressed this frame
      */
     isActionJustPressed(action) {
+        // Check keyboard
         const keys = this.bindings[action];
-        if (!keys) return false;
-        return keys.some(key => this.justPressed[key]);
+        if (keys && keys.some(key => this.justPressed[key])) {
+            return true;
+        }
+
+        // Check touch controls
+        if (this.touchControls && this.touchControls.enabled) {
+            if (action === 'attack' && this.touchJustPressed.attack) return true;
+            if (action === 'jump' && this.touchJustPressed.jump) return true;
+            if (action === 'interact' && this.touchJustPressed.interact) return true;
+        }
+
+        return false;
     }
 
     /**
@@ -141,6 +195,12 @@ class InputHandler {
         let h = 0;
         if (this.isActionHeld('left')) h -= 1;
         if (this.isActionHeld('right')) h += 1;
+
+        // Touch joystick overrides if active
+        if (this.touchControls && this.touchControls.enabled && this.touchControls.joystick.active) {
+            return this.touchControls.getHorizontal();
+        }
+
         return h;
     }
 
@@ -151,6 +211,12 @@ class InputHandler {
         let v = 0;
         if (this.isActionHeld('up')) v -= 1;
         if (this.isActionHeld('down')) v += 1;
+
+        // Touch joystick overrides if active
+        if (this.touchControls && this.touchControls.enabled && this.touchControls.joystick.active) {
+            return this.touchControls.getVertical();
+        }
+
         return v;
     }
 
@@ -158,7 +224,17 @@ class InputHandler {
      * Check if a specific key was just pressed (by key code)
      */
     isKeyJustPressed(keyCode) {
-        return this.justPressed[keyCode] === true;
+        // Check keyboard
+        if (this.justPressed[keyCode] === true) return true;
+
+        // Check touch weapon buttons
+        if (this.touchControls && this.touchControls.enabled) {
+            if ((keyCode === 'Digit1' || keyCode === 'Numpad1') && this.touchJustPressed.weapon1) return true;
+            if ((keyCode === 'Digit2' || keyCode === 'Numpad2') && this.touchJustPressed.weapon2) return true;
+            if ((keyCode === 'Digit3' || keyCode === 'Numpad3') && this.touchJustPressed.weapon3) return true;
+        }
+
+        return false;
     }
 
     /**
@@ -166,5 +242,12 @@ class InputHandler {
      */
     isKeyHeld(keyCode) {
         return this.keys[keyCode] === true;
+    }
+
+    /**
+     * Check if using touch controls
+     */
+    isTouchEnabled() {
+        return this.touchControls && this.touchControls.enabled;
     }
 }

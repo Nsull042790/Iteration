@@ -1183,3 +1183,290 @@ body {
     text-shadow: 0 0 10px rgba(255, 255, 0, 0.5);
     animation: pulse 0.5s ease-in-out infinite;
 }
+
+/* ============================================
+   Touch Controls for Mobile
+   ============================================ */
+
+.touch-controls {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 200px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    padding: 20px;
+    pointer-events: none;
+    z-index: 100;
+    opacity: 0.9;
+}
+
+.touch-controls > * {
+    pointer-events: auto;
+}
+
+/* Left side - Joystick */
+.touch-left {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.joystick-base {
+    width: 120px;
+    height: 120px;
+    background: radial-gradient(circle, rgba(0, 240, 255, 0.15) 0%, rgba(0, 0, 0, 0.4) 100%);
+    border: 2px solid rgba(0, 240, 255, 0.5);
+    border-radius: 50%;
+    position: relative;
+    box-shadow:
+        0 0 20px rgba(0, 240, 255, 0.2),
+        inset 0 0 30px rgba(0, 0, 0, 0.5);
+}
+
+.joystick-base.active {
+    border-color: #00f0ff;
+    box-shadow:
+        0 0 30px rgba(0, 240, 255, 0.4),
+        inset 0 0 30px rgba(0, 0, 0, 0.3);
+}
+
+.joystick-knob {
+    width: 50px;
+    height: 50px;
+    background: radial-gradient(circle at 30% 30%, #00f0ff 0%, #008899 100%);
+    border: 2px solid #00f0ff;
+    border-radius: 50%;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    box-shadow:
+        0 0 15px rgba(0, 240, 255, 0.5),
+        0 4px 8px rgba(0, 0, 0, 0.5);
+    transition: transform 0.05s ease-out;
+}
+
+/* Right side - Action buttons */
+.touch-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 10px;
+}
+
+.touch-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    font-family: 'Courier New', monospace;
+    font-weight: bold;
+    letter-spacing: 1px;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+    transition: all 0.1s ease;
+}
+
+.touch-btn span {
+    pointer-events: none;
+}
+
+.touch-btn.active {
+    transform: scale(0.95);
+}
+
+/* Attack button - Large, primary */
+.touch-btn-attack {
+    width: 80px;
+    height: 80px;
+    background: radial-gradient(circle at 30% 30%, #ff0066 0%, #aa0044 100%);
+    border: 3px solid #ff00aa;
+    color: #ffffff;
+    font-size: 14px;
+    box-shadow:
+        0 0 20px rgba(255, 0, 170, 0.4),
+        0 4px 8px rgba(0, 0, 0, 0.5);
+}
+
+.touch-btn-attack.active {
+    background: radial-gradient(circle at 30% 30%, #ff3399 0%, #cc0066 100%);
+    box-shadow:
+        0 0 30px rgba(255, 0, 170, 0.6),
+        0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+/* Jump button */
+.touch-btn-jump {
+    width: 65px;
+    height: 65px;
+    background: radial-gradient(circle at 30% 30%, #00ccff 0%, #0088aa 100%);
+    border: 3px solid #00f0ff;
+    color: #ffffff;
+    font-size: 11px;
+    box-shadow:
+        0 0 15px rgba(0, 240, 255, 0.4),
+        0 4px 8px rgba(0, 0, 0, 0.5);
+}
+
+.touch-btn-jump.active {
+    background: radial-gradient(circle at 30% 30%, #33ddff 0%, #00aacc 100%);
+    box-shadow:
+        0 0 25px rgba(0, 240, 255, 0.6),
+        0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+/* Interact button - smaller */
+.touch-btn-interact {
+    width: 50px;
+    height: 50px;
+    background: radial-gradient(circle at 30% 30%, #00ff88 0%, #00aa55 100%);
+    border: 2px solid #00ff88;
+    color: #ffffff;
+    font-size: 10px;
+    box-shadow:
+        0 0 12px rgba(0, 255, 136, 0.4),
+        0 3px 6px rgba(0, 0, 0, 0.5);
+}
+
+.touch-btn-interact.active {
+    background: radial-gradient(circle at 30% 30%, #33ffaa 0%, #00cc66 100%);
+    box-shadow:
+        0 0 20px rgba(0, 255, 136, 0.6),
+        0 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+/* Weapon buttons row */
+.weapon-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 5px;
+}
+
+.touch-btn-weapon {
+    width: 40px;
+    height: 40px;
+    background: radial-gradient(circle at 30% 30%, #666666 0%, #333333 100%);
+    border: 2px solid #888888;
+    color: #ffffff;
+    font-size: 14px;
+    box-shadow:
+        0 0 8px rgba(255, 255, 255, 0.2),
+        0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.touch-btn-weapon.active {
+    background: radial-gradient(circle at 30% 30%, #ffaa00 0%, #cc7700 100%);
+    border-color: #ffcc00;
+    box-shadow:
+        0 0 15px rgba(255, 170, 0, 0.5),
+        0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+/* Mobile device adjustments */
+body.mobile-device #game-canvas {
+    max-height: calc(100vh - 180px);
+    max-height: calc(100dvh - 180px);
+}
+
+body.mobile-device .screen {
+    padding-bottom: 180px;
+}
+
+/* Hide touch controls hint on desktop */
+.touch-hint {
+    display: none;
+}
+
+body.mobile-device .touch-hint {
+    display: block;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 11px;
+    margin-top: 10px;
+}
+
+/* Mobile-specific modal adjustments */
+body.mobile-device .modal-content {
+    max-height: calc(100vh - 220px);
+    max-height: calc(100dvh - 220px);
+    overflow-y: auto;
+}
+
+body.mobile-device .character-grid {
+    max-height: 40vh;
+}
+
+body.mobile-device .upgrade-choices {
+    flex-direction: column;
+    align-items: center;
+}
+
+body.mobile-device .upgrade-card {
+    width: 90%;
+    max-width: 280px;
+}
+
+/* Hide keyboard hints on mobile */
+body.mobile-device .title-hint,
+body.mobile-device .gameover-hint,
+body.mobile-device .upgrade-hint,
+body.mobile-device .character-hint,
+body.mobile-device .upgrade-key,
+body.mobile-device #controls-modal {
+    display: none !important;
+}
+
+/* Ensure touch controls are visible */
+body.mobile-device .touch-controls {
+    display: flex;
+}
+
+/* Landscape mode adjustments */
+@media (max-height: 500px) and (orientation: landscape) {
+    .touch-controls {
+        height: 150px;
+        padding: 10px 20px;
+    }
+
+    .joystick-base {
+        width: 100px;
+        height: 100px;
+    }
+
+    .joystick-knob {
+        width: 40px;
+        height: 40px;
+    }
+
+    .touch-btn-attack {
+        width: 65px;
+        height: 65px;
+        font-size: 12px;
+    }
+
+    .touch-btn-jump {
+        width: 55px;
+        height: 55px;
+        font-size: 10px;
+    }
+
+    .touch-btn-interact {
+        width: 40px;
+        height: 40px;
+        font-size: 9px;
+    }
+
+    .touch-btn-weapon {
+        width: 35px;
+        height: 35px;
+        font-size: 12px;
+    }
+
+    body.mobile-device #game-canvas {
+        max-height: calc(100vh - 140px);
+    }
+}

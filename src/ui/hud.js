@@ -315,7 +315,7 @@ class HUD {
         // Version number
         ctx.font = '10px "Courier New", monospace';
         ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
-        ctx.fillText('v0.8.0', x, y + 44);
+        ctx.fillText('v0.9.0', x, y + 44);
 
         ctx.restore();
     }

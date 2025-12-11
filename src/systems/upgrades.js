@@ -382,10 +382,11 @@ class UpgradeSystem {
     /**
      * Calculate crit damage
      */
-    calculateDamage(baseDamage) {
+    calculateDamage(baseDamage, extraCritChance = 0) {
         let damage = baseDamage;
+        const totalCritChance = this.modifiers.critChance + extraCritChance;
 
-        if (this.modifiers.critChance > 0 && Math.random() < this.modifiers.critChance) {
+        if (totalCritChance > 0 && Math.random() < totalCritChance) {
             damage *= this.modifiers.critMultiplier;
             return { damage, isCrit: true };
         }

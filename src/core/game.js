@@ -38,10 +38,31 @@ class Game {
         this.cycles = new CyclesSystem();
         this.bladeEvolution = new BladeEvolution();
         this.upgradeSystem = new UpgradeSystem();
+        this.dropSystem = new DropSystem();
+        this.characterSystem = new CharacterSystem();
+
+        // Temp buffs from drops
+        this.tempBuffs = {
+            damageBoost: 1.0,
+            speedBoost: 1.0,
+            xpMultiplier: 1.0,
+            shield: false,
+            shieldHits: 0,
+            invincible: false,
+            magnetRange: 60
+        };
+
+        // Permanent buffs from legendary drops
+        this.permanentBuffs = {
+            damage: 1.0
+        };
 
         // Upgrade selection state
         this.showingUpgrades = false;
         this.currentUpgradeChoices = [];
+
+        // Character selection state
+        this.showingCharacterSelect = false;
 
         // Level progression
         this.currentLevel = 1;
@@ -400,7 +421,7 @@ class Game {
         const handleTitleClick = () => {
             titleScreen.classList.add('hidden');
             titleBtn.removeEventListener('click', handleTitleClick);
-            this.showControlsModal();
+            this.showCharacterSelect();
         };
 
         titleBtn.addEventListener('click', handleTitleClick);
@@ -414,6 +435,116 @@ class Game {
             }
         };
         window.addEventListener('keydown', handleTitleKey);
+    }
+
+    /**
+     * Show character selection screen
+     */
+    showCharacterSelect() {
+        this.state = 'character_select';
+        this.showingCharacterSelect = true;
+
+        const modal = document.getElementById('character-modal');
+        const grid = document.getElementById('character-grid');
+
+        // Clear previous
+        grid.innerHTML = '';
+
+        let selectedIndex = 0;
+
+        // Create character cards
+        this.characterSystem.characters.forEach((char, index) => {
+            const card = document.createElement('div');
+            card.className = 'character-card' + (index === 0 ? ' selected' : '');
+            card.style.setProperty('--char-color', char.color);
+            card.style.setProperty('--eye-color', char.eyeColor);
+            card.dataset.index = index;
+
+            const statBars = this.characterSystem.getStatBars(char.id);
+
+            card.innerHTML = `
+                <div class="character-avatar">
+                    <div class="character-avatar-inner">
+                        <div class="character-avatar-eye"></div>
+                    </div>
+                </div>
+                <div class="character-name">${char.name}</div>
+                <div class="character-subtitle">${char.subtitle}</div>
+                <div class="character-description">${char.description}</div>
+                <div class="character-stats">
+                    ${statBars.map(stat => `
+                        <div class="stat-row">
+                            <span class="stat-name">${stat.name}</span>
+                            <div class="stat-bar-bg">
+                                <div class="stat-bar-fill" style="width: ${stat.value}%; background: ${stat.color}"></div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+                <div class="character-special">
+                    <div class="special-name">${char.special.name}</div>
+                    <div class="special-desc">${char.special.description}</div>
+                </div>
+            `;
+
+            card.addEventListener('click', () => {
+                this.selectCharacter(char.id);
+            });
+
+            grid.appendChild(card);
+        });
+
+        modal.classList.remove('hidden');
+
+        // Keyboard navigation
+        this.charSelectKeyHandler = (e) => {
+            const cards = grid.querySelectorAll('.character-card');
+
+            if (e.code === 'ArrowRight' || e.code === 'ArrowDown') {
+                cards[selectedIndex].classList.remove('selected');
+                selectedIndex = (selectedIndex + 1) % cards.length;
+                cards[selectedIndex].classList.add('selected');
+            } else if (e.code === 'ArrowLeft' || e.code === 'ArrowUp') {
+                cards[selectedIndex].classList.remove('selected');
+                selectedIndex = (selectedIndex - 1 + cards.length) % cards.length;
+                cards[selectedIndex].classList.add('selected');
+            } else if (e.code === 'Enter' || e.code === 'Space') {
+                const charId = this.characterSystem.characters[selectedIndex].id;
+                this.selectCharacter(charId);
+            }
+        };
+        window.addEventListener('keydown', this.charSelectKeyHandler);
+    }
+
+    /**
+     * Select a character and proceed
+     */
+    selectCharacter(charId) {
+        this.characterSystem.select(charId);
+
+        // Hide modal
+        const modal = document.getElementById('character-modal');
+        modal.classList.add('hidden');
+
+        // Remove keyboard handler
+        if (this.charSelectKeyHandler) {
+            window.removeEventListener('keydown', this.charSelectKeyHandler);
+            this.charSelectKeyHandler = null;
+        }
+
+        this.showingCharacterSelect = false;
+
+        // Apply character to player
+        this.characterSystem.applyToPlayer(this.player);
+
+        // Flash effect
+        const char = this.characterSystem.getSelected();
+        this.renderer.flash(char.color, 0.5);
+
+        this.hud.addMessage(`OPERATIVE ${char.name} SELECTED`, 'system');
+
+        // Proceed to controls
+        this.showControlsModal();
     }
 
     /**
@@ -464,7 +595,8 @@ class Game {
      */
     startGame() {
         this.state = 'playing';
-        this.hud.addMessage('SIMULATION INITIALIZED', 'system');
+        const char = this.characterSystem.getSelected();
+        this.hud.addMessage(`${char.name} ONLINE - SIMULATION INITIALIZED`, 'system');
     }
 
     /**
@@ -611,7 +743,8 @@ class Game {
 
                 // Check if enemy hits player
                 if (this.player.active && enemy.collidesWith(this.player)) {
-                    if (this.player.takeDamage(enemy.damage)) {
+                    const actualDamage = this.calculateDamageTaken(enemy.damage);
+                    if (actualDamage > 0 && this.player.takeDamage(actualDamage)) {
                         this.cycles.applyDamagePenalty();
                         this.camera.addShake(5, 10);
                         this.renderer.flash(GAME_CONFIG.COLORS.MAGENTA, 0.3);
@@ -654,7 +787,8 @@ class Game {
 
             // Check if boss hits player
             if (this.player.active && this.boss.collidesWith(this.player)) {
-                if (this.player.takeDamage(this.boss.damage)) {
+                const actualDamage = this.calculateDamageTaken(this.boss.damage);
+                if (actualDamage > 0 && this.player.takeDamage(actualDamage)) {
                     this.cycles.applyDamagePenalty();
                     this.camera.addShake(8, 15);
                     this.renderer.flash(GAME_CONFIG.COLORS.MAGENTA, 0.4);
@@ -671,7 +805,8 @@ class Game {
                     const projBounds = { x: proj.x - 8, y: proj.y - 8, width: 16, height: 16 };
                     if (Utils.rectsOverlap(projBounds, this.player.getBounds())) {
                         proj.active = false;
-                        if (this.player.takeDamage(this.boss.damage * 0.5)) {
+                        const actualDamage = this.calculateDamageTaken(this.boss.damage * 0.5);
+                        if (actualDamage > 0 && this.player.takeDamage(actualDamage)) {
                             this.cycles.applyDamagePenalty();
                             this.camera.addShake(4, 8);
                             // Check for death immediately after taking damage
@@ -695,7 +830,15 @@ class Game {
             this.hud.addMessage(`${this.boss.name} DESTROYED! +${this.boss.cycleReward} CYCLES +FULL HEAL`, 'success');
 
             // Gain blade XP from boss kill
-            this.addBladeXP(50);
+            let xpMultiplier = this.upgradeSystem.modifiers.xpMultiplier;
+            if (this.player.characterSpecial?.xpBonus) {
+                xpMultiplier *= (1 + this.player.characterSpecial.xpBonus);
+            }
+            xpMultiplier *= this.tempBuffs.xpMultiplier;
+            this.addBladeXP(Math.floor(50 * xpMultiplier));
+
+            // Roll for boss drops (guaranteed)
+            this.dropSystem.rollDrops(this.boss.x, this.boss.y, 'boss');
 
             this.completeLevel();
         }
@@ -748,6 +891,17 @@ class Game {
         // Update blade ability effects
         this.updateBladeEffects();
 
+        // Update drop system
+        this.dropSystem.update(this);
+
+        // Character special: Chrome's regeneration
+        if (this.player.characterSpecial?.regenRate) {
+            this.player.health = Math.min(
+                this.player.health + this.player.characterSpecial.regenRate / 60,
+                this.player.maxHealth
+            );
+        }
+
         // Check for cycle depletion
         if (this.cycles.isDepleted()) {
             this.handleCycleDepletion();
@@ -779,9 +933,24 @@ class Game {
         const bladeMultiplier = this.bladeEvolution.getDamageMultiplier();
         const upgradeMultiplier = this.upgradeSystem.getDamageMultiplier(this.player);
 
+        // Apply temp buffs and permanent buffs
+        const tempDamageBoost = this.tempBuffs.damageBoost || 1.0;
+        const permDamageBoost = this.permanentBuffs.damage || 1.0;
+
+        // Character special: Blitz speed damage bonus
+        let speedBonus = 1.0;
+        if (this.player.characterSpecial?.speedDamageBonus) {
+            const speedPercent = Math.abs(this.player.velocityX) / 8; // Max speed ~8
+            speedBonus = 1 + speedPercent * 0.5; // Up to +50% at max speed
+        }
+
         // Calculate damage with potential crit
-        let rawDamage = baseDamage * bladeMultiplier * upgradeMultiplier;
-        const { damage: finalDamage, isCrit } = this.upgradeSystem.calculateDamage(rawDamage);
+        let rawDamage = baseDamage * bladeMultiplier * upgradeMultiplier * tempDamageBoost * permDamageBoost * speedBonus;
+
+        // Character special: Phantom's crit chance
+        let extraCritChance = this.player.characterSpecial?.critChance || 0;
+
+        const { damage: finalDamage, isCrit } = this.upgradeSystem.calculateDamage(rawDamage, extraCritChance);
         const damage = Math.floor(finalDamage);
 
         const tier = this.bladeEvolution.getCurrentTier();
@@ -824,9 +993,17 @@ class Game {
                     this.player.health = Math.min(this.player.health + healAmount, this.player.maxHealth);
                     this.hud.addMessage(`+${cycleGain} CYCLES +${healAmount} HP`, 'success');
 
-                    // Gain blade XP from kill (with upgrade multiplier)
-                    const xpGain = Math.floor(10 * this.upgradeSystem.modifiers.xpMultiplier);
+                    // Gain blade XP from kill (with upgrade multiplier + character bonus)
+                    let xpMultiplier = this.upgradeSystem.modifiers.xpMultiplier;
+                    if (this.player.characterSpecial?.xpBonus) {
+                        xpMultiplier *= (1 + this.player.characterSpecial.xpBonus);
+                    }
+                    xpMultiplier *= this.tempBuffs.xpMultiplier;
+                    const xpGain = Math.floor(10 * xpMultiplier);
                     this.addBladeXP(xpGain);
+
+                    // Roll for drops
+                    this.dropSystem.rollDrops(enemy.x, enemy.y, 'normal');
                 }
 
                 // Visual feedback - use blade color (extra shake for crits)
@@ -847,6 +1024,10 @@ class Game {
         }
         // Add lifesteal from upgrades
         lifestealPercent += this.upgradeSystem.getLifestealPercent();
+        // Character special: Havoc's lifesteal
+        if (this.player.characterSpecial?.lifesteal) {
+            lifestealPercent += this.player.characterSpecial.lifesteal;
+        }
 
         if (lifestealPercent > 0 && totalDamageDealt > 0) {
             const healAmount = Math.floor(totalDamageDealt * lifestealPercent);
@@ -895,6 +1076,12 @@ class Game {
      * Spawn a blade wave projectile
      */
     spawnBladeWave(tier) {
+        // Character special: Nova's wave bonus
+        let waveBonus = 1.0;
+        if (this.player.characterSpecial?.waveBonus) {
+            waveBonus = 1 + this.player.characterSpecial.waveBonus;
+        }
+
         const wave = {
             x: this.player.x + (this.player.facingRight ? 30 : -30),
             y: this.player.y,
@@ -902,7 +1089,7 @@ class Game {
             vy: 0,
             width: 40,
             height: 20,
-            damage: Math.floor(25 * this.bladeEvolution.getDamageMultiplier() * (tier.waveDamage || 0.5)),
+            damage: Math.floor(25 * this.bladeEvolution.getDamageMultiplier() * (tier.waveDamage || 0.5) * waveBonus),
             color: tier.waveColor || tier.color,
             lifetime: 60,
             active: true
@@ -915,18 +1102,25 @@ class Game {
      * Trigger explosion AOE damage
      */
     triggerExplosion(x, y, radius, damage) {
+        // Character special: Sage's explosion bonus
+        let explosionBonus = 1.0;
+        if (this.player.characterSpecial?.explosionBonus) {
+            explosionBonus = 1 + this.player.characterSpecial.explosionBonus;
+        }
+        const actualRadius = radius * explosionBonus;
+
         // Damage nearby enemies
         for (const enemy of this.enemies) {
             if (!enemy.active) continue;
             const dx = enemy.x - x;
             const dy = enemy.y - y;
             const dist = Math.sqrt(dx * dx + dy * dy);
-            if (dist < radius && dist > 0) {
+            if (dist < actualRadius && dist > 0) {
                 enemy.takeDamage(Math.floor(damage));
             }
         }
         // Spawn explosion particles
-        this.spawnExplosionParticles(x, y, radius);
+        this.spawnExplosionParticles(x, y, actualRadius);
     }
 
     /**
@@ -958,6 +1152,38 @@ class Game {
                 }
             }
         }
+    }
+
+    /**
+     * Calculate actual damage taken after reductions
+     */
+    calculateDamageTaken(baseDamage) {
+        // Check invincibility from temp buff
+        if (this.tempBuffs.invincible) {
+            return 0;
+        }
+
+        // Check shield from temp buff
+        if (this.tempBuffs.shield && this.tempBuffs.shieldHits > 0) {
+            this.tempBuffs.shieldHits--;
+            if (this.tempBuffs.shieldHits <= 0) {
+                this.tempBuffs.shield = false;
+            }
+            this.hud.addMessage('SHIELD BLOCKED!', 'success');
+            return 0;
+        }
+
+        let damage = baseDamage;
+
+        // Character special: Titan's damage reduction
+        if (this.player.characterSpecial?.damageReduction) {
+            damage *= (1 - this.player.characterSpecial.damageReduction);
+        }
+
+        // Upgrade modifier: damage taken multiplier
+        damage *= this.upgradeSystem.modifiers.damageTakenMultiplier;
+
+        return Math.floor(damage);
     }
 
     /**
@@ -1269,6 +1495,9 @@ class Game {
         // Render blade ability effects (waves, explosions, lightning)
         this.renderBladeEffects(ctx);
 
+        // Render drops
+        this.dropSystem.render(ctx, this.camera);
+
         // Render player
         if (this.player) {
             this.player.render(ctx, this.camera);
@@ -1289,6 +1518,9 @@ class Game {
             levelComplete: this.levelComplete,
             showControls: this.showControls
         });
+
+        // Render active buff indicators
+        this.dropSystem.renderBuffBar(ctx, 20, this.canvas.height - 70);
 
         // Render pause overlay
         if (this.isPaused) {
@@ -1461,6 +1693,28 @@ class Game {
 
         // Reset upgrade system
         this.upgradeSystem.reset();
+
+        // Reset drop system
+        this.dropSystem.reset();
+
+        // Reset temp buffs
+        this.tempBuffs = {
+            damageBoost: 1.0,
+            speedBoost: 1.0,
+            xpMultiplier: 1.0,
+            shield: false,
+            shieldHits: 0,
+            invincible: false,
+            magnetRange: 60
+        };
+
+        // Reset permanent buffs
+        this.permanentBuffs = {
+            damage: 1.0
+        };
+
+        // Re-apply character stats
+        this.characterSystem.applyToPlayer(this.player);
 
         // Generate fresh random room
         this.currentRoom = generateRandomRoom(1);

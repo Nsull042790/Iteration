@@ -53,16 +53,32 @@
                         <div class="footer-item">STATUS: <span class="cyan">READY</span></div>
                         <div class="footer-item">GHOSTS: <span class="cyan">0</span></div>
                         <div class="footer-item">BLADE: <span class="magenta">STANDARD</span></div>
-                        <div class="footer-item version">v0.5.0</div>
+                        <div class="footer-item version">v0.6.0</div>
                     </div>
                 </div>
             </div>
 
             <button id="title-start-btn" class="glitch-btn">
-                <span class="btn-content">[ ENTER SIMULATION ]</span>
+                <span class="btn-content">[ SELECT OPERATIVE ]</span>
             </button>
 
             <div class="title-hint">Press SPACE or ENTER to begin</div>
+        </div>
+
+        <!-- Character Selection Modal -->
+        <div id="character-modal" class="screen hidden">
+            <div class="modal-content character-content">
+                <div class="modal-header">
+                    <div class="modal-title character-title">SELECT OPERATIVE</div>
+                    <div class="modal-subtitle">// CHOOSE YOUR COMBAT PROTOCOL</div>
+                </div>
+
+                <div class="character-grid" id="character-grid">
+                    <!-- Character cards will be generated here -->
+                </div>
+
+                <div class="character-hint">Click to select or use arrow keys + ENTER</div>
+            </div>
         </div>
 
         <!-- Game Over Modal -->
@@ -205,6 +221,8 @@
     <script src="src/systems/cycles.js"></script>
     <script src="src/systems/blade-evolution.js"></script>
     <script src="src/systems/upgrades.js"></script>
+    <script src="src/systems/drops.js"></script>
+    <script src="src/systems/characters.js"></script>
     <script src="src/ui/hud.js"></script>
     <script src="src/core/renderer.js"></script>
     <script src="src/core/game.js"></script>

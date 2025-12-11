@@ -884,6 +884,186 @@ body {
 }
 
 /* ============================================
+   Character Selection Modal
+   ============================================ */
+
+.character-content {
+    border-color: #00f0ff;
+    box-shadow:
+        0 0 30px rgba(0, 240, 255, 0.3),
+        inset 0 0 60px rgba(0, 240, 255, 0.05);
+    max-width: 1100px;
+    width: 95%;
+}
+
+.character-title {
+    color: #00f0ff !important;
+    text-shadow: 0 0 20px rgba(0, 240, 255, 0.5) !important;
+}
+
+.character-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
+    margin: 20px 0;
+    max-height: 60vh;
+    overflow-y: auto;
+    padding: 10px;
+}
+
+.character-card {
+    background: rgba(10, 10, 20, 0.9);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    padding: 15px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.character-card:hover {
+    transform: translateY(-3px);
+    border-color: var(--char-color, #00f0ff);
+    box-shadow: 0 8px 25px rgba(0, 240, 255, 0.3);
+}
+
+.character-card.selected {
+    border-color: var(--char-color, #00f0ff);
+    box-shadow: 0 0 20px var(--char-color, #00f0ff);
+}
+
+.character-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--char-color, #00f0ff);
+}
+
+.character-avatar {
+    width: 60px;
+    height: 60px;
+    margin: 0 auto 10px;
+    border-radius: 50%;
+    background: var(--char-color, #00f0ff);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 15px var(--char-color, #00f0ff);
+}
+
+.character-avatar-inner {
+    width: 45px;
+    height: 45px;
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.character-avatar-eye {
+    width: 8px;
+    height: 8px;
+    background: var(--eye-color, #ffffff);
+    border-radius: 50%;
+    box-shadow: 0 0 5px var(--eye-color, #ffffff);
+}
+
+.character-name {
+    font-size: 14px;
+    font-weight: bold;
+    color: var(--char-color, #00f0ff);
+    text-align: center;
+    margin-bottom: 2px;
+    letter-spacing: 2px;
+}
+
+.character-subtitle {
+    font-size: 9px;
+    color: rgba(255, 255, 255, 0.5);
+    text-align: center;
+    margin-bottom: 8px;
+    letter-spacing: 1px;
+}
+
+.character-description {
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.6);
+    text-align: center;
+    margin-bottom: 10px;
+    min-height: 28px;
+}
+
+.character-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 10px;
+}
+
+.stat-row {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.stat-name {
+    font-size: 8px;
+    color: rgba(255, 255, 255, 0.5);
+    width: 25px;
+}
+
+.stat-bar-bg {
+    flex: 1;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.stat-bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.3s ease;
+}
+
+.character-special {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+    padding: 6px;
+    text-align: center;
+}
+
+.special-name {
+    font-size: 9px;
+    font-weight: bold;
+    color: var(--char-color, #00f0ff);
+    letter-spacing: 1px;
+}
+
+.special-desc {
+    font-size: 8px;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.character-hint {
+    text-align: center;
+    color: rgba(255, 255, 255, 0.3);
+    font-size: 12px;
+    letter-spacing: 2px;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+@media (max-width: 900px) {
+    .character-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* ============================================
    Glow effects
    ============================================ */
 

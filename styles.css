@@ -1185,6 +1185,42 @@ body {
 }
 
 /* ============================================
+   Weapon Maxed Celebration
+   ============================================ */
+
+.celebration-content {
+    animation: celebrationPop 0.5s ease-out;
+}
+
+@keyframes celebrationPop {
+    0% {
+        transform: scale(0.5);
+        opacity: 0;
+    }
+    50% {
+        transform: scale(1.1);
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.upgrade-title:has(+ .celebration-content),
+.upgrade-content:has(.celebration-content) .upgrade-title {
+    animation: glitchTitle 0.3s infinite;
+}
+
+/* Override upgrade modal colors for celebration */
+.upgrade-content:has(.celebration-content) {
+    border-color: #ffff00 !important;
+    box-shadow:
+        0 0 50px rgba(255, 255, 0, 0.5),
+        0 0 100px rgba(255, 0, 170, 0.3),
+        inset 0 0 60px rgba(255, 255, 0, 0.1) !important;
+}
+
+/* ============================================
    Touch Controls for Mobile
    ============================================ */
 

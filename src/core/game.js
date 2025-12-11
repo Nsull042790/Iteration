@@ -410,28 +410,101 @@ class Game {
         // Apply the weapon upgrade
         const result = this.weaponSystem.upgradeWeapon(option.slotIndex);
 
+        // Hide upgrade modal
+        const modal = document.getElementById('upgrade-modal');
+        modal.classList.add('hidden');
+
         if (result.success) {
             // Show message
             this.hud.addMessage(`WEAPON EVOLVED: ${result.newTier.name}`, 'evolution');
 
-            if (result.newTier.isLaser) {
-                setTimeout(() => {
-                    this.hud.addMessage('LASER SWORD UNLOCKED!', 'success');
-                }, 500);
-            }
-
             // Flash effect
             this.renderer.flash(result.newTier.color, 0.5);
             this.camera.addShake(5, 15);
-        }
 
-        // Hide modal and proceed
-        const modal = document.getElementById('upgrade-modal');
-        modal.classList.add('hidden');
+            // Check if weapon is now maxed (laser unlocked!)
+            if (result.newTier.isLaser) {
+                // Show celebration modal
+                this.showWeaponMaxedCelebration(option.weaponName, result.newTier);
+                return; // Don't proceed to next level yet - celebration will handle it
+            }
+        }
 
         // Proceed to next level after brief delay
         setTimeout(() => {
             this.nextLevel();
+        }, 500);
+    }
+
+    /**
+     * Show weapon maxed celebration
+     */
+    showWeaponMaxedCelebration(weaponName, tier) {
+        const modal = document.getElementById('upgrade-modal');
+        const choicesContainer = document.getElementById('upgrade-choices');
+        const title = modal.querySelector('.upgrade-title');
+        const subtitle = modal.querySelector('.modal-subtitle');
+
+        if (title) title.textContent = 'DAMNNNNN!';
+        if (subtitle) subtitle.textContent = '// MAXIMUM POWER ACHIEVED';
+
+        // Clear and show celebration content
+        choicesContainer.innerHTML = `
+            <div class="celebration-content" style="text-align: center; padding: 20px;">
+                <div style="font-size: 64px; margin-bottom: 20px; animation: pulse 0.5s infinite;">⚔️</div>
+                <div style="font-size: 24px; color: #ffff00; text-shadow: 0 0 20px #ffff00; margin-bottom: 10px; letter-spacing: 4px;">
+                    YOU MAXED OUT
+                </div>
+                <div style="font-size: 32px; color: ${tier.color}; text-shadow: 0 0 30px ${tier.color}; margin-bottom: 20px; font-weight: bold;">
+                    ${weaponName}
+                </div>
+                <div style="font-size: 18px; color: #00f0ff; margin-bottom: 15px;">
+                    ${tier.name} UNLOCKED
+                </div>
+                <div style="font-size: 14px; color: #ff00aa; text-shadow: 0 0 10px #ff00aa; animation: pulse 1s infinite;">
+                    🔥 LASER SWORD ACTIVATED 🔥
+                </div>
+                <div style="margin-top: 30px; font-size: 12px; color: rgba(255,255,255,0.5);">
+                    Tap anywhere to continue
+                </div>
+            </div>
+        `;
+
+        modal.classList.remove('hidden');
+
+        // Epic effects
+        this.renderer.flash('#ffff00', 0.8);
+        this.camera.addShake(15, 40);
+
+        // Multiple flash effects
+        setTimeout(() => this.renderer.flash(tier.color, 0.6), 200);
+        setTimeout(() => this.renderer.flash('#ff00aa', 0.4), 400);
+
+        // Handle dismissal
+        const handleDismiss = () => {
+            modal.classList.add('hidden');
+            modal.removeEventListener('click', handleDismiss);
+            window.removeEventListener('keydown', handleDismissKey);
+
+            // Reset modal title for next time
+            if (title) title.textContent = 'EVOLUTION DETECTED';
+            if (subtitle) subtitle.textContent = '// SELECT UPGRADE PROTOCOL';
+
+            setTimeout(() => {
+                this.nextLevel();
+            }, 300);
+        };
+
+        const handleDismissKey = (e) => {
+            if (e.code === 'Space' || e.code === 'Enter' || e.key === '1' || e.key === '2' || e.key === '3') {
+                handleDismiss();
+            }
+        };
+
+        // Add slight delay before allowing dismissal to prevent accidental skip
+        setTimeout(() => {
+            modal.addEventListener('click', handleDismiss);
+            window.addEventListener('keydown', handleDismissKey);
         }, 500);
     }
 

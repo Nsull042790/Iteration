@@ -491,235 +491,152 @@ function createTestRoom() {
 }
 
 /**
- * Generate a random room with vertical platform-focused gameplay
- * Designed for bouncing between platforms, not staying on the ground
+ * Generate a random room with level-appropriate difficulty
+ * Level 1: Forgiving, ground-based with platforms to explore
+ * Level 2+: More vertical, deadly floor introduced
+ * Level 3+: Full vertical challenge
  */
 function generateRandomRoom(level = 1) {
     const room = new Room(GAME_CONFIG.ROOM.WIDTH * 1.5, GAME_CONFIG.ROOM.HEIGHT);
     room.name = 'COMBAT ZONE ' + level;
 
-    // Walls only - no solid floor!
+    // Walls
     room.createPlatform(-32, 0, 32, room.height, { style: 'solid' });
     room.createPlatform(room.width, 0, 32, room.height, { style: 'solid' });
 
-    // Deadly pit at the very bottom (small floor with spikes)
-    room.createPlatform(0, room.height - 20, room.width, 20, {
-        style: 'solid',
-        deadly: true
-    });
+    // Floor - safe for level 1, deadly for higher levels
+    if (level === 1) {
+        // Safe floor for beginners
+        room.createPlatform(0, room.height - 32, room.width, 32, { style: 'grid' });
+    } else {
+        // Deadly pit for higher levels
+        room.createPlatform(0, room.height - 20, room.width, 20, {
+            style: 'solid',
+            deadly: true
+        });
+    }
 
-    // Platform styles based on level
-    const baseStyles = ['solid', 'grid', 'circuit'];
-    const advancedStyles = ['neon', 'hex', 'energy'];
-    const styles = level >= 2 ? [...baseStyles, ...advancedStyles] : baseStyles;
+    // Simpler styles for level 1 (less GPU-intensive)
+    const styles = level === 1 ? ['solid', 'grid'] :
+                   level === 2 ? ['solid', 'grid', 'circuit'] :
+                   ['solid', 'grid', 'circuit', 'neon', 'hex'];
 
-    // Accent colors for variety
-    const accentColors = ['#00f0ff', '#ff00aa', '#00ff88', '#ffdd00', '#ff8800'];
+    const accentColors = ['#00f0ff', '#ff00aa', '#00ff88'];
 
-    // Define distinct height tiers (from bottom to top)
-    const tiers = {
-        ground: { minY: room.height - 120, maxY: room.height - 80 },    // Low tier
-        low: { minY: room.height - 220, maxY: room.height - 160 },      // Low-mid tier
-        mid: { minY: room.height - 340, maxY: room.height - 260 },      // Mid tier
-        high: { minY: room.height - 480, maxY: room.height - 380 },     // High tier
-        sky: { minY: room.height - 620, maxY: room.height - 520 }       // Sky tier
-    };
+    // Difficulty scaling
+    const platformWidth = level === 1 ? { min: 120, max: 200 } :
+                          level === 2 ? { min: 100, max: 160 } :
+                          { min: 70, max: 140 };
 
-    const tierNames = ['ground', 'low', 'mid', 'high', 'sky'];
-    const placedPlatforms = [];
+    const jumpHeight = level === 1 ? 70 : level === 2 ? 90 : 110;
 
-    // Horizontal zones for distribution
-    const zoneCount = 8;
+    // Height tiers based on level
+    const maxTiers = level === 1 ? 3 : level === 2 ? 4 : 5;
+    const tierHeight = 120;
+    const baseY = room.height - (level === 1 ? 100 : 80);
+
+    // Pre-calculate platform positions (no overlap checking needed)
+    const platforms = [];
+    const zoneCount = 6;
     const zoneWidth = room.width / zoneCount;
 
-    // Helper to check platform overlap
-    const checkOverlap = (x, y, width, minSpacing = 100) => {
-        for (const existing of placedPlatforms) {
-            const horizontalOverlap = Math.abs(x - existing.x) < (width + existing.width) / 2 + 60;
-            const verticalClose = Math.abs(y - existing.y) < minSpacing;
-            if (horizontalOverlap && verticalClose) return true;
-        }
-        return false;
-    };
+    // === SPAWN PLATFORM ===
+    const spawnY = baseY;
+    room.createPlatform(60, spawnY, 150, 24, { style: 'grid', oneWay: false });
 
-    // Helper to create a platform with random style
-    const createRandomPlatform = (x, y, width, oneWay = true) => {
-        const style = styles[Utils.randomInt(0, styles.length - 1)];
-        const accentColor = accentColors[Utils.randomInt(0, accentColors.length - 1)];
-        const platformHeight = style === 'circuit' || style === 'hex' ? 28 : 22;
-
-        room.createPlatform(x, y, width, platformHeight, {
-            style: style,
-            oneWay: oneWay,
-            accentColor: style !== 'solid' && style !== 'grid' ? accentColor : null
-        });
-        placedPlatforms.push({ x, y, width });
-    };
-
-    // === SPAWN PLATFORM (safe starting point) ===
-    const spawnPlatformWidth = 120;
-    const spawnY = tiers.ground.minY;
-    room.createPlatform(60, spawnY, spawnPlatformWidth, 24, {
-        style: 'grid',
-        oneWay: false
-    });
-    placedPlatforms.push({ x: 60, y: spawnY, width: spawnPlatformWidth });
-
-    // === CREATE STAIRCASE PATTERNS ===
-    // These encourage vertical movement by placing platforms in ascending paths
-
-    // Left side staircase (ascending from spawn)
-    let stairX = 80;
-    let stairY = spawnY;
-    for (let i = 0; i < 4; i++) {
-        stairX += Utils.random(100, 180);
-        stairY -= Utils.random(80, 120);
-        if (stairY > room.height - 600 && stairX < room.width - 150) {
-            const width = Utils.randomInt(80, 130);
-            createRandomPlatform(stairX, stairY, width);
-        }
-    }
-
-    // Right side descending staircase
-    stairX = room.width - 200;
-    stairY = tiers.high.minY;
-    for (let i = 0; i < 4; i++) {
-        stairX -= Utils.random(100, 180);
-        stairY += Utils.random(60, 100);
-        if (stairY < room.height - 100 && stairX > 100) {
-            const width = Utils.randomInt(80, 130);
-            if (!checkOverlap(stairX, stairY, width)) {
-                createRandomPlatform(stairX, stairY, width);
-            }
-        }
-    }
-
-    // === DISTRIBUTED TIER PLATFORMS ===
-    // Ensure each tier has platforms spread across the room width
-
-    for (const tierName of tierNames) {
-        const tier = tiers[tierName];
-        // More platforms in mid/high tiers, fewer at ground
-        const platformsInTier = tierName === 'ground' ? 2 :
-                                tierName === 'sky' ? (level >= 2 ? 3 : 2) : 4;
+    // === GENERATE PLATFORMS PER TIER ===
+    for (let tier = 0; tier < maxTiers; tier++) {
+        const tierY = baseY - (tier * tierHeight);
+        const platformsInTier = tier === 0 ? 2 : (level === 1 ? 2 : 3);
 
         for (let i = 0; i < platformsInTier; i++) {
-            let attempts = 0;
-            while (attempts < 10) {
-                const zone = Utils.randomInt(0, zoneCount - 1);
-                const width = Utils.randomInt(70, 140);
-                const x = zone * zoneWidth + Utils.random(20, zoneWidth - width - 20);
-                const y = Utils.random(tier.minY, tier.maxY);
+            // Spread platforms evenly across zones
+            const zone = Math.floor((i + 0.5) * zoneCount / platformsInTier);
+            const width = Utils.randomInt(platformWidth.min, platformWidth.max);
+            const x = zone * zoneWidth + Utils.random(20, zoneWidth - width - 20);
+            const y = tierY + Utils.random(-20, 20);
 
-                if (!checkOverlap(x, y, width, 90)) {
-                    createRandomPlatform(x, y, width);
-                    break;
-                }
-                attempts++;
-            }
+            // Skip if too close to spawn platform
+            if (tier === 0 && x < 250) continue;
+
+            const style = styles[Utils.randomInt(0, styles.length - 1)];
+            room.createPlatform(x, y, width, 22, {
+                style: style,
+                oneWay: tier > 0,
+                accentColor: style !== 'solid' && style !== 'grid' ?
+                    accentColors[Utils.randomInt(0, accentColors.length - 1)] : null
+            });
         }
     }
 
-    // === CONNECTOR PLATFORMS ===
-    // Small platforms that bridge gaps between tiers
-    const connectorCount = 4 + level;
-    for (let i = 0; i < connectorCount; i++) {
-        const x = Utils.random(100, room.width - 150);
-        // Place between tier boundaries
-        const tierIndex = Utils.randomInt(0, tierNames.length - 2);
-        const upperTier = tiers[tierNames[tierIndex + 1]];
-        const lowerTier = tiers[tierNames[tierIndex]];
-        const y = (upperTier.maxY + lowerTier.minY) / 2 + Utils.random(-30, 30);
+    // === STEPPING STONES (connect tiers) ===
+    const stepCount = level === 1 ? 3 : level === 2 ? 4 : 5;
+    for (let i = 0; i < stepCount; i++) {
+        const x = Utils.random(200, room.width - 250);
+        const tier = Utils.randomInt(0, maxTiers - 2);
+        const y = baseY - (tier * tierHeight) - jumpHeight;
+        const width = Utils.randomInt(80, 120);
 
-        const width = Utils.randomInt(50, 90);
-        if (!checkOverlap(x, y, width, 70)) {
-            createRandomPlatform(x, y, width);
-        }
+        room.createPlatform(x, y, width, 20, {
+            style: 'solid',
+            oneWay: true
+        });
     }
 
-    // === MOVING PLATFORMS ===
-    // Horizontal movers at various heights
-    if (level >= 1) {
-        const movingCount = 1 + Math.floor(level / 2);
+    // === MOVING PLATFORMS (level 2+) ===
+    if (level >= 2) {
+        const movingCount = Math.min(level - 1, 2);
         for (let i = 0; i < movingCount; i++) {
-            const tier = tierNames[Utils.randomInt(1, 3)]; // low to high
-            const tierData = tiers[tier];
-            const startX = Utils.random(150, room.width / 2);
-            const y = Utils.random(tierData.minY, tierData.maxY);
-            const moveDistance = Utils.random(180, 300);
-            const accentColor = accentColors[Utils.randomInt(0, accentColors.length - 1)];
+            const tier = Utils.randomInt(1, Math.min(maxTiers - 1, 3));
+            const y = baseY - (tier * tierHeight);
+            const startX = Utils.random(200, room.width / 2);
+            const moveDistance = Utils.random(150, 250);
 
-            room.createPlatform(startX, y, 90, 20, {
+            room.createPlatform(startX, y, 100, 20, {
                 style: 'neon',
                 moving: true,
-                moveEndX: Math.min(startX + moveDistance, room.width - 150),
+                moveEndX: startX + moveDistance,
                 moveEndY: y,
-                moveSpeed: 1.2 + level * 0.3,
-                accentColor: accentColor,
-                oneWay: true
-            });
-        }
-    }
-
-    // Vertical elevator platforms
-    if (level >= 2) {
-        const elevatorCount = Math.min(level - 1, 2);
-        for (let i = 0; i < elevatorCount; i++) {
-            const x = Utils.random(200, room.width - 250);
-            const startY = tiers.low.maxY;
-            const endY = tiers.high.minY;
-
-            room.createPlatform(x, startY, 70, 20, {
-                style: 'energy',
-                moving: true,
-                moveEndX: x,
-                moveEndY: endY,
-                moveSpeed: 1.5 + level * 0.2,
-                oneWay: true
-            });
-        }
-    }
-
-    // === CHALLENGE PLATFORMS (higher levels) ===
-    if (level >= 3) {
-        // Small hopping platforms in sky tier
-        const hopperCount = 3;
-        let hopX = Utils.random(200, 400);
-        for (let i = 0; i < hopperCount; i++) {
-            const y = Utils.random(tiers.sky.minY, tiers.sky.maxY);
-            room.createPlatform(hopX, y, 50, 18, {
-                style: 'hex',
+                moveSpeed: 1.5,
                 oneWay: true,
-                accentColor: '#ff00aa'
+                accentColor: '#00ff88'
             });
-            hopX += Utils.random(120, 180);
-            if (hopX > room.width - 150) break;
         }
+    }
+
+    // === VERTICAL ELEVATOR (level 3+) ===
+    if (level >= 3) {
+        const x = Utils.random(room.width / 3, room.width * 2 / 3);
+        const startY = baseY - tierHeight;
+        const endY = baseY - (tierHeight * 3);
+
+        room.createPlatform(x, startY, 80, 20, {
+            style: 'energy',
+            moving: true,
+            moveEndX: x,
+            moveEndY: endY,
+            moveSpeed: 1.2,
+            oneWay: true
+        });
     }
 
     // === SAFE LANDING ZONES ===
-    // Ensure there are wider platforms at key areas to prevent frustration
-    const safeZones = [
-        { x: room.width / 3 - 75, tier: 'mid' },
-        { x: room.width * 2 / 3 - 75, tier: 'low' },
-        { x: room.width / 2 - 60, tier: 'high' }
-    ];
+    // Larger platforms at key spots
+    const safeZoneCount = level === 1 ? 3 : 2;
+    for (let i = 0; i < safeZoneCount; i++) {
+        const x = room.width * (i + 1) / (safeZoneCount + 1) - 80;
+        const tier = Utils.randomInt(1, Math.min(2, maxTiers - 1));
+        const y = baseY - (tier * tierHeight);
 
-    for (const zone of safeZones) {
-        const tierData = tiers[zone.tier];
-        const y = (tierData.minY + tierData.maxY) / 2;
-        if (!checkOverlap(zone.x, y, 150, 80)) {
-            room.createPlatform(zone.x, y, 150, 26, {
-                style: 'circuit',
-                oneWay: true,
-                accentColor: '#00f0ff'
-            });
-            placedPlatforms.push({ x: zone.x, y, width: 150 });
-        }
+        room.createPlatform(x, y, 160, 26, {
+            style: 'circuit',
+            oneWay: true,
+            accentColor: '#00f0ff'
+        });
     }
 
-    // Set spawn point on the spawn platform
-    room.setSpawnPoint(120, spawnY - 40);
+    // Set spawn point
+    room.setSpawnPoint(135, spawnY - 40);
 
     return room;
 }

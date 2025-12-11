@@ -8,7 +8,8 @@ class BladeEvolution {
         this.xp = 0;
         this.currentTier = 0;
 
-        // Blade tiers with colors, thresholds, and visual properties
+        // Blade tiers with colors, abilities, and visual properties
+        // LOWER thresholds for faster, more satisfying progression
         this.tiers = [
             {
                 name: 'BASIC',
@@ -17,103 +18,139 @@ class BladeEvolution {
                 glowColor: '#00f0ff',
                 damageMultiplier: 1.0,
                 // Visual properties
-                shape: 'stick',         // Simple energy stick
+                shape: 'stick',
                 length: 38,
                 width: 3,
                 glowIntensity: 12,
                 hasTrail: false,
                 hasParticles: false,
-                coreWidth: 1
+                coreWidth: 1,
+                // Abilities
+                ability: null,
+                abilityDesc: 'Standard slash attack'
             },
             {
                 name: 'CHARGED',
-                xpRequired: 30,
+                xpRequired: 15,  // ~2 kills
                 color: '#00ff88',
                 glowColor: '#00ff88',
-                damageMultiplier: 1.1,
+                damageMultiplier: 1.2,
                 // Visual properties
-                shape: 'blade',         // Wider, more defined edge
-                length: 42,
-                width: 4,
-                glowIntensity: 16,
+                shape: 'blade',
+                length: 44,
+                width: 5,
+                glowIntensity: 18,
                 hasTrail: true,
                 hasParticles: false,
-                coreWidth: 1.5,
-                crackling: true         // Electric crackle effect
+                coreWidth: 2,
+                crackling: true,
+                // Abilities
+                ability: 'wave',        // Sends a projectile wave on attack
+                abilityDesc: 'Slash sends energy wave',
+                waveSpeed: 8,
+                waveDamage: 0.5,        // 50% of blade damage
+                waveColor: '#00ff88'
             },
             {
                 name: 'ENHANCED',
-                xpRequired: 80,
+                xpRequired: 40,  // ~4 kills
                 color: '#ffdd00',
                 glowColor: '#ffdd00',
-                damageMultiplier: 1.25,
-                // Visual properties
-                shape: 'sword',         // Proper sword shape with guard
-                length: 46,
-                width: 5,
-                glowIntensity: 20,
-                hasTrail: true,
-                hasParticles: true,
-                particleCount: 2,
-                coreWidth: 2,
-                hasGuard: true
-            },
-            {
-                name: 'OVERCLOCKED',
-                xpRequired: 150,
-                color: '#ff8800',
-                glowColor: '#ff8800',
                 damageMultiplier: 1.4,
                 // Visual properties
-                shape: 'heatsword',     // Heated segmented blade
+                shape: 'sword',
                 length: 50,
                 width: 6,
-                glowIntensity: 25,
+                glowIntensity: 24,
                 hasTrail: true,
                 hasParticles: true,
                 particleCount: 3,
                 coreWidth: 2,
                 hasGuard: true,
-                segments: 3,            // Segmented blade sections
-                heatDistortion: true
+                // Abilities
+                ability: 'explosive',   // Attacks create small explosions
+                abilityDesc: 'Hits explode for AOE damage',
+                explosionRadius: 60,
+                explosionDamage: 0.3    // 30% splash damage
             },
             {
-                name: 'CORRUPTED',
-                xpRequired: 250,
-                color: '#ff00ff',
-                glowColor: '#ff00ff',
-                damageMultiplier: 1.6,
+                name: 'OVERCLOCKED',
+                xpRequired: 80,  // ~8 kills
+                color: '#ff8800',
+                glowColor: '#ff8800',
+                damageMultiplier: 1.7,
                 // Visual properties
-                shape: 'corrupt',       // Jagged, unstable energy
-                length: 54,
+                shape: 'heatsword',
+                length: 56,
                 width: 7,
                 glowIntensity: 30,
                 hasTrail: true,
                 hasParticles: true,
                 particleCount: 4,
                 coreWidth: 2.5,
-                glitchEffect: true,     // Visual glitching
-                jagged: true
+                hasGuard: true,
+                segments: 3,
+                heatDistortion: true,
+                // Abilities
+                ability: 'chain',       // Damage chains to nearby enemies
+                abilityDesc: 'Damage chains to nearby foes',
+                chainRange: 120,
+                chainDamage: 0.6,       // 60% chain damage
+                maxChains: 2
+            },
+            {
+                name: 'CORRUPTED',
+                xpRequired: 130, // ~13 kills
+                color: '#ff00ff',
+                glowColor: '#ff00ff',
+                damageMultiplier: 2.0,
+                // Visual properties
+                shape: 'corrupt',
+                length: 62,
+                width: 8,
+                glowIntensity: 35,
+                hasTrail: true,
+                hasParticles: true,
+                particleCount: 5,
+                coreWidth: 3,
+                glitchEffect: true,
+                jagged: true,
+                // Abilities
+                ability: 'lifesteal',   // Heal on hit
+                abilityDesc: 'Attacks heal you',
+                lifestealPercent: 0.15  // 15% of damage dealt
             },
             {
                 name: 'TRANSCENDED',
-                xpRequired: 400,
+                xpRequired: 200, // ~20 kills or boss + kills
                 color: '#ffffff',
                 glowColor: '#ff00ff',
                 secondaryColor: '#00ffff',
-                damageMultiplier: 2.0,
+                damageMultiplier: 2.5,
                 // Visual properties
-                shape: 'laser',         // Pure energy laser beam
-                length: 60,
-                width: 8,
-                glowIntensity: 40,
+                shape: 'laser',
+                length: 70,
+                width: 10,
+                glowIntensity: 50,
                 hasTrail: true,
                 hasParticles: true,
-                particleCount: 6,
-                coreWidth: 3,
-                isLaser: true,          // Full laser beam
+                particleCount: 8,
+                coreWidth: 4,
+                isLaser: true,
                 pulsingCore: true,
-                rainbow: true           // Subtle color shift
+                rainbow: true,
+                // Abilities - ALL PREVIOUS + new ultimate
+                ability: 'ultimate',    // All abilities combined
+                abilityDesc: 'WAVE + EXPLOSION + CHAIN + LIFESTEAL',
+                // Inherits all previous abilities
+                waveSpeed: 10,
+                waveDamage: 0.6,
+                explosionRadius: 80,
+                explosionDamage: 0.4,
+                chainRange: 150,
+                chainDamage: 0.7,
+                maxChains: 3,
+                lifestealPercent: 0.2
             }
         ];
 
@@ -275,5 +312,31 @@ class BladeEvolution {
      */
     isMaxTier() {
         return this.currentTier >= this.tiers.length - 1;
+    }
+
+    /**
+     * Get current ability name
+     */
+    getAbility() {
+        return this.tiers[this.currentTier].ability;
+    }
+
+    /**
+     * Get ability description
+     */
+    getAbilityDesc() {
+        return this.tiers[this.currentTier].abilityDesc;
+    }
+
+    /**
+     * Check if current tier has a specific ability (for inherited abilities)
+     */
+    hasAbility(abilityName) {
+        const tier = this.tiers[this.currentTier];
+        if (tier.ability === 'ultimate') {
+            // Ultimate has all abilities
+            return ['wave', 'explosive', 'chain', 'lifesteal'].includes(abilityName);
+        }
+        return tier.ability === abilityName;
     }
 }

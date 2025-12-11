@@ -10,15 +10,16 @@ class Boss extends Entity {
         this.level = level;
         this.name = Boss.getNameForLevel(level);
 
-        // Scale stats based on level
-        const levelMultiplier = 1 + (level - 1) * 0.5;
+        // Progressive difficulty scaling (gentler early, steeper later)
+        // Level 1: 1.0x, Level 2: 1.2x, Level 3: 1.5x, Level 4: 1.9x, Level 5: 2.4x
+        const levelMultiplier = 1 + (level - 1) * 0.2 + Math.max(0, level - 2) * 0.1;
 
-        // Stats
-        this.health = Math.floor(300 * levelMultiplier);
+        // Stats - more forgiving for early levels
+        this.health = Math.floor(200 * levelMultiplier);
         this.maxHealth = this.health;
-        this.damage = Math.floor(12 * levelMultiplier);
-        this.speed = 3 + level * 0.4;
-        this.cycleReward = Math.floor(250 * levelMultiplier);
+        this.damage = Math.floor(8 + level * 2);
+        this.speed = 2 + level * 0.3;
+        this.cycleReward = Math.floor(200 * levelMultiplier);
 
         // Phase system (WoW-style)
         this.phase = 1; // 1, 2, or 3

@@ -639,6 +639,9 @@ class Game {
         // Update blade evolution
         this.bladeEvolution.update();
 
+        // Update blade ability effects
+        this.updateBladeEffects();
+
         // Check for cycle depletion
         if (this.cycles.isDepleted()) {
             this.handleCycleDepletion();
@@ -668,6 +671,11 @@ class Game {
         // Get damage with blade multiplier
         const baseDamage = 25;
         const damage = Math.floor(baseDamage * this.bladeEvolution.getDamageMultiplier());
+        const tier = this.bladeEvolution.getCurrentTier();
+
+        // Track hits for chain ability
+        const hitEnemies = [];
+        let totalDamageDealt = 0;
 
         // Check regular enemies
         for (const enemy of this.enemies) {
@@ -678,6 +686,13 @@ class Game {
             if (Utils.rectsOverlap(attackBounds, enemyBounds)) {
                 // Hit the enemy with blade damage
                 const killed = enemy.takeDamage(damage);
+                totalDamageDealt += damage;
+                hitEnemies.push({ enemy, x: enemy.x, y: enemy.y, killed });
+
+                // Explosive ability - AOE damage
+                if (this.bladeEvolution.hasAbility('explosive') && tier.explosionRadius) {
+                    this.triggerExplosion(enemy.x, enemy.y, tier.explosionRadius, damage * tier.explosionDamage);
+                }
 
                 if (killed) {
                     // Gain cycles from kill
@@ -700,6 +715,21 @@ class Game {
             }
         }
 
+        // Chain ability - chain damage to nearby enemies
+        if (this.bladeEvolution.hasAbility('chain') && hitEnemies.length > 0 && tier.chainRange) {
+            this.triggerChainDamage(hitEnemies, damage * tier.chainDamage, tier.chainRange, tier.maxChains || 2);
+        }
+
+        // Lifesteal ability - heal based on damage dealt
+        if (this.bladeEvolution.hasAbility('lifesteal') && totalDamageDealt > 0 && tier.lifestealPercent) {
+            const healAmount = Math.floor(totalDamageDealt * tier.lifestealPercent);
+            if (healAmount > 0) {
+                this.player.health = Math.min(this.player.health + healAmount, this.player.maxHealth);
+                // Visual feedback for lifesteal
+                this.spawnHealParticle(this.player.x, this.player.y, healAmount);
+            }
+        }
+
         // Check boss
         if (this.boss && this.boss.active && this.boss.invincibilityFrames <= 0) {
             const bossBounds = this.boss.getBounds();
@@ -709,9 +739,320 @@ class Game {
                 const bossDamage = Math.floor(20 * this.bladeEvolution.getDamageMultiplier());
                 const killed = this.boss.takeDamage(bossDamage);
 
+                // Lifesteal on boss
+                if (this.bladeEvolution.hasAbility('lifesteal') && tier.lifestealPercent) {
+                    const healAmount = Math.floor(bossDamage * tier.lifestealPercent);
+                    if (healAmount > 0) {
+                        this.player.health = Math.min(this.player.health + healAmount, this.player.maxHealth);
+                        this.spawnHealParticle(this.player.x, this.player.y, healAmount);
+                    }
+                }
+
+                // Explosive on boss
+                if (this.bladeEvolution.hasAbility('explosive') && tier.explosionRadius) {
+                    this.triggerExplosion(this.boss.x, this.boss.y, tier.explosionRadius, bossDamage * tier.explosionDamage);
+                }
+
                 // Visual feedback - use blade color
                 this.camera.addShake(5, 8);
                 this.renderer.flash(this.bladeEvolution.getBladeColor(), 0.3);
+            }
+        }
+
+        // Wave ability - spawn projectile on attack start (once per attack)
+        if (this.bladeEvolution.hasAbility('wave') && this.player.attackFrame === 1) {
+            this.spawnBladeWave(tier);
+        }
+    }
+
+    /**
+     * Spawn a blade wave projectile
+     */
+    spawnBladeWave(tier) {
+        const wave = {
+            x: this.player.x + (this.player.facingRight ? 30 : -30),
+            y: this.player.y,
+            vx: (this.player.facingRight ? 1 : -1) * (tier.waveSpeed || 8),
+            vy: 0,
+            width: 40,
+            height: 20,
+            damage: Math.floor(25 * this.bladeEvolution.getDamageMultiplier() * (tier.waveDamage || 0.5)),
+            color: tier.waveColor || tier.color,
+            lifetime: 60,
+            active: true
+        };
+        if (!this.bladeWaves) this.bladeWaves = [];
+        this.bladeWaves.push(wave);
+    }
+
+    /**
+     * Trigger explosion AOE damage
+     */
+    triggerExplosion(x, y, radius, damage) {
+        // Damage nearby enemies
+        for (const enemy of this.enemies) {
+            if (!enemy.active) continue;
+            const dx = enemy.x - x;
+            const dy = enemy.y - y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < radius && dist > 0) {
+                enemy.takeDamage(Math.floor(damage));
+            }
+        }
+        // Spawn explosion particles
+        this.spawnExplosionParticles(x, y, radius);
+    }
+
+    /**
+     * Chain damage to nearby enemies
+     */
+    triggerChainDamage(hitEnemies, chainDamage, chainRange, maxChains) {
+        const alreadyHit = new Set(hitEnemies.map(h => h.enemy));
+        let chainsLeft = maxChains;
+
+        for (const hit of hitEnemies) {
+            if (chainsLeft <= 0) break;
+
+            for (const enemy of this.enemies) {
+                if (!enemy.active || alreadyHit.has(enemy)) continue;
+
+                const dx = enemy.x - hit.x;
+                const dy = enemy.y - hit.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+
+                if (dist < chainRange) {
+                    enemy.takeDamage(Math.floor(chainDamage));
+                    alreadyHit.add(enemy);
+                    chainsLeft--;
+
+                    // Spawn chain lightning visual
+                    this.spawnChainLightning(hit.x, hit.y, enemy.x, enemy.y);
+
+                    if (chainsLeft <= 0) break;
+                }
+            }
+        }
+    }
+
+    /**
+     * Spawn heal particle effect
+     */
+    spawnHealParticle(x, y, amount) {
+        // Add floating heal number
+        if (!this.floatingTexts) this.floatingTexts = [];
+        this.floatingTexts.push({
+            x, y: y - 20,
+            text: `+${amount}`,
+            color: '#00ff88',
+            lifetime: 40,
+            vy: -1
+        });
+    }
+
+    /**
+     * Spawn explosion particles
+     */
+    spawnExplosionParticles(x, y, radius) {
+        if (!this.explosions) this.explosions = [];
+        this.explosions.push({
+            x, y, radius,
+            lifetime: 15,
+            maxLifetime: 15,
+            color: this.bladeEvolution.getBladeColor()
+        });
+    }
+
+    /**
+     * Spawn chain lightning visual
+     */
+    spawnChainLightning(x1, y1, x2, y2) {
+        if (!this.chainLightnings) this.chainLightnings = [];
+        this.chainLightnings.push({
+            x1, y1, x2, y2,
+            lifetime: 10,
+            color: '#ff8800'
+        });
+    }
+
+    /**
+     * Update all blade ability effects
+     */
+    updateBladeEffects() {
+        // Update blade waves
+        if (this.bladeWaves) {
+            for (const wave of this.bladeWaves) {
+                if (!wave.active) continue;
+
+                wave.x += wave.vx;
+                wave.lifetime--;
+
+                if (wave.lifetime <= 0) {
+                    wave.active = false;
+                    continue;
+                }
+
+                // Check collision with enemies
+                for (const enemy of this.enemies) {
+                    if (!enemy.active) continue;
+                    const dx = enemy.x - wave.x;
+                    const dy = enemy.y - wave.y;
+                    if (Math.abs(dx) < wave.width && Math.abs(dy) < wave.height) {
+                        enemy.takeDamage(wave.damage);
+                        wave.active = false;
+                        this.camera.addShake(2, 3);
+                        break;
+                    }
+                }
+
+                // Check boss
+                if (wave.active && this.boss && this.boss.active) {
+                    const dx = this.boss.x - wave.x;
+                    const dy = this.boss.y - wave.y;
+                    if (Math.abs(dx) < wave.width + 40 && Math.abs(dy) < wave.height + 40) {
+                        this.boss.takeDamage(wave.damage);
+                        wave.active = false;
+                        this.camera.addShake(3, 5);
+                    }
+                }
+            }
+            this.bladeWaves = this.bladeWaves.filter(w => w.active);
+        }
+
+        // Update explosions
+        if (this.explosions) {
+            for (const exp of this.explosions) {
+                exp.lifetime--;
+            }
+            this.explosions = this.explosions.filter(e => e.lifetime > 0);
+        }
+
+        // Update chain lightnings
+        if (this.chainLightnings) {
+            for (const chain of this.chainLightnings) {
+                chain.lifetime--;
+            }
+            this.chainLightnings = this.chainLightnings.filter(c => c.lifetime > 0);
+        }
+
+        // Update floating texts
+        if (this.floatingTexts) {
+            for (const text of this.floatingTexts) {
+                text.y += text.vy;
+                text.lifetime--;
+            }
+            this.floatingTexts = this.floatingTexts.filter(t => t.lifetime > 0);
+        }
+    }
+
+    /**
+     * Render blade ability effects
+     */
+    renderBladeEffects(ctx) {
+        const camPos = this.camera.getFinalPosition();
+
+        // Render blade waves
+        if (this.bladeWaves) {
+            for (const wave of this.bladeWaves) {
+                if (!wave.active) continue;
+                const sx = wave.x - camPos.x;
+                const sy = wave.y - camPos.y;
+
+                ctx.save();
+                ctx.globalAlpha = wave.lifetime / 60;
+                ctx.shadowColor = wave.color;
+                ctx.shadowBlur = 15;
+                ctx.fillStyle = wave.color;
+
+                // Draw crescent wave shape
+                ctx.beginPath();
+                ctx.ellipse(sx, sy, wave.width / 2, wave.height / 2, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath();
+                ctx.ellipse(sx, sy, wave.width / 4, wave.height / 4, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.restore();
+            }
+        }
+
+        // Render explosions
+        if (this.explosions) {
+            for (const exp of this.explosions) {
+                const sx = exp.x - camPos.x;
+                const sy = exp.y - camPos.y;
+                const progress = 1 - (exp.lifetime / exp.maxLifetime);
+                const currentRadius = exp.radius * progress;
+
+                ctx.save();
+                ctx.globalAlpha = 1 - progress;
+                ctx.strokeStyle = exp.color;
+                ctx.lineWidth = 3;
+                ctx.shadowColor = exp.color;
+                ctx.shadowBlur = 20;
+
+                ctx.beginPath();
+                ctx.arc(sx, sy, currentRadius, 0, Math.PI * 2);
+                ctx.stroke();
+
+                // Inner ring
+                ctx.globalAlpha = (1 - progress) * 0.5;
+                ctx.beginPath();
+                ctx.arc(sx, sy, currentRadius * 0.6, 0, Math.PI * 2);
+                ctx.stroke();
+
+                ctx.restore();
+            }
+        }
+
+        // Render chain lightnings
+        if (this.chainLightnings) {
+            for (const chain of this.chainLightnings) {
+                const sx1 = chain.x1 - camPos.x;
+                const sy1 = chain.y1 - camPos.y;
+                const sx2 = chain.x2 - camPos.x;
+                const sy2 = chain.y2 - camPos.y;
+
+                ctx.save();
+                ctx.globalAlpha = chain.lifetime / 10;
+                ctx.strokeStyle = chain.color;
+                ctx.lineWidth = 2;
+                ctx.shadowColor = chain.color;
+                ctx.shadowBlur = 10;
+
+                // Draw jagged lightning
+                ctx.beginPath();
+                ctx.moveTo(sx1, sy1);
+                const segments = 4;
+                for (let i = 1; i < segments; i++) {
+                    const t = i / segments;
+                    const mx = sx1 + (sx2 - sx1) * t + (Math.random() - 0.5) * 20;
+                    const my = sy1 + (sy2 - sy1) * t + (Math.random() - 0.5) * 20;
+                    ctx.lineTo(mx, my);
+                }
+                ctx.lineTo(sx2, sy2);
+                ctx.stroke();
+
+                ctx.restore();
+            }
+        }
+
+        // Render floating texts
+        if (this.floatingTexts) {
+            for (const text of this.floatingTexts) {
+                const sx = text.x - camPos.x;
+                const sy = text.y - camPos.y;
+
+                ctx.save();
+                ctx.globalAlpha = text.lifetime / 40;
+                ctx.fillStyle = text.color;
+                ctx.font = 'bold 14px monospace';
+                ctx.textAlign = 'center';
+                ctx.shadowColor = text.color;
+                ctx.shadowBlur = 8;
+                ctx.fillText(text.text, sx, sy);
+                ctx.restore();
             }
         }
     }
@@ -726,6 +1067,14 @@ class Game {
             // Blade evolved! Show effects
             const newTier = this.bladeEvolution.getCurrentTier();
             this.hud.addMessage(`BLADE EVOLVED: ${newTier.name}`, 'evolution');
+
+            // Show ability unlock message
+            if (newTier.ability) {
+                setTimeout(() => {
+                    this.hud.addMessage(`NEW ABILITY: ${newTier.abilityDesc}`, 'success');
+                }, 500);
+            }
+
             this.renderer.flash(newTier.color, 0.6);
             this.camera.addShake(8, 30);
 
@@ -776,6 +1125,9 @@ class Game {
         if (this.boss) {
             this.boss.render(ctx, this.camera);
         }
+
+        // Render blade ability effects (waves, explosions, lightning)
+        this.renderBladeEffects(ctx);
 
         // Render player
         if (this.player) {

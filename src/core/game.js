@@ -40,6 +40,10 @@ class Game {
         this.upgradeSystem = new UpgradeSystem();
         this.dropSystem = new DropSystem();
         this.characterSystem = new CharacterSystem();
+        this.weaponSystem = new WeaponSystem();
+
+        // Laser projectiles from weapons
+        this.laserProjectiles = [];
 
         // Temp buffs from drops
         this.tempBuffs = {
@@ -285,38 +289,70 @@ class Game {
     }
 
     /**
-     * Show upgrade selection screen
+     * Show upgrade selection screen - weapon upgrades
      */
     showUpgradeSelection() {
         this.showingUpgrades = true;
         this.isPaused = true;
-        this.currentUpgradeChoices = this.upgradeSystem.getRandomChoices(3);
+
+        // Get weapon upgrade options
+        this.currentWeaponChoices = this.weaponSystem.getUpgradeOptions();
 
         const modal = document.getElementById('upgrade-modal');
         const choicesContainer = document.getElementById('upgrade-choices');
+        const title = modal.querySelector('.upgrade-title');
+        if (title) title.textContent = 'CHOOSE WEAPON TO UPGRADE';
 
         // Clear previous choices
         choicesContainer.innerHTML = '';
 
-        // Create upgrade cards
-        this.currentUpgradeChoices.forEach((upgrade, index) => {
+        // Create weapon upgrade cards
+        this.currentWeaponChoices.forEach((option, index) => {
             const card = document.createElement('div');
-            card.className = 'upgrade-card';
-            card.style.setProperty('--upgrade-color', upgrade.color);
+            card.className = 'upgrade-card weapon-upgrade';
+            card.style.setProperty('--upgrade-color', option.color);
 
-            card.innerHTML = `
-                <span class="upgrade-rarity ${upgrade.rarity}">${upgrade.rarity}</span>
-                <div class="upgrade-icon">${upgrade.icon}</div>
-                <div class="upgrade-name">${upgrade.name}</div>
-                <div class="upgrade-description">${upgrade.description}</div>
-                <div class="upgrade-effects">
-                    ${upgrade.positive.map(p => `<div class="upgrade-positive">${p}</div>`).join('')}
-                    ${upgrade.negative.map(n => `<div class="upgrade-negative">${n}</div>`).join('')}
-                </div>
-                <span class="upgrade-key">${index + 1}</span>
-            `;
+            if (option.isMaxed) {
+                // Max level weapon
+                card.innerHTML = `
+                    <span class="upgrade-rarity legendary">MAX LEVEL</span>
+                    <div class="upgrade-icon">⚔</div>
+                    <div class="upgrade-name">${option.currentTier.name}</div>
+                    <div class="upgrade-description">${option.weaponName} - FULLY EVOLVED</div>
+                    <div class="upgrade-effects">
+                        <div class="upgrade-positive">LASER SWORD UNLOCKED</div>
+                        <div class="weapon-stats">
+                            <div>DMG: ${(option.currentTier.damage * 100).toFixed(0)}%</div>
+                            <div>SPD: ${(option.currentTier.speed * 100).toFixed(0)}%</div>
+                        </div>
+                    </div>
+                    <span class="upgrade-key">${index + 1}</span>
+                `;
+                card.classList.add('maxed');
+            } else {
+                // Upgradeable weapon
+                const isLaserNext = option.nextTier.isLaser;
+                card.innerHTML = `
+                    <span class="upgrade-rarity ${isLaserNext ? 'legendary' : 'uncommon'}">LV${option.currentLevel} → LV${option.nextLevel}</span>
+                    <div class="upgrade-icon">⚔</div>
+                    <div class="upgrade-name">${option.nextTier.name}</div>
+                    <div class="upgrade-description">${option.weaponName}</div>
+                    <div class="upgrade-effects">
+                        <div class="upgrade-positive">DMG: ${(option.currentTier.damage * 100).toFixed(0)}% → ${(option.nextTier.damage * 100).toFixed(0)}%</div>
+                        <div class="upgrade-positive">SPD: ${(option.currentTier.speed * 100).toFixed(0)}% → ${(option.nextTier.speed * 100).toFixed(0)}%</div>
+                        ${option.nextTier.ability ? `<div class="upgrade-positive">+${option.nextTier.ability.toUpperCase()}</div>` : ''}
+                        ${isLaserNext ? '<div class="upgrade-positive laser-unlock">LASER SWORD UNLOCKED!</div>' : ''}
+                    </div>
+                    <div class="weapon-tier-progress">
+                        ${Array(option.maxLevel).fill(0).map((_, i) =>
+                            `<span class="tier-dot ${i < option.currentLevel ? 'filled' : ''} ${i === option.currentLevel ? 'next' : ''}"></span>`
+                        ).join('')}
+                    </div>
+                    <span class="upgrade-key">${index + 1}</span>
+                `;
+            }
 
-            card.addEventListener('click', () => this.selectUpgrade(index));
+            card.addEventListener('click', () => this.selectWeaponUpgrade(index));
             choicesContainer.appendChild(card);
         });
 
@@ -326,8 +362,8 @@ class Game {
         this.upgradeKeyHandler = (e) => {
             if (e.key === '1' || e.key === '2' || e.key === '3') {
                 const index = parseInt(e.key) - 1;
-                if (index < this.currentUpgradeChoices.length) {
-                    this.selectUpgrade(index);
+                if (index < this.currentWeaponChoices.length) {
+                    this.selectWeaponUpgrade(index);
                 }
             }
         };
@@ -335,7 +371,57 @@ class Game {
     }
 
     /**
-     * Select an upgrade
+     * Select a weapon upgrade
+     */
+    selectWeaponUpgrade(index) {
+        if (!this.showingUpgrades || index >= this.currentWeaponChoices.length) return;
+
+        const option = this.currentWeaponChoices[index];
+
+        // Check if already maxed
+        if (option.isMaxed) {
+            this.hud.addMessage(`${option.weaponName} IS ALREADY AT MAX LEVEL`, 'warning');
+            return;
+        }
+
+        // Apply the weapon upgrade
+        const result = this.weaponSystem.upgradeWeapon(option.slotIndex);
+
+        if (result.success) {
+            // Show message
+            this.hud.addMessage(`WEAPON EVOLVED: ${result.newTier.name}`, 'evolution');
+
+            if (result.newTier.isLaser) {
+                setTimeout(() => {
+                    this.hud.addMessage('LASER SWORD UNLOCKED!', 'success');
+                }, 500);
+            }
+
+            // Hide modal
+            const modal = document.getElementById('upgrade-modal');
+            modal.classList.add('hidden');
+
+            // Remove keyboard listener
+            if (this.upgradeKeyHandler) {
+                window.removeEventListener('keydown', this.upgradeKeyHandler);
+                this.upgradeKeyHandler = null;
+            }
+
+            this.showingUpgrades = false;
+
+            // Flash effect
+            this.renderer.flash(result.newTier.color, 0.5);
+            this.camera.addShake(5, 15);
+
+            // Proceed to next level after brief delay
+            setTimeout(() => {
+                this.nextLevel();
+            }, 500);
+        }
+    }
+
+    /**
+     * Select an upgrade (legacy - for roguelike upgrades)
      */
     selectUpgrade(index) {
         if (!this.showingUpgrades || index >= this.currentUpgradeChoices.length) return;
@@ -673,6 +759,26 @@ class Game {
             return;
         }
 
+        // Weapon switching with 1, 2, 3 keys
+        if (this.input.isKeyJustPressed('Digit1') || this.input.isKeyJustPressed('Numpad1')) {
+            if (this.weaponSystem.switchTo(0)) {
+                this.hud.addMessage(`WEAPON: ${this.weaponSystem.getActiveTierData().name}`, 'system');
+            }
+        }
+        if (this.input.isKeyJustPressed('Digit2') || this.input.isKeyJustPressed('Numpad2')) {
+            if (this.weaponSystem.switchTo(1)) {
+                this.hud.addMessage(`WEAPON: ${this.weaponSystem.getActiveTierData().name}`, 'system');
+            }
+        }
+        if (this.input.isKeyJustPressed('Digit3') || this.input.isKeyJustPressed('Numpad3')) {
+            if (this.weaponSystem.switchTo(2)) {
+                this.hud.addMessage(`WEAPON: ${this.weaponSystem.getActiveTierData().name}`, 'system');
+            }
+        }
+
+        // Update weapon system
+        this.weaponSystem.update();
+
         // Update player
         if (this.player && this.player.active) {
             // Store previous position for cycle cost calculation
@@ -928,8 +1034,9 @@ class Game {
         const attackBounds = this.player.getAttackBounds();
         if (!attackBounds) return;
 
-        // Get damage with blade multiplier AND upgrade multipliers
+        // Get damage with weapon multiplier AND upgrade multipliers
         const baseDamage = 25;
+        const weaponMultiplier = this.weaponSystem.getDamageMultiplier();
         const bladeMultiplier = this.bladeEvolution.getDamageMultiplier();
         const upgradeMultiplier = this.upgradeSystem.getDamageMultiplier(this.player);
 
@@ -945,7 +1052,7 @@ class Game {
         }
 
         // Calculate damage with potential crit
-        let rawDamage = baseDamage * bladeMultiplier * upgradeMultiplier * tempDamageBoost * permDamageBoost * speedBonus;
+        let rawDamage = baseDamage * weaponMultiplier * bladeMultiplier * upgradeMultiplier * tempDamageBoost * permDamageBoost * speedBonus;
 
         // Character special: Phantom's crit chance
         let extraCritChance = this.player.characterSpecial?.critChance || 0;
@@ -1069,6 +1176,33 @@ class Game {
         // Wave ability - spawn projectile on attack start (once per attack)
         if (this.bladeEvolution.hasAbility('wave') && this.player.attackFrame === 1) {
             this.spawnBladeWave(tier);
+        }
+
+        // Weapon laser ability - spawn laser on attack (once per attack)
+        if (this.player.attackFrame === 1) {
+            const weaponTier = this.weaponSystem.getActiveTierData();
+
+            // Max tier weapon always shoots laser
+            if (weaponTier.isLaser) {
+                const lasers = this.weaponSystem.createLaser(
+                    this.player.x,
+                    this.player.y,
+                    this.player.facingRight,
+                    this.player
+                );
+                this.laserProjectiles.push(...lasers);
+                this.hud.addMessage('', ''); // trigger visual without message
+            }
+            // Tier 4 weapons have a chance to shoot laser
+            else if (weaponTier.laserChance && Math.random() < weaponTier.laserChance) {
+                const lasers = this.weaponSystem.createLaser(
+                    this.player.x,
+                    this.player.y,
+                    this.player.facingRight,
+                    this.player
+                );
+                this.laserProjectiles.push(...lasers);
+            }
         }
     }
 
@@ -1308,6 +1442,69 @@ class Game {
             }
             this.floatingTexts = this.floatingTexts.filter(t => t.lifetime > 0);
         }
+
+        // Update laser projectiles
+        if (this.laserProjectiles) {
+            for (const laser of this.laserProjectiles) {
+                if (!laser.active) continue;
+
+                laser.x += laser.vx;
+                laser.y += laser.vy;
+                laser.lifetime--;
+
+                if (laser.lifetime <= 0) {
+                    laser.active = false;
+                    continue;
+                }
+
+                // Check collision with enemies
+                for (const enemy of this.enemies) {
+                    if (!enemy.active) continue;
+                    const dx = enemy.x - laser.x;
+                    const dy = enemy.y - laser.y;
+                    if (Math.abs(dx) < laser.width + 20 && Math.abs(dy) < laser.height + 20) {
+                        enemy.takeDamage(laser.damage);
+                        // Lasers pierce through enemies
+                        this.camera.addShake(2, 3);
+                        // Spawn hit effect
+                        this.spawnLaserHitEffect(enemy.x, enemy.y, laser.color);
+                    }
+                }
+
+                // Check boss
+                if (this.boss && this.boss.active) {
+                    const dx = this.boss.x - laser.x;
+                    const dy = this.boss.y - laser.y;
+                    if (Math.abs(dx) < laser.width + 40 && Math.abs(dy) < laser.height + 40) {
+                        this.boss.takeDamage(laser.damage);
+                        this.camera.addShake(3, 5);
+                        this.spawnLaserHitEffect(this.boss.x, this.boss.y, laser.color);
+                    }
+                }
+            }
+            this.laserProjectiles = this.laserProjectiles.filter(l => l.active);
+        }
+
+        // Update laser hit effects
+        if (this.laserHits) {
+            for (const hit of this.laserHits) {
+                hit.lifetime--;
+            }
+            this.laserHits = this.laserHits.filter(h => h.lifetime > 0);
+        }
+    }
+
+    /**
+     * Spawn laser hit effect
+     */
+    spawnLaserHitEffect(x, y, color) {
+        if (!this.laserHits) this.laserHits = [];
+        this.laserHits.push({
+            x, y,
+            color,
+            lifetime: 8,
+            maxLifetime: 8
+        });
     }
 
     /**
@@ -1421,6 +1618,74 @@ class Game {
                 ctx.restore();
             }
         }
+
+        // Render laser projectiles
+        if (this.laserProjectiles) {
+            for (const laser of this.laserProjectiles) {
+                if (!laser.active) continue;
+                const sx = laser.x - camPos.x;
+                const sy = laser.y - camPos.y;
+
+                ctx.save();
+                ctx.globalAlpha = laser.lifetime / 60;
+
+                // Outer glow
+                ctx.shadowColor = laser.glow || laser.color;
+                ctx.shadowBlur = 20;
+
+                // Main laser beam
+                ctx.fillStyle = laser.color;
+                ctx.beginPath();
+                ctx.ellipse(sx, sy, laser.width, laser.height / 2, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Core (white center)
+                ctx.fillStyle = '#ffffff';
+                ctx.shadowBlur = 10;
+                ctx.beginPath();
+                ctx.ellipse(sx, sy, laser.width * 0.6, laser.height / 4, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Leading edge spark
+                const sparkX = sx + (laser.vx > 0 ? laser.width : -laser.width);
+                ctx.fillStyle = laser.color;
+                ctx.beginPath();
+                ctx.arc(sparkX, sy, 4, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.restore();
+            }
+        }
+
+        // Render laser hit effects
+        if (this.laserHits) {
+            for (const hit of this.laserHits) {
+                const sx = hit.x - camPos.x;
+                const sy = hit.y - camPos.y;
+                const progress = 1 - (hit.lifetime / hit.maxLifetime);
+                const radius = 10 + progress * 20;
+
+                ctx.save();
+                ctx.globalAlpha = 1 - progress;
+                ctx.strokeStyle = hit.color;
+                ctx.lineWidth = 3;
+                ctx.shadowColor = hit.color;
+                ctx.shadowBlur = 15;
+
+                ctx.beginPath();
+                ctx.arc(sx, sy, radius, 0, Math.PI * 2);
+                ctx.stroke();
+
+                // Inner flash
+                ctx.fillStyle = '#ffffff';
+                ctx.globalAlpha = (1 - progress) * 0.5;
+                ctx.beginPath();
+                ctx.arc(sx, sy, radius * 0.3, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.restore();
+            }
+        }
     }
 
     /**
@@ -1521,6 +1786,9 @@ class Game {
 
         // Render active buff indicators
         this.dropSystem.renderBuffBar(ctx, 20, this.canvas.height - 70);
+
+        // Render weapon slots
+        this.weaponSystem.renderSlots(ctx, this.canvas.width - 220, 20);
 
         // Render pause overlay
         if (this.isPaused) {
@@ -1696,6 +1964,11 @@ class Game {
 
         // Reset drop system
         this.dropSystem.reset();
+
+        // Reset weapon system
+        this.weaponSystem.reset();
+        this.laserProjectiles = [];
+        this.laserHits = [];
 
         // Reset temp buffs
         this.tempBuffs = {

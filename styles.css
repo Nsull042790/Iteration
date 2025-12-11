@@ -1118,3 +1118,68 @@ body {
         justify-content: center;
     }
 }
+
+/* ============================================
+   Weapon Upgrade Cards
+   ============================================ */
+
+.upgrade-card.weapon-upgrade {
+    min-height: 220px;
+}
+
+.upgrade-card.weapon-upgrade .upgrade-icon {
+    font-size: 32px;
+    color: var(--upgrade-color, #00f0ff);
+    text-shadow: 0 0 15px var(--upgrade-color, #00f0ff);
+}
+
+.upgrade-card.maxed {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.upgrade-card.maxed:hover {
+    transform: none;
+    box-shadow: none;
+}
+
+.weapon-stats {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin-top: 8px;
+    font-size: 11px;
+    color: var(--upgrade-color, #00f0ff);
+}
+
+.weapon-tier-progress {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+    margin-top: 12px;
+}
+
+.tier-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.tier-dot.filled {
+    background: var(--upgrade-color, #00f0ff);
+    box-shadow: 0 0 8px var(--upgrade-color, #00f0ff);
+}
+
+.tier-dot.next {
+    background: rgba(255, 255, 255, 0.4);
+    animation: pulse 1s ease-in-out infinite;
+}
+
+.laser-unlock {
+    color: #ffff00 !important;
+    font-weight: bold;
+    text-shadow: 0 0 10px rgba(255, 255, 0, 0.5);
+    animation: pulse 0.5s ease-in-out infinite;
+}

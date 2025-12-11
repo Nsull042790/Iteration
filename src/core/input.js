@@ -153,4 +153,18 @@ class InputHandler {
         if (this.isActionHeld('down')) v += 1;
         return v;
     }
+
+    /**
+     * Check if a specific key was just pressed (by key code)
+     */
+    isKeyJustPressed(keyCode) {
+        return this.justPressed[keyCode] === true;
+    }
+
+    /**
+     * Check if a specific key is currently held (by key code)
+     */
+    isKeyHeld(keyCode) {
+        return this.keys[keyCode] === true;
+    }
 }

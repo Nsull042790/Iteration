@@ -210,6 +210,7 @@ class Player extends Entity {
 
     /**
      * Take damage
+     * Returns true if damage was taken, false if invincible
      */
     takeDamage(amount) {
         if (this.invincibilityFrames > 0) return false;
@@ -219,7 +220,8 @@ class Player extends Entity {
 
         if (this.health <= 0) {
             this.health = 0;
-            this.die();
+            // Don't call die() here - let game.js handle death detection
+            // This ensures handlePlayerDeath() can run properly
         }
 
         return true;

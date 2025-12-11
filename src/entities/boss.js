@@ -417,9 +417,9 @@ class Boss extends Entity {
         // Spawn hit particles
         this.spawnHitParticles();
 
-        // Stun briefly on big hits
-        if (amount >= 30) {
-            this.stunTimer = 20;
+        // Only stun on massive hits (50+ damage) - rare/special attacks only
+        if (amount >= 50) {
+            this.stunTimer = 15;
             this.aiState = 'idle';
         }
 

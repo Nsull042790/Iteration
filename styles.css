@@ -732,6 +732,158 @@ body {
 }
 
 /* ============================================
+   Upgrade Selection Modal
+   ============================================ */
+
+.upgrade-content {
+    border-color: #00ff88;
+    box-shadow:
+        0 0 30px rgba(0, 255, 136, 0.3),
+        inset 0 0 60px rgba(0, 255, 136, 0.05);
+    max-width: 900px;
+    width: 90%;
+}
+
+.upgrade-title {
+    color: #00ff88 !important;
+    text-shadow: 0 0 20px rgba(0, 255, 136, 0.5) !important;
+}
+
+.upgrade-choices {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin: 30px 0;
+    flex-wrap: wrap;
+}
+
+.upgrade-card {
+    background: rgba(10, 10, 20, 0.9);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    padding: 20px;
+    width: 250px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.upgrade-card:hover {
+    transform: translateY(-5px);
+    border-color: var(--upgrade-color, #00ff88);
+    box-shadow: 0 10px 30px rgba(0, 255, 136, 0.3);
+}
+
+.upgrade-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--upgrade-color, #00ff88);
+}
+
+.upgrade-icon {
+    font-size: 32px;
+    text-align: center;
+    margin-bottom: 10px;
+    filter: drop-shadow(0 0 10px var(--upgrade-color, #00ff88));
+}
+
+.upgrade-name {
+    font-size: 14px;
+    font-weight: bold;
+    color: var(--upgrade-color, #00ff88);
+    text-align: center;
+    margin-bottom: 5px;
+    letter-spacing: 2px;
+}
+
+.upgrade-description {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.5);
+    text-align: center;
+    margin-bottom: 15px;
+}
+
+.upgrade-effects {
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding-top: 12px;
+}
+
+.upgrade-positive {
+    color: #00ff88;
+    font-size: 12px;
+    margin: 4px 0;
+}
+
+.upgrade-positive::before {
+    content: '+ ';
+}
+
+.upgrade-negative {
+    color: #ff4444;
+    font-size: 12px;
+    margin: 4px 0;
+}
+
+.upgrade-negative::before {
+    content: '- ';
+}
+
+.upgrade-rarity {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    font-size: 9px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.upgrade-rarity.common {
+    background: rgba(150, 150, 150, 0.3);
+    color: #aaaaaa;
+}
+
+.upgrade-rarity.uncommon {
+    background: rgba(0, 255, 136, 0.2);
+    color: #00ff88;
+}
+
+.upgrade-rarity.rare {
+    background: rgba(0, 170, 255, 0.2);
+    color: #00aaff;
+}
+
+.upgrade-rarity.legendary {
+    background: rgba(255, 170, 0, 0.2);
+    color: #ffaa00;
+}
+
+.upgrade-key {
+    position: absolute;
+    bottom: 8px;
+    left: 8px;
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 2px 6px;
+    border-radius: 3px;
+}
+
+.upgrade-hint {
+    text-align: center;
+    color: rgba(255, 255, 255, 0.3);
+    font-size: 12px;
+    letter-spacing: 2px;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+/* ============================================
    Glow effects
    ============================================ */
 

@@ -53,7 +53,7 @@
                         <div class="footer-item">STATUS: <span class="cyan">READY</span></div>
                         <div class="footer-item">GHOSTS: <span class="cyan">0</span></div>
                         <div class="footer-item">BLADE: <span class="magenta">STANDARD</span></div>
-                        <div class="footer-item version">v0.4.0</div>
+                        <div class="footer-item version">v0.5.0</div>
                     </div>
                 </div>
             </div>
@@ -96,6 +96,22 @@
                 </div>
 
                 <div class="gameover-hint">Press SPACE or ENTER to restart</div>
+            </div>
+        </div>
+
+        <!-- Upgrade Selection Modal -->
+        <div id="upgrade-modal" class="screen hidden">
+            <div class="modal-content upgrade-content">
+                <div class="modal-header">
+                    <div class="modal-title upgrade-title">EVOLUTION DETECTED</div>
+                    <div class="modal-subtitle">// SELECT UPGRADE PROTOCOL</div>
+                </div>
+
+                <div class="upgrade-choices" id="upgrade-choices">
+                    <!-- Upgrade cards will be generated here -->
+                </div>
+
+                <div class="upgrade-hint">Click to select or press 1, 2, 3</div>
             </div>
         </div>
 
@@ -188,6 +204,7 @@
     <script src="src/levels/room.js"></script>
     <script src="src/systems/cycles.js"></script>
     <script src="src/systems/blade-evolution.js"></script>
+    <script src="src/systems/upgrades.js"></script>
     <script src="src/ui/hud.js"></script>
     <script src="src/core/renderer.js"></script>
     <script src="src/core/game.js"></script>

@@ -37,6 +37,11 @@ class Game {
         this.interactables = [];
         this.cycles = new CyclesSystem();
         this.bladeEvolution = new BladeEvolution();
+        this.upgradeSystem = new UpgradeSystem();
+
+        // Upgrade selection state
+        this.showingUpgrades = false;
+        this.currentUpgradeChoices = [];
 
         // Level progression
         this.currentLevel = 1;
@@ -238,7 +243,6 @@ class Game {
         if (this.currentLevel % 3 === 1 && this.currentLevel > 1) {
             this.currentZoneIndex = Math.min(this.currentZoneIndex + 1, this.zones.length - 1);
             this.currentZone = this.zones[this.currentZoneIndex];
-            this.hud.addMessage(`ENTERING: ${this.currentZone}`, 'system');
         }
 
         // Bonus cycles for completing level
@@ -246,35 +250,112 @@ class Game {
         this.cycles.gain(levelBonus);
         this.hud.addMessage(`LEVEL COMPLETE! +${levelBonus} CYCLES`, 'success');
 
-        // Spawn exit portal near the player's position
-        const portalX = Math.min(this.player.x + 150, this.currentRoom.width - 150);
-        const portalY = this.player.y - 20; // Slightly above player
-        const exitPortal = new Interactable(portalX, portalY, 'exit_portal');
-        this.interactables.push(exitPortal);
+        // Second Wind upgrade - heal after boss
+        if (this.upgradeSystem.hasUpgrade('second_wind')) {
+            const healAmount = Math.floor(this.player.maxHealth * 0.30);
+            this.player.health = Math.min(this.player.health + healAmount, this.player.maxHealth);
+            this.hud.addMessage(`SECOND WIND: +${healAmount} HP`, 'success');
+        }
 
-        // Show prominent message
-        this.hud.addMessage('>>> PORTAL OPENED - Press E to proceed <<<', 'evolution');
+        // Show upgrade selection after a brief delay
+        setTimeout(() => {
+            this.showUpgradeSelection();
+        }, 1000);
+    }
 
-        // Auto-proceed to next level after 5 seconds
-        this.autoProgressTimer = setTimeout(() => {
-            if (this.levelComplete) {
-                this.nextLevel();
+    /**
+     * Show upgrade selection screen
+     */
+    showUpgradeSelection() {
+        this.showingUpgrades = true;
+        this.isPaused = true;
+        this.currentUpgradeChoices = this.upgradeSystem.getRandomChoices(3);
+
+        const modal = document.getElementById('upgrade-modal');
+        const choicesContainer = document.getElementById('upgrade-choices');
+
+        // Clear previous choices
+        choicesContainer.innerHTML = '';
+
+        // Create upgrade cards
+        this.currentUpgradeChoices.forEach((upgrade, index) => {
+            const card = document.createElement('div');
+            card.className = 'upgrade-card';
+            card.style.setProperty('--upgrade-color', upgrade.color);
+
+            card.innerHTML = `
+                <span class="upgrade-rarity ${upgrade.rarity}">${upgrade.rarity}</span>
+                <div class="upgrade-icon">${upgrade.icon}</div>
+                <div class="upgrade-name">${upgrade.name}</div>
+                <div class="upgrade-description">${upgrade.description}</div>
+                <div class="upgrade-effects">
+                    ${upgrade.positive.map(p => `<div class="upgrade-positive">${p}</div>`).join('')}
+                    ${upgrade.negative.map(n => `<div class="upgrade-negative">${n}</div>`).join('')}
+                </div>
+                <span class="upgrade-key">${index + 1}</span>
+            `;
+
+            card.addEventListener('click', () => this.selectUpgrade(index));
+            choicesContainer.appendChild(card);
+        });
+
+        modal.classList.remove('hidden');
+
+        // Setup keyboard listener
+        this.upgradeKeyHandler = (e) => {
+            if (e.key === '1' || e.key === '2' || e.key === '3') {
+                const index = parseInt(e.key) - 1;
+                if (index < this.currentUpgradeChoices.length) {
+                    this.selectUpgrade(index);
+                }
             }
-        }, 5000);
+        };
+        window.addEventListener('keydown', this.upgradeKeyHandler);
+    }
+
+    /**
+     * Select an upgrade
+     */
+    selectUpgrade(index) {
+        if (!this.showingUpgrades || index >= this.currentUpgradeChoices.length) return;
+
+        const upgrade = this.currentUpgradeChoices[index];
+
+        // Apply the upgrade
+        this.upgradeSystem.applyUpgrade(upgrade, this);
+
+        // Show message
+        this.hud.addMessage(`UPGRADE ACQUIRED: ${upgrade.name}`, 'evolution');
+
+        // Hide modal
+        const modal = document.getElementById('upgrade-modal');
+        modal.classList.add('hidden');
+
+        // Remove keyboard listener
+        if (this.upgradeKeyHandler) {
+            window.removeEventListener('keydown', this.upgradeKeyHandler);
+            this.upgradeKeyHandler = null;
+        }
+
+        this.showingUpgrades = false;
+
+        // Flash effect
+        this.renderer.flash(upgrade.color, 0.5);
+        this.camera.addShake(5, 15);
+
+        // Proceed to next level after brief delay
+        setTimeout(() => {
+            this.nextLevel();
+        }, 500);
     }
 
     /**
      * Progress to next level
      */
     nextLevel() {
-        // Clear auto-progress timer if it exists
-        if (this.autoProgressTimer) {
-            clearTimeout(this.autoProgressTimer);
-            this.autoProgressTimer = null;
-        }
-
-        // Reset level complete flag
+        // Reset level complete flag and unpause
         this.levelComplete = false;
+        this.isPaused = false;
 
         this.renderer.flash('#ffffff', 0.5);
 
@@ -294,6 +375,11 @@ class Game {
             this.player.y = this.currentRoom.spawnPoint.y;
             this.player.velocityX = 0;
             this.player.velocityY = 0;
+
+            // Zone change message
+            if (this.currentLevel % 3 === 1 && this.currentLevel > 1) {
+                this.hud.addMessage(`ENTERING: ${this.currentZone}`, 'system');
+            }
 
             this.hud.addMessage(`LEVEL ${this.currentLevel} - ${this.currentZone}`, 'system');
         }, 500);
@@ -688,9 +774,16 @@ class Game {
         const attackBounds = this.player.getAttackBounds();
         if (!attackBounds) return;
 
-        // Get damage with blade multiplier
+        // Get damage with blade multiplier AND upgrade multipliers
         const baseDamage = 25;
-        const damage = Math.floor(baseDamage * this.bladeEvolution.getDamageMultiplier());
+        const bladeMultiplier = this.bladeEvolution.getDamageMultiplier();
+        const upgradeMultiplier = this.upgradeSystem.getDamageMultiplier(this.player);
+
+        // Calculate damage with potential crit
+        let rawDamage = baseDamage * bladeMultiplier * upgradeMultiplier;
+        const { damage: finalDamage, isCrit } = this.upgradeSystem.calculateDamage(rawDamage);
+        const damage = Math.floor(finalDamage);
+
         const tier = this.bladeEvolution.getCurrentTier();
 
         // Track hits for chain ability
@@ -709,29 +802,36 @@ class Game {
                 totalDamageDealt += damage;
                 hitEnemies.push({ enemy, x: enemy.x, y: enemy.y, killed });
 
+                // Crit indicator
+                if (isCrit) {
+                    this.spawnCritText(enemy.x, enemy.y - 20, damage);
+                }
+
                 // Explosive ability - AOE damage
                 if (this.bladeEvolution.hasAbility('explosive') && tier.explosionRadius) {
                     this.triggerExplosion(enemy.x, enemy.y, tier.explosionRadius, damage * tier.explosionDamage);
                 }
 
                 if (killed) {
-                    // Gain cycles from kill
-                    this.cycles.gain(50);
+                    // Gain cycles from kill (with upgrade multiplier)
+                    const cycleGain = Math.floor(50 * this.upgradeSystem.modifiers.cycleGainMultiplier);
+                    this.cycles.gain(cycleGain);
                     this.killCount++;
                     this.totalKills++;
 
                     // Heal player on kill
                     const healAmount = 10;
                     this.player.health = Math.min(this.player.health + healAmount, this.player.maxHealth);
-                    this.hud.addMessage(`+50 CYCLES +${healAmount} HP`, 'success');
+                    this.hud.addMessage(`+${cycleGain} CYCLES +${healAmount} HP`, 'success');
 
-                    // Gain blade XP from kill
-                    this.addBladeXP(10);
+                    // Gain blade XP from kill (with upgrade multiplier)
+                    const xpGain = Math.floor(10 * this.upgradeSystem.modifiers.xpMultiplier);
+                    this.addBladeXP(xpGain);
                 }
 
-                // Visual feedback - use blade color
-                this.camera.addShake(3, 5);
-                this.renderer.flash(this.bladeEvolution.getBladeColor(), 0.2);
+                // Visual feedback - use blade color (extra shake for crits)
+                this.camera.addShake(isCrit ? 6 : 3, isCrit ? 10 : 5);
+                this.renderer.flash(isCrit ? '#ffffff' : this.bladeEvolution.getBladeColor(), isCrit ? 0.4 : 0.2);
             }
         }
 
@@ -740,12 +840,18 @@ class Game {
             this.triggerChainDamage(hitEnemies, damage * tier.chainDamage, tier.chainRange, tier.maxChains || 2);
         }
 
-        // Lifesteal ability - heal based on damage dealt
-        if (this.bladeEvolution.hasAbility('lifesteal') && totalDamageDealt > 0 && tier.lifestealPercent) {
-            const healAmount = Math.floor(totalDamageDealt * tier.lifestealPercent);
+        // Lifesteal from blade ability
+        let lifestealPercent = 0;
+        if (this.bladeEvolution.hasAbility('lifesteal') && tier.lifestealPercent) {
+            lifestealPercent += tier.lifestealPercent;
+        }
+        // Add lifesteal from upgrades
+        lifestealPercent += this.upgradeSystem.getLifestealPercent();
+
+        if (lifestealPercent > 0 && totalDamageDealt > 0) {
+            const healAmount = Math.floor(totalDamageDealt * lifestealPercent);
             if (healAmount > 0) {
                 this.player.health = Math.min(this.player.health + healAmount, this.player.maxHealth);
-                // Visual feedback for lifesteal
                 this.spawnHealParticle(this.player.x, this.player.y, healAmount);
             }
         }
@@ -755,13 +861,13 @@ class Game {
             const bossBounds = this.boss.getBounds();
 
             if (Utils.rectsOverlap(attackBounds, bossBounds)) {
-                // Hit the boss with blade damage
-                const bossDamage = Math.floor(20 * this.bladeEvolution.getDamageMultiplier());
+                // Hit the boss with blade damage + upgrade multipliers
+                const bossDamage = Math.floor(20 * bladeMultiplier * upgradeMultiplier);
                 const killed = this.boss.takeDamage(bossDamage);
 
                 // Lifesteal on boss
-                if (this.bladeEvolution.hasAbility('lifesteal') && tier.lifestealPercent) {
-                    const healAmount = Math.floor(bossDamage * tier.lifestealPercent);
+                if (lifestealPercent > 0) {
+                    const healAmount = Math.floor(bossDamage * lifestealPercent);
                     if (healAmount > 0) {
                         this.player.health = Math.min(this.player.health + healAmount, this.player.maxHealth);
                         this.spawnHealParticle(this.player.x, this.player.y, healAmount);
@@ -866,6 +972,20 @@ class Game {
             color: '#00ff88',
             lifetime: 40,
             vy: -1
+        });
+    }
+
+    /**
+     * Spawn crit text effect
+     */
+    spawnCritText(x, y, damage) {
+        if (!this.floatingTexts) this.floatingTexts = [];
+        this.floatingTexts.push({
+            x, y,
+            text: `CRIT! ${damage}`,
+            color: '#ffff00',
+            lifetime: 50,
+            vy: -1.5
         });
     }
 
@@ -1338,6 +1458,9 @@ class Game {
         // Reset blade evolution
         this.bladeEvolution.reset();
         this.updatePlayerBlade();
+
+        // Reset upgrade system
+        this.upgradeSystem.reset();
 
         // Generate fresh random room
         this.currentRoom = generateRandomRoom(1);

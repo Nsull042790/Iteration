@@ -90,6 +90,9 @@ class HUD {
         // Render zone/room indicator (top right)
         this.renderZoneIndicator(ctx, gameState.currentZone, gameState.currentRoom);
 
+        // Render ghost counter (under zone indicator)
+        this.renderGhostCounter(ctx, gameState.ghostCount || 0, gameState.totalDeaths || 0);
+
         // Render progression bar (bottom center)
         this.renderProgressBar(ctx, gameState);
 
@@ -312,7 +315,38 @@ class HUD {
         // Version number
         ctx.font = '10px "Courier New", monospace';
         ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
-        ctx.fillText('v0.0.9', x, y + 44);
+        ctx.fillText('v0.8.0', x, y + 44);
+
+        ctx.restore();
+    }
+
+    /**
+     * Render ghost counter
+     */
+    renderGhostCounter(ctx, ghostCount, totalDeaths) {
+        const x = this.width - this.padding;
+        const y = this.padding + 60;
+
+        ctx.save();
+        ctx.textAlign = 'right';
+        ctx.font = '11px "Courier New", monospace';
+
+        // Ghost icon and count
+        const ghostColor = ghostCount > 0 ? GAME_CONFIG.COLORS.GHOST : 'rgba(255, 255, 255, 0.3)';
+        ctx.fillStyle = ghostColor;
+
+        if (ghostCount > 0) {
+            ctx.shadowColor = ghostColor;
+            ctx.shadowBlur = 8;
+        }
+
+        ctx.fillText(`GHOSTS: ${ghostCount}`, x, y);
+
+        // Total deaths (smaller, dimmer)
+        ctx.shadowBlur = 0;
+        ctx.font = '9px "Courier New", monospace';
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+        ctx.fillText(`TOTAL DEATHS: ${totalDeaths}`, x, y + 14);
 
         ctx.restore();
     }

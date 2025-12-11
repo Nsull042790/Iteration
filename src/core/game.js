@@ -41,6 +41,7 @@ class Game {
         this.dropSystem = new DropSystem();
         this.characterSystem = new CharacterSystem();
         this.weaponSystem = new WeaponSystem();
+        this.ghostSystem = new GhostSystem();
 
         // Laser projectiles from weapons
         this.laserProjectiles = [];
@@ -146,6 +147,10 @@ class Game {
         this.bossSpawned = false;
         this.levelComplete = false;
         this.enemiesKilledInLevel = 0;
+
+        // Spawn ghosts from past deaths
+        const roomWidth = this.currentRoom ? this.currentRoom.width : 1600;
+        this.ghostSystem.spawnGhostsForLevel(this.currentLevel, roomWidth);
 
         // Calculate enemy count based on level
         this.maxEnemiesInLevel = 3 + Math.floor(this.currentLevel * 1.5);
@@ -819,12 +824,12 @@ class Game {
 
             // Check for death by falling
             if (this.player.y > this.currentRoom.height + 100) {
-                this.handlePlayerDeath();
+                this.handlePlayerDeath('fall');
             }
 
             // Check for death by health depletion
             if (this.player.health <= 0) {
-                this.handlePlayerDeath();
+                this.handlePlayerDeath('enemy');
             }
 
             // Check attack hits on enemies
@@ -900,7 +905,7 @@ class Game {
                     this.renderer.flash(GAME_CONFIG.COLORS.MAGENTA, 0.4);
                     // Check for death immediately after taking damage
                     if (this.player.health <= 0) {
-                        this.handlePlayerDeath();
+                        this.handlePlayerDeath('boss');
                     }
                 }
             }
@@ -917,7 +922,7 @@ class Game {
                             this.camera.addShake(4, 8);
                             // Check for death immediately after taking damage
                             if (this.player.health <= 0) {
-                                this.handlePlayerDeath();
+                                this.handlePlayerDeath('boss');
                             }
                         }
                     }
@@ -999,6 +1004,9 @@ class Game {
 
         // Update drop system
         this.dropSystem.update(this);
+
+        // Update ghost system
+        this.ghostSystem.update(this);
 
         // Character special: Chrome's regeneration
         if (this.player.characterSpecial?.regenRate) {
@@ -1763,6 +1771,9 @@ class Game {
         // Render drops
         this.dropSystem.render(ctx, this.camera);
 
+        // Render ghosts
+        this.ghostSystem.render(ctx, this.camera);
+
         // Render player
         if (this.player) {
             this.player.render(ctx, this.camera);
@@ -1781,7 +1792,9 @@ class Game {
             bossSpawned: this.bossSpawned,
             boss: this.boss,
             levelComplete: this.levelComplete,
-            showControls: this.showControls
+            showControls: this.showControls,
+            ghostCount: this.ghostSystem.getGhostCount(),
+            totalDeaths: this.ghostSystem.getTotalDeaths()
         });
 
         // Render active buff indicators
@@ -1860,14 +1873,26 @@ class Game {
     /**
      * Handle player death
      */
-    handlePlayerDeath() {
+    handlePlayerDeath(cause = 'enemy') {
         // Prevent multiple death triggers - check both active and state
         if (this.state === 'gameover') return;
 
         this.player.active = false;
         this.state = 'gameover';
 
-        console.log('DEATH TRIGGERED - showing game over');
+        // Record death for ghost system
+        this.ghostSystem.recordDeath({
+            level: this.currentLevel,
+            x: this.player.x,
+            y: this.player.y,
+            cause: cause,
+            character: this.characterSystem.selectedCharacter,
+            weapon: this.weaponSystem.getActiveWeapon().type,
+            weaponTier: this.weaponSystem.getActiveWeapon().tier,
+            kills: this.totalKills
+        });
+
+        console.log('DEATH TRIGGERED - ghost recorded');
 
         this.renderer.flash(GAME_CONFIG.COLORS.MAGENTA, 0.8);
         this.renderer.glitch(2, 30);
@@ -1923,9 +1948,7 @@ class Game {
             this.renderer.glitch(1.5, 20);
             this.hud.addMessage('CYCLES DEPLETED', 'warning');
 
-            this.player.active = false;
-            this.state = 'gameover';
-            setTimeout(() => this.showGameOverModal(), 1000);
+            this.handlePlayerDeath('cycles');
         }
     }
 
@@ -1969,6 +1992,9 @@ class Game {
         this.weaponSystem.reset();
         this.laserProjectiles = [];
         this.laserHits = [];
+
+        // Reset ghost system (keeps death records for future runs)
+        this.ghostSystem.reset();
 
         // Reset temp buffs
         this.tempBuffs = {

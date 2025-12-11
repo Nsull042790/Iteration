@@ -297,11 +297,21 @@ class Game {
      * Show upgrade selection screen - weapon upgrades
      */
     showUpgradeSelection() {
-        this.showingUpgrades = true;
-        this.isPaused = true;
-
         // Get weapon upgrade options
         this.currentWeaponChoices = this.weaponSystem.getUpgradeOptions();
+
+        // Check if all weapons are maxed - skip selection if so
+        const allMaxed = this.currentWeaponChoices.every(opt => opt.isMaxed);
+        if (allMaxed) {
+            this.hud.addMessage('ALL WEAPONS MAXED - ADVANCING', 'system');
+            setTimeout(() => {
+                this.nextLevel();
+            }, 500);
+            return;
+        }
+
+        this.showingUpgrades = true;
+        this.isPaused = true;
 
         const modal = document.getElementById('upgrade-modal');
         const choicesContainer = document.getElementById('upgrade-choices');
@@ -318,7 +328,7 @@ class Game {
             card.style.setProperty('--upgrade-color', option.color);
 
             if (option.isMaxed) {
-                // Max level weapon
+                // Max level weapon - not selectable
                 card.innerHTML = `
                     <span class="upgrade-rarity legendary">MAX LEVEL</span>
                     <div class="upgrade-icon">⚔</div>
@@ -331,7 +341,6 @@ class Game {
                             <div>SPD: ${(option.currentTier.speed * 100).toFixed(0)}%</div>
                         </div>
                     </div>
-                    <span class="upgrade-key">${index + 1}</span>
                 `;
                 card.classList.add('maxed');
             } else {
@@ -355,19 +364,20 @@ class Game {
                     </div>
                     <span class="upgrade-key">${index + 1}</span>
                 `;
+                card.addEventListener('click', () => this.selectWeaponUpgrade(index));
             }
 
-            card.addEventListener('click', () => this.selectWeaponUpgrade(index));
             choicesContainer.appendChild(card);
         });
 
         modal.classList.remove('hidden');
 
-        // Setup keyboard listener
+        // Setup keyboard listener (only for non-maxed weapons)
         this.upgradeKeyHandler = (e) => {
+            if (!this.showingUpgrades) return;
             if (e.key === '1' || e.key === '2' || e.key === '3') {
                 const index = parseInt(e.key) - 1;
-                if (index < this.currentWeaponChoices.length) {
+                if (index < this.currentWeaponChoices.length && !this.currentWeaponChoices[index].isMaxed) {
                     this.selectWeaponUpgrade(index);
                 }
             }
@@ -379,14 +389,22 @@ class Game {
      * Select a weapon upgrade
      */
     selectWeaponUpgrade(index) {
-        if (!this.showingUpgrades || index >= this.currentWeaponChoices.length) return;
+        // Guard against double selection or invalid state
+        if (!this.showingUpgrades) return;
+        if (index >= this.currentWeaponChoices.length) return;
 
         const option = this.currentWeaponChoices[index];
 
-        // Check if already maxed
-        if (option.isMaxed) {
-            this.hud.addMessage(`${option.weaponName} IS ALREADY AT MAX LEVEL`, 'warning');
-            return;
+        // Ignore maxed weapons
+        if (option.isMaxed) return;
+
+        // Immediately mark as not showing to prevent double selection
+        this.showingUpgrades = false;
+
+        // Remove keyboard listener immediately
+        if (this.upgradeKeyHandler) {
+            window.removeEventListener('keydown', this.upgradeKeyHandler);
+            this.upgradeKeyHandler = null;
         }
 
         // Apply the weapon upgrade
@@ -402,58 +420,14 @@ class Game {
                 }, 500);
             }
 
-            // Hide modal
-            const modal = document.getElementById('upgrade-modal');
-            modal.classList.add('hidden');
-
-            // Remove keyboard listener
-            if (this.upgradeKeyHandler) {
-                window.removeEventListener('keydown', this.upgradeKeyHandler);
-                this.upgradeKeyHandler = null;
-            }
-
-            this.showingUpgrades = false;
-
             // Flash effect
             this.renderer.flash(result.newTier.color, 0.5);
             this.camera.addShake(5, 15);
-
-            // Proceed to next level after brief delay
-            setTimeout(() => {
-                this.nextLevel();
-            }, 500);
         }
-    }
 
-    /**
-     * Select an upgrade (legacy - for roguelike upgrades)
-     */
-    selectUpgrade(index) {
-        if (!this.showingUpgrades || index >= this.currentUpgradeChoices.length) return;
-
-        const upgrade = this.currentUpgradeChoices[index];
-
-        // Apply the upgrade
-        this.upgradeSystem.applyUpgrade(upgrade, this);
-
-        // Show message
-        this.hud.addMessage(`UPGRADE ACQUIRED: ${upgrade.name}`, 'evolution');
-
-        // Hide modal
+        // Hide modal and proceed
         const modal = document.getElementById('upgrade-modal');
         modal.classList.add('hidden');
-
-        // Remove keyboard listener
-        if (this.upgradeKeyHandler) {
-            window.removeEventListener('keydown', this.upgradeKeyHandler);
-            this.upgradeKeyHandler = null;
-        }
-
-        this.showingUpgrades = false;
-
-        // Flash effect
-        this.renderer.flash(upgrade.color, 0.5);
-        this.camera.addShake(5, 15);
 
         // Proceed to next level after brief delay
         setTimeout(() => {

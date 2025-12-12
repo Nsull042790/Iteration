@@ -7,10 +7,15 @@ class Game {
     constructor(canvas) {
         this.canvas = canvas;
 
+        // Game mode: '2d' or 'fps'
+        this.gameMode = '2d';
+
         // Core systems
         this.renderer = new Renderer(canvas);
+        this.fpsRenderer = new FPSRenderer(canvas);
         this.input = new InputHandler();
         this.input.initTouchControls(); // Initialize mobile touch controls
+        this.fpsInput = new FPSInput();
         this.physics = new Physics();
         this.camera = new Camera(GAME_CONFIG.CANVAS_WIDTH, GAME_CONFIG.CANVAS_HEIGHT);
         this.hud = new HUD(canvas);
@@ -552,24 +557,38 @@ class Game {
 
         const titleScreen = document.getElementById('title-screen');
         const titleBtn = document.getElementById('title-start-btn');
+        const fpsBtn = document.getElementById('fps-mode-btn');
 
         titleScreen.classList.remove('hidden');
 
-        // Handle button click
+        // Handle 2D mode button click
         const handleTitleClick = () => {
+            this.gameMode = '2d';
             titleScreen.classList.add('hidden');
             titleBtn.removeEventListener('click', handleTitleClick);
+            if (fpsBtn) fpsBtn.removeEventListener('click', handleFPSClick);
+            window.removeEventListener('keydown', handleTitleKey);
+            this.showCharacterSelect();
+        };
+
+        // Handle FPS mode button click
+        const handleFPSClick = () => {
+            this.gameMode = 'fps';
+            titleScreen.classList.add('hidden');
+            titleBtn.removeEventListener('click', handleTitleClick);
+            if (fpsBtn) fpsBtn.removeEventListener('click', handleFPSClick);
+            window.removeEventListener('keydown', handleTitleKey);
             this.showCharacterSelect();
         };
 
         titleBtn.addEventListener('click', handleTitleClick);
+        if (fpsBtn) fpsBtn.addEventListener('click', handleFPSClick);
 
-        // Handle key press
+        // Handle key press (defaults to 2D mode)
         const handleTitleKey = (e) => {
             if (this.state === 'title' && (e.code === 'Space' || e.code === 'Enter')) {
                 e.preventDefault();
                 titleBtn.click();
-                window.removeEventListener('keydown', handleTitleKey);
             }
         };
         window.addEventListener('keydown', handleTitleKey);
@@ -735,6 +754,14 @@ class Game {
         this.state = 'playing';
         const char = this.characterSystem.getSelected();
         this.hud.addMessage(`${char.name} ONLINE - SIMULATION INITIALIZED`, 'system');
+
+        // Initialize FPS input if in FPS mode
+        if (this.gameMode === 'fps') {
+            this.fpsInput.init(this.canvas);
+            // Set initial player angle (facing right)
+            this.fpsInput.setAngle(0);
+            this.hud.addMessage('CLICK TO LOCK MOUSE - WASD TO MOVE', 'system');
+        }
     }
 
     /**
@@ -803,15 +830,19 @@ class Game {
      * Update game state
      */
     update(deltaTime) {
-        // Update input state
-        this.input.update();
+        // Update input state based on game mode
+        if (this.gameMode === 'fps') {
+            this.fpsInput.update();
+        } else {
+            this.input.update();
+        }
 
         // Don't update game logic if paused or not playing
         if (this.isPaused || this.state !== 'playing') {
             return;
         }
 
-        // Weapon switching with 1, 2, 3 keys
+        // Weapon switching with 1, 2, 3 keys (works in both modes)
         if (this.input.isKeyJustPressed('Digit1') || this.input.isKeyJustPressed('Numpad1')) {
             if (this.weaponSystem.switchTo(0)) {
                 this.hud.addMessage(`WEAPON: ${this.weaponSystem.getActiveTierData().name}`, 'system');
@@ -831,46 +862,70 @@ class Game {
         // Update weapon system
         this.weaponSystem.update();
 
-        // Update player
+        // Update player based on game mode
         if (this.player && this.player.active) {
             // Store previous position for cycle cost calculation
             const prevX = this.player.x;
+            const prevY = this.player.y;
 
-            // Update player
-            this.player.update(deltaTime, this.input);
+            if (this.gameMode === 'fps') {
+                // FPS mode movement
+                this.updatePlayerFPS(deltaTime);
+            } else {
+                // 2D mode movement
+                this.player.update(deltaTime, this.input);
 
-            // Apply gravity
-            this.physics.applyGravity(this.player);
+                // Apply gravity
+                this.physics.applyGravity(this.player);
 
-            // Resolve collisions
-            if (this.currentRoom) {
-                this.physics.resolveCollisions(
-                    this.player,
-                    this.currentRoom.getActivePlatforms()
-                );
+                // Resolve collisions
+                if (this.currentRoom) {
+                    this.physics.resolveCollisions(
+                        this.player,
+                        this.currentRoom.getActivePlatforms()
+                    );
+                }
             }
 
             // Calculate movement cost
-            const moveDistance = Math.abs(this.player.x - prevX);
+            const moveDistance = Math.sqrt(
+                Math.pow(this.player.x - prevX, 2) +
+                Math.pow(this.player.y - prevY, 2)
+            );
             if (moveDistance > 0.1) {
                 this.cycles.spendMove(moveDistance);
             }
 
-            // Jump cost
-            if (this.input.isActionJustPressed('jump') && this.player.coyoteTime > 0) {
-                this.cycles.spendJump();
-            }
+            // Handle jump/attack costs based on mode
+            if (this.gameMode === 'fps') {
+                if (this.fpsInput.isAttackJustPressed()) {
+                    this.cycles.spendAttack();
+                    // Trigger attack in FPS mode
+                    this.player.isAttacking = true;
+                    this.player.attackFrame = 1;
+                    this.player.attackDuration = 15;
+                }
+            } else {
+                // Jump cost
+                if (this.input.isActionJustPressed('jump') && this.player.coyoteTime > 0) {
+                    this.cycles.spendJump();
+                }
 
-            // Attack cost
-            if (this.input.isActionJustPressed('attack')) {
-                this.cycles.spendAttack();
+                // Attack cost
+                if (this.input.isActionJustPressed('attack')) {
+                    this.cycles.spendAttack();
+                }
             }
 
             // Keep player in bounds
             this.player.x = Utils.clamp(this.player.x, 0, this.currentRoom.width - this.player.width);
+            if (this.gameMode === 'fps') {
+                // In FPS mode, also clamp Y (no falling off screen)
+                this.player.y = Utils.clamp(this.player.y, 100, this.currentRoom.height - 50);
+            }
 
-            // Check for death by falling
-            if (this.player.y > this.currentRoom.height + 100) {
+            // Check for death by falling (2D mode only)
+            if (this.gameMode !== 'fps' && this.player.y > this.currentRoom.height + 100) {
                 this.handlePlayerDeath('fall');
             }
 
@@ -879,8 +934,12 @@ class Game {
                 this.handlePlayerDeath('enemy');
             }
 
-            // Check attack hits on enemies
-            this.checkAttackHits();
+            // Check attack hits on enemies (different method for FPS mode)
+            if (this.gameMode === 'fps') {
+                this.checkFPSAttackHits();
+            } else {
+                this.checkAttackHits();
+            }
         }
 
         // Update enemies
@@ -1784,9 +1843,122 @@ class Game {
     }
 
     /**
+     * Update player in FPS mode
+     */
+    updatePlayerFPS(deltaTime) {
+        // Get movement from FPS input
+        const movement = this.fpsInput.getMovement();
+
+        // Apply movement
+        this.player.x += movement.x;
+        this.player.y += movement.y;
+
+        // Update player facing direction based on angle
+        const angle = this.fpsInput.getAngle();
+        this.player.facingRight = Math.cos(angle) > 0;
+
+        // Handle attack animation
+        if (this.player.isAttacking) {
+            this.player.attackDuration--;
+            this.player.attackFrame++;
+            if (this.player.attackDuration <= 0) {
+                this.player.isAttacking = false;
+                this.player.attackFrame = 0;
+            }
+        }
+
+        // Update FPS renderer with player position
+        this.fpsRenderer.updatePlayer(this.player.x, this.player.y, angle);
+    }
+
+    /**
+     * Check attack hits in FPS mode (raycast from view direction)
+     */
+    checkFPSAttackHits() {
+        if (!this.player.isAttacking || this.player.attackFrame !== 1) return;
+
+        const angle = this.fpsInput.getAngle();
+        const attackRange = 150; // Melee range in FPS
+
+        // Get enemies in front of player within attack range
+        for (const enemy of this.enemies) {
+            if (!enemy.active || enemy.invincibilityFrames > 0) continue;
+
+            // Calculate direction to enemy
+            const dx = enemy.x - this.player.x;
+            const dy = enemy.y - this.player.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+
+            if (dist > attackRange) continue;
+
+            // Check if enemy is in front of player (within attack cone)
+            const angleToEnemy = Math.atan2(dy, dx);
+            let angleDiff = angleToEnemy - angle;
+            while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+            while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+
+            // Attack cone of 90 degrees (45 degrees each side)
+            if (Math.abs(angleDiff) < Math.PI / 4) {
+                // Hit the enemy
+                const baseDamage = 25;
+                const weaponMultiplier = this.weaponSystem.getDamageMultiplier();
+                const bladeMultiplier = this.bladeEvolution.getDamageMultiplier();
+                const upgradeMultiplier = this.upgradeSystem.getDamageMultiplier(this.player);
+                const damage = Math.floor(baseDamage * weaponMultiplier * bladeMultiplier * upgradeMultiplier);
+
+                const killed = enemy.takeDamage(damage);
+
+                if (killed) {
+                    const cycleGain = Math.floor(50 * this.upgradeSystem.modifiers.cycleGainMultiplier);
+                    this.cycles.gain(cycleGain);
+                    this.killCount++;
+                    this.totalKills++;
+                    this.player.health = Math.min(this.player.health + 10, this.player.maxHealth);
+                    this.hud.addMessage(`+${cycleGain} CYCLES +10 HP`, 'success');
+                    this.dropSystem.rollDrops(enemy.x, enemy.y, 'normal');
+                }
+
+                this.camera.addShake(3, 5);
+            }
+        }
+
+        // Check boss
+        if (this.boss && this.boss.active && this.boss.invincibilityFrames <= 0) {
+            const dx = this.boss.x - this.player.x;
+            const dy = this.boss.y - this.player.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+
+            if (dist <= attackRange) {
+                const angleToEnemy = Math.atan2(dy, dx);
+                let angleDiff = angleToEnemy - angle;
+                while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+                while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+
+                if (Math.abs(angleDiff) < Math.PI / 4) {
+                    const damage = Math.floor(20 * this.bladeEvolution.getDamageMultiplier());
+                    this.boss.takeDamage(damage);
+                    this.camera.addShake(5, 8);
+                }
+            }
+        }
+    }
+
+    /**
      * Render game
      */
     render() {
+        // Branch based on game mode
+        if (this.gameMode === 'fps' && this.state === 'playing') {
+            this.renderFPS();
+        } else {
+            this.render2D();
+        }
+    }
+
+    /**
+     * Render 2D mode
+     */
+    render2D() {
         const ctx = this.renderer.getContext();
 
         // Begin frame
@@ -1862,6 +2034,98 @@ class Game {
 
         // End frame (apply effects)
         this.renderer.endFrame();
+    }
+
+    /**
+     * Render FPS mode
+     */
+    renderFPS() {
+        const ctx = this.canvas.getContext('2d');
+
+        // Clear canvas
+        ctx.fillStyle = '#050508';
+        ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+        // Render first-person view
+        this.fpsRenderer.render(
+            this.currentRoom,
+            this.enemies,
+            this.boss,
+            this.player,
+            this.interactables
+        );
+
+        // Render HUD (same as 2D mode)
+        this.hud.render(ctx, {
+            player: this.player,
+            cycles: this.cycles,
+            bladeEvolution: this.bladeEvolution,
+            currentZone: this.currentZone,
+            currentRoom: `ROOM ${Utils.padNumber(this.roomNumber, 2)}`,
+            currentLevel: this.currentLevel,
+            enemiesKilled: this.enemiesKilledInLevel,
+            totalEnemies: this.maxEnemiesInLevel,
+            bossSpawned: this.bossSpawned,
+            boss: this.boss,
+            levelComplete: this.levelComplete,
+            showControls: false, // Don't show 2D controls in FPS mode
+            ghostCount: this.ghostSystem.getGhostCount(),
+            totalDeaths: this.ghostSystem.getTotalDeaths()
+        });
+
+        // Render active buff indicators
+        this.dropSystem.renderBuffBar(ctx, 20, this.canvas.height - 70);
+
+        // Render weapon slots
+        this.weaponSystem.renderSlots(ctx, this.canvas.width - 220, 20);
+
+        // FPS mode specific UI
+        this.renderFPSUI(ctx);
+
+        // Render pause overlay
+        if (this.isPaused) {
+            this.renderPauseOverlay(ctx);
+        }
+
+        // Debug info
+        if (GAME_CONFIG.DEBUG) {
+            this.renderDebugInfo(ctx);
+        }
+    }
+
+    /**
+     * Render FPS-specific UI elements
+     */
+    renderFPSUI(ctx) {
+        // Click to lock message
+        if (!this.fpsInput.isLocked()) {
+            ctx.save();
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+            ctx.fillRect(0, this.canvas.height / 2 - 30, this.canvas.width, 60);
+
+            ctx.font = 'bold 20px monospace';
+            ctx.fillStyle = '#00f0ff';
+            ctx.textAlign = 'center';
+            ctx.shadowColor = '#00f0ff';
+            ctx.shadowBlur = 10;
+            ctx.fillText('CLICK TO LOCK MOUSE', this.canvas.width / 2, this.canvas.height / 2);
+
+            ctx.font = '14px monospace';
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+            ctx.shadowBlur = 0;
+            ctx.fillText('WASD to move | Mouse to look | Click to attack', this.canvas.width / 2, this.canvas.height / 2 + 20);
+            ctx.restore();
+        }
+
+        // FPS mode indicator
+        ctx.save();
+        ctx.font = 'bold 12px monospace';
+        ctx.fillStyle = '#ff00aa';
+        ctx.textAlign = 'left';
+        ctx.shadowColor = '#ff00aa';
+        ctx.shadowBlur = 5;
+        ctx.fillText('FPS MODE', 20, 30);
+        ctx.restore();
     }
 
     /**
@@ -2021,6 +2285,12 @@ class Game {
         this.player.y = this.currentRoom.spawnPoint.y;
         this.player.velocityX = 0;
         this.player.velocityY = 0;
+
+        // Reset FPS input angle if in FPS mode
+        if (this.gameMode === 'fps') {
+            this.fpsInput.setAngle(0);
+            this.fpsRenderer.updatePlayer(this.player.x, this.player.y, 0);
+        }
 
         // Reset cycles
         this.cycles.reset();

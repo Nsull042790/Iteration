@@ -66,7 +66,8 @@ class CharacterSystem {
                     health: 180,
                     damage: 140,
                     speed: 65,
-                    attackSpeed: 70
+                    attackSpeed: 70,
+                    jumpHeight: 75  // Lower jump due to weight
                 },
                 color: '#ff4400',
                 secondaryColor: '#aa2200',
@@ -74,7 +75,7 @@ class CharacterSystem {
                 style: 'bulky',
                 special: {
                     name: 'HEAVY ARMOR',
-                    description: '-20% damage taken',
+                    description: '-20% damage taken, lower jump',
                     damageReduction: 0.20
                 }
             },
@@ -129,7 +130,7 @@ class CharacterSystem {
                 description: 'Glass cannon. High risk, high reward.',
                 inspiration: 'Doom Guy/Duke Nukem',
                 stats: {
-                    health: 60,
+                    health: 50,      // Reduced from 60 - true glass cannon
                     damage: 170,
                     speed: 110,
                     attackSpeed: 120
@@ -140,8 +141,9 @@ class CharacterSystem {
                 style: 'aggressive',
                 special: {
                     name: 'BLOODLUST',
-                    description: '+5% lifesteal on hit',
-                    lifesteal: 0.05
+                    description: '+3% lifesteal, +10% damage taken',
+                    lifesteal: 0.03,         // Reduced from 5%
+                    damageAmplify: 0.10      // NEW: takes 10% more damage
                 }
             },
             {
@@ -184,8 +186,8 @@ class CharacterSystem {
                 style: 'robotic',
                 special: {
                     name: 'REGENERATE',
-                    description: 'Slowly heal over time',
-                    regenRate: 0.5  // HP per second
+                    description: 'Heal 1 HP per second',
+                    regenRate: 1.0  // HP per second (buffed from 0.5)
                 }
             }
         ];
@@ -224,6 +226,12 @@ class CharacterSystem {
         player.baseDamageMultiplier = char.stats.damage / 100;
         player.baseSpeedMultiplier = char.stats.speed / 100;
         player.baseAttackSpeedMultiplier = char.stats.attackSpeed / 100;
+
+        // Apply jump height modifier (Titan has lower jump)
+        player.jumpMultiplier = (char.stats.jumpHeight || 100) / 100;
+
+        // Apply damage amplification (Havoc takes more damage)
+        player.damageAmplify = char.special.damageAmplify || 0;
 
         // Apply visual style
         player.characterColor = char.color;

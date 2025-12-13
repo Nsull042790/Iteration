@@ -89,7 +89,9 @@ class Player extends Entity {
         const wantsJump = input.isJumpBuffered();
 
         if (canJump && wantsJump) {
-            this.velocityY = this.jumpForce;
+            // Apply jump multiplier (Titan has lower jump)
+            const jumpMult = this.jumpMultiplier || 1.0;
+            this.velocityY = this.jumpForce * jumpMult;
             this.isJumping = true;
             this.jumpHeld = true;
             this.coyoteTime = 0;
@@ -248,7 +250,11 @@ class Player extends Entity {
     takeDamage(amount) {
         if (this.invincibilityFrames > 0) return false;
 
-        this.health -= amount;
+        // Apply damage amplification (Havoc takes extra damage)
+        const damageAmp = this.damageAmplify || 0;
+        const finalDamage = Math.floor(amount * (1 + damageAmp));
+
+        this.health -= finalDamage;
         this.invincibilityFrames = GAME_CONFIG.PLAYER.INVINCIBILITY_FRAMES;
 
         if (this.health <= 0) {
@@ -290,6 +296,12 @@ class Player extends Entity {
         // Draw player body (humanoid silhouette)
         this.renderBody(ctx, screenPos);
 
+        // Draw equipped hat (if cosmetics system exists)
+        if (window.game?.cosmeticsSystem) {
+            const centerX = screenPos.x + this.width / 2;
+            window.game.cosmeticsSystem.renderHat(ctx, centerX, screenPos.y + 2, this.facingRight);
+        }
+
         // Draw blade
         this.renderBlade(ctx, screenPos);
 
@@ -310,27 +322,31 @@ class Player extends Entity {
         const centerX = screenPos.x + this.width / 2;
         const centerY = screenPos.y + this.height / 2;
 
+        // Get suit colors (default or equipped)
+        const bodyColor = this.suitBodyColor || GAME_CONFIG.COLORS.PLAYER;
+        const coreColor = this.suitCoreColor || GAME_CONFIG.COLORS.PLAYER_CORE;
+
         ctx.save();
 
         // Body glow
-        ctx.shadowColor = GAME_CONFIG.COLORS.CYAN;
+        ctx.shadowColor = coreColor;
         ctx.shadowBlur = 15;
 
         // Head
-        ctx.fillStyle = GAME_CONFIG.COLORS.PLAYER;
+        ctx.fillStyle = bodyColor;
         ctx.beginPath();
         ctx.arc(centerX, screenPos.y + 10, 8, 0, Math.PI * 2);
         ctx.fill();
 
         // Core (chest)
-        ctx.fillStyle = GAME_CONFIG.COLORS.PLAYER_CORE;
+        ctx.fillStyle = coreColor;
         ctx.shadowBlur = 20;
         ctx.beginPath();
         ctx.arc(centerX, screenPos.y + 22, 4, 0, Math.PI * 2);
         ctx.fill();
 
         // Torso
-        ctx.fillStyle = GAME_CONFIG.COLORS.PLAYER;
+        ctx.fillStyle = bodyColor;
         ctx.shadowBlur = 10;
         ctx.fillRect(centerX - 6, screenPos.y + 16, 12, 16);
 

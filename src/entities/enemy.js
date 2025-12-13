@@ -39,6 +39,13 @@ class Enemy extends Entity {
         // Death
         this.deathTimer = 0;
         this.particles = [];
+
+        // Status effects (DoT)
+        this.statusEffects = [];
+
+        // Slow effect from cold imbue
+        this.slowDuration = 0;
+        this.slowMultiplier = 1.0;
     }
 
     /**
@@ -83,6 +90,25 @@ class Enemy extends Entity {
 
         // Update particles
         this.updateParticles();
+
+        // Update status effects (DoT)
+        this.updateStatusEffects();
+
+        // Update slow effect
+        if (this.slowDuration > 0) {
+            this.slowDuration--;
+            if (this.slowDuration <= 0) {
+                this.slowMultiplier = 1.0;
+            }
+        }
+    }
+
+    /**
+     * Apply slow effect (Cold imbue)
+     */
+    applySlow(multiplier, duration) {
+        this.slowMultiplier = multiplier;
+        this.slowDuration = duration;
     }
 
     /**
@@ -137,7 +163,8 @@ class Enemy extends Entity {
             this.patrolDirection *= -1;
         }
 
-        this.velocityX = this.patrolDirection * this.speed * 0.5;
+        // Apply slow multiplier from cold imbue
+        this.velocityX = this.patrolDirection * this.speed * 0.5 * this.slowMultiplier;
         this.facingRight = this.patrolDirection > 0;
     }
 
@@ -148,7 +175,8 @@ class Enemy extends Entity {
         const dx = (player.x + player.width / 2) - (this.x + this.width / 2);
 
         if (Math.abs(dx) > 10) {
-            this.velocityX = Math.sign(dx) * this.speed;
+            // Apply slow multiplier from cold imbue
+            this.velocityX = Math.sign(dx) * this.speed * this.slowMultiplier;
             this.facingRight = dx > 0;
         }
     }
@@ -197,6 +225,124 @@ class Enemy extends Entity {
     die() {
         this.active = false;
         // Death particles are spawned and will be rendered by room
+    }
+
+    /**
+     * Apply a status effect (bleed, burn, etc.)
+     * @param {string} type - 'bleed', 'burn', 'freeze', etc.
+     * @param {number} damage - damage per tick
+     * @param {number} duration - total duration in frames
+     * @param {boolean} isCrit - whether the original hit was a crit (DoT ticks inherit crit)
+     */
+    applyStatusEffect(type, damage, duration, isCrit = false) {
+        // Check if already has this effect - refresh duration if so
+        const existing = this.statusEffects.find(e => e.type === type);
+        if (existing) {
+            existing.duration = Math.max(existing.duration, duration);
+            existing.damage = Math.max(existing.damage, damage);
+            existing.isCrit = existing.isCrit || isCrit; // Keep crit if either was crit
+            return;
+        }
+
+        this.statusEffects.push({
+            type: type,
+            damage: damage,
+            duration: duration,
+            maxDuration: duration,
+            tickRate: 30, // Damage every 30 frames (0.5 seconds)
+            tickTimer: 0,
+            isCrit: isCrit
+        });
+    }
+
+    /**
+     * Update and process status effects
+     * Returns total DoT damage dealt this frame
+     */
+    updateStatusEffects() {
+        if (!this.active) return 0;
+
+        let totalDotDamage = 0;
+
+        for (let i = this.statusEffects.length - 1; i >= 0; i--) {
+            const effect = this.statusEffects[i];
+
+            effect.tickTimer++;
+            effect.duration--;
+
+            // Apply DoT damage on tick
+            if (effect.tickTimer >= effect.tickRate) {
+                effect.tickTimer = 0;
+
+                // Calculate tick damage (crit applies to DoT ticks!)
+                let tickDamage = effect.damage;
+                if (effect.isCrit) {
+                    tickDamage = Math.floor(tickDamage * 1.5); // Crit DoT bonus
+                }
+
+                this.health -= tickDamage;
+                totalDotDamage += tickDamage;
+
+                // Spawn status effect particles based on type
+                this.spawnStatusParticles(effect.type, effect.isCrit);
+
+                // Check for death from DoT
+                if (this.health <= 0) {
+                    this.die();
+                    return totalDotDamage;
+                }
+            }
+
+            // Remove expired effects
+            if (effect.duration <= 0) {
+                this.statusEffects.splice(i, 1);
+            }
+        }
+
+        return totalDotDamage;
+    }
+
+    /**
+     * Spawn particles for status effect ticks
+     */
+    spawnStatusParticles(type, isCrit) {
+        let color = '#ff4444'; // Default red
+
+        switch (type) {
+            case 'bleed':
+                color = isCrit ? '#ff0000' : '#ff4466';
+                break;
+            case 'burn':
+                color = isCrit ? '#ffff00' : '#ff8800';
+                break;
+            case 'freeze':
+                color = isCrit ? '#ffffff' : '#00ffff';
+                break;
+            case 'electric':
+                color = isCrit ? '#ffffff' : '#ffff00';
+                break;
+        }
+
+        // Spawn small DoT particles
+        for (let i = 0; i < 3; i++) {
+            this.particles.push({
+                x: this.x + this.width / 2 + Utils.random(-10, 10),
+                y: this.y + this.height / 2 + Utils.random(-10, 10),
+                vx: Utils.random(-2, 2),
+                vy: Utils.random(-3, -1),
+                life: Utils.randomInt(10, 20),
+                maxLife: 20,
+                size: Utils.random(2, 4),
+                color: color
+            });
+        }
+    }
+
+    /**
+     * Check if enemy has a specific status effect
+     */
+    hasStatusEffect(type) {
+        return this.statusEffects.some(e => e.type === type);
     }
 
     /**
@@ -264,6 +410,9 @@ class Enemy extends Entity {
 
         // Health bar
         this.renderHealthBar(ctx, screenPos);
+
+        // Status effect icons
+        this.renderStatusEffects(ctx, screenPos);
 
         ctx.restore();
     }
@@ -387,9 +536,11 @@ class Enemy extends Entity {
             const screenPos = camera.worldToScreen(p.x, p.y);
             const alpha = p.life / p.maxLife;
 
-            ctx.fillStyle = GAME_CONFIG.COLORS.MAGENTA;
+            // Use custom color if set, otherwise default magenta
+            const color = p.color || GAME_CONFIG.COLORS.MAGENTA;
+            ctx.fillStyle = color;
             ctx.globalAlpha = alpha;
-            ctx.shadowColor = GAME_CONFIG.COLORS.MAGENTA;
+            ctx.shadowColor = color;
             ctx.shadowBlur = 5;
 
             ctx.beginPath();
@@ -398,5 +549,42 @@ class Enemy extends Entity {
         }
 
         ctx.restore();
+    }
+
+    /**
+     * Render status effect indicators above enemy
+     */
+    renderStatusEffects(ctx, screenPos) {
+        if (this.statusEffects.length === 0) return;
+
+        let offsetX = 0;
+        for (const effect of this.statusEffects) {
+            let icon = '●';
+            let color = '#ffffff';
+
+            switch (effect.type) {
+                case 'bleed':
+                    icon = '💧';
+                    color = '#ff4466';
+                    break;
+                case 'burn':
+                    icon = '🔥';
+                    color = '#ff8800';
+                    break;
+                case 'freeze':
+                    icon = '❄';
+                    color = '#00ffff';
+                    break;
+                case 'electric':
+                    icon = '⚡';
+                    color = '#ffff00';
+                    break;
+            }
+
+            ctx.font = '10px monospace';
+            ctx.fillStyle = color;
+            ctx.fillText(icon, screenPos.x + offsetX, screenPos.y - 15);
+            offsetX += 12;
+        }
     }
 }

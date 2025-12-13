@@ -208,6 +208,123 @@ class DropSystem {
                     game.player.health = game.player.maxHealth;
                     return 'JACKPOT! +200 CYCLES +30 XP +FULL HEAL';
                 }
+            },
+
+            // === MAGIC IMBUE DROPS (rare) ===
+            {
+                id: 'imbue_cold',
+                name: 'FROST CORE',
+                rarity: 'rare',
+                dropChance: 0.018,
+                color: '#00ffff',
+                icon: '❄',
+                duration: 1800,  // 30 seconds
+                isImbue: true,
+                imbueType: 'cold',
+                effect: (game) => {
+                    game.activeImbue = { type: 'cold', color: '#00ffff', name: 'FROST' };
+                    return 'COLD IMBUE: Slows enemies (30s)';
+                },
+                onExpire: (game) => {
+                    if (game.activeImbue?.type === 'cold') game.activeImbue = null;
+                }
+            },
+            {
+                id: 'imbue_fire',
+                name: 'INFERNO CORE',
+                rarity: 'rare',
+                dropChance: 0.018,
+                color: '#ff4400',
+                icon: '🔥',
+                duration: 1800,
+                isImbue: true,
+                imbueType: 'fire',
+                effect: (game) => {
+                    game.activeImbue = { type: 'fire', color: '#ff4400', name: 'INFERNO' };
+                    return 'FIRE IMBUE: Burns enemies (30s)';
+                },
+                onExpire: (game) => {
+                    if (game.activeImbue?.type === 'fire') game.activeImbue = null;
+                }
+            },
+            {
+                id: 'imbue_electric',
+                name: 'STORM CORE',
+                rarity: 'rare',
+                dropChance: 0.018,
+                color: '#ffff00',
+                icon: '⚡',
+                duration: 1800,
+                isImbue: true,
+                imbueType: 'electric',
+                effect: (game) => {
+                    game.activeImbue = { type: 'electric', color: '#ffff00', name: 'STORM' };
+                    return 'ELECTRIC IMBUE: Chains to enemies (30s)';
+                },
+                onExpire: (game) => {
+                    if (game.activeImbue?.type === 'electric') game.activeImbue = null;
+                }
+            },
+            {
+                id: 'imbue_teleport',
+                name: 'WARP CORE',
+                rarity: 'legendary',
+                dropChance: 0.01,
+                color: '#aa00ff',
+                icon: '✧',
+                duration: 1800,
+                isImbue: true,
+                imbueType: 'teleport',
+                effect: (game) => {
+                    game.activeImbue = { type: 'teleport', color: '#aa00ff', name: 'WARP' };
+                    return 'TELEPORT IMBUE: Warp to kills (30s)';
+                },
+                onExpire: (game) => {
+                    if (game.activeImbue?.type === 'teleport') game.activeImbue = null;
+                }
+            },
+
+            // === COSMETIC DROPS (from chests/bosses) ===
+            {
+                id: 'cosmetic_hat',
+                name: 'HAT SCHEMATIC',
+                rarity: 'rare',
+                dropChance: 0.012,
+                color: '#ffaa00',
+                icon: '🎩',
+                duration: 0,
+                isCosmetic: true,
+                cosmeticType: 'hat',
+                effect: (game) => {
+                    const hat = game.cosmeticsSystem.getRandomHatDrop();
+                    if (hat) {
+                        game.cosmeticsSystem.unlockHat(hat.id);
+                        game.cosmeticsSystem.equipHat(hat.id);
+                        return `UNLOCKED: ${hat.name} HAT!`;
+                    }
+                    return 'All hats unlocked!';
+                }
+            },
+            {
+                id: 'cosmetic_suit',
+                name: 'SUIT SCHEMATIC',
+                rarity: 'rare',
+                dropChance: 0.012,
+                color: '#00aaff',
+                icon: '👔',
+                duration: 0,
+                isCosmetic: true,
+                cosmeticType: 'suit',
+                effect: (game) => {
+                    const suit = game.cosmeticsSystem.getRandomSuitDrop();
+                    if (suit) {
+                        game.cosmeticsSystem.unlockSuit(suit.id);
+                        game.cosmeticsSystem.equipSuit(suit.id);
+                        game.cosmeticsSystem.applySuitToPlayer(game.player);
+                        return `UNLOCKED: ${suit.name} SUIT!`;
+                    }
+                    return 'All suits unlocked!';
+                }
             }
         ];
 

@@ -76,6 +76,9 @@ class Boss extends Entity {
         this.particles = [];
         this.projectiles = [];
 
+        // Status effects (DoT)
+        this.statusEffects = [];
+
         // Entry animation
         this.isEntering = true;
         this.entryTimer = 90;
@@ -244,6 +247,9 @@ class Boss extends Entity {
 
         // Update particles
         this.updateParticles();
+
+        // Update status effects (DoT)
+        this.updateStatusEffects();
     }
 
     /**
@@ -489,7 +495,7 @@ class Boss extends Entity {
                     this.x + (this.facingRight ? this.width : -200),
                     this.y,
                     200, this.height,
-                    15, 'line'
+                    45, 'line'  // Extended warning time (was 15)
                 );
             }
         } else if (this.attackTimer < 40) {
@@ -517,7 +523,7 @@ class Boss extends Entity {
             // Create landing zone telegraph
             if (this.attackTimer === 10 && !this.isGrounded) {
                 const landX = this.x + this.velocityX * 20;
-                this.createDangerZone(landX - 50, this.y + this.height, 180, 40, 25, 'circle');
+                this.createDangerZone(landX - 50, this.y + this.height, 180, 40, 60, 'circle');  // Extended warning (was 25)
             }
         } else if (this.attackTimer === 30 && !this.isGrounded) {
             // Slam down
@@ -593,7 +599,7 @@ class Boss extends Entity {
             const count = 3 + this.phase;
             for (let i = 0; i < count; i++) {
                 const zoneX = Utils.random(100, 1700);
-                this.createDangerZone(zoneX, 500, 120, 100, 50, 'circle');
+                this.createDangerZone(zoneX, 500, 120, 100, 90, 'circle');  // Extended warning (was 50)
             }
         }
 
@@ -827,6 +833,117 @@ class Boss extends Entity {
                 size: Utils.random(4, 12)
             });
         }
+    }
+
+    /**
+     * Apply a status effect (bleed, burn, etc.)
+     * @param {string} type - 'bleed', 'burn', 'freeze', etc.
+     * @param {number} damage - damage per tick
+     * @param {number} duration - total duration in frames
+     * @param {boolean} isCrit - whether the original hit was a crit (DoT ticks inherit crit)
+     */
+    applyStatusEffect(type, damage, duration, isCrit = false) {
+        // Check if already has this effect - refresh duration if so
+        const existing = this.statusEffects.find(e => e.type === type);
+        if (existing) {
+            existing.duration = Math.max(existing.duration, duration);
+            existing.damage = Math.max(existing.damage, damage);
+            existing.isCrit = existing.isCrit || isCrit;
+            return;
+        }
+
+        this.statusEffects.push({
+            type: type,
+            damage: damage,
+            duration: duration,
+            maxDuration: duration,
+            tickRate: 30, // Damage every 30 frames
+            tickTimer: 0,
+            isCrit: isCrit
+        });
+    }
+
+    /**
+     * Update and process status effects
+     */
+    updateStatusEffects() {
+        if (!this.active || this.isEntering) return;
+
+        for (let i = this.statusEffects.length - 1; i >= 0; i--) {
+            const effect = this.statusEffects[i];
+
+            effect.tickTimer++;
+            effect.duration--;
+
+            // Apply DoT damage on tick
+            if (effect.tickTimer >= effect.tickRate) {
+                effect.tickTimer = 0;
+
+                // Calculate tick damage (crit applies to DoT ticks!)
+                let tickDamage = effect.damage;
+                if (effect.isCrit) {
+                    tickDamage = Math.floor(tickDamage * 1.5);
+                }
+
+                this.health -= tickDamage;
+
+                // Spawn status effect particles
+                this.spawnStatusParticles(effect.type, effect.isCrit);
+
+                // Check for death from DoT
+                if (this.health <= 0) {
+                    this.die();
+                    return;
+                }
+            }
+
+            // Remove expired effects
+            if (effect.duration <= 0) {
+                this.statusEffects.splice(i, 1);
+            }
+        }
+    }
+
+    /**
+     * Spawn particles for status effect ticks
+     */
+    spawnStatusParticles(type, isCrit) {
+        let color = '#ff4444';
+
+        switch (type) {
+            case 'bleed':
+                color = isCrit ? '#ff0000' : '#ff4466';
+                break;
+            case 'burn':
+                color = isCrit ? '#ffff00' : '#ff8800';
+                break;
+            case 'freeze':
+                color = isCrit ? '#ffffff' : '#00ffff';
+                break;
+            case 'electric':
+                color = isCrit ? '#ffffff' : '#ffff00';
+                break;
+        }
+
+        for (let i = 0; i < 5; i++) {
+            this.particles.push({
+                x: this.x + this.width / 2 + Utils.random(-20, 20),
+                y: this.y + this.height / 2 + Utils.random(-20, 20),
+                vx: Utils.random(-3, 3),
+                vy: Utils.random(-4, -1),
+                life: Utils.randomInt(15, 25),
+                maxLife: 25,
+                size: Utils.random(3, 6),
+                color: color
+            });
+        }
+    }
+
+    /**
+     * Check if boss has a specific status effect
+     */
+    hasStatusEffect(type) {
+        return this.statusEffects.some(e => e.type === type);
     }
 
     /**
@@ -1498,9 +1615,11 @@ class Boss extends Entity {
             const screenPos = camera.worldToScreen(p.x, p.y);
             const alpha = p.life / p.maxLife;
 
-            ctx.fillStyle = v.primaryColor;
+            // Use custom color if set, otherwise boss color
+            const color = p.color || v.primaryColor;
+            ctx.fillStyle = color;
             ctx.globalAlpha = alpha;
-            ctx.shadowColor = v.glowColor;
+            ctx.shadowColor = p.color || v.glowColor;
             ctx.shadowBlur = 8;
 
             ctx.beginPath();

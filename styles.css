@@ -2059,3 +2059,91 @@ body.mobile-device .touch-controls {
         max-height: calc(100vh - 140px);
     }
 }
+
+/* ============================================
+   FAQ/Help Modal
+   ============================================ */
+
+.faq-content {
+    max-width: 800px;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.faq-sections {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.faq-section {
+    background: rgba(0, 240, 255, 0.05);
+    border: 1px solid rgba(0, 240, 255, 0.2);
+    border-radius: 4px;
+    padding: 15px 20px;
+}
+
+.faq-title {
+    font-size: 16px;
+    font-weight: bold;
+    color: #00f0ff;
+    margin-bottom: 10px;
+    letter-spacing: 2px;
+}
+
+.faq-text {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.8);
+    line-height: 1.6;
+}
+
+.faq-text .cyan {
+    color: #00f0ff;
+    font-weight: bold;
+}
+
+.faq-text .magenta {
+    color: #ff00aa;
+    font-weight: bold;
+}
+
+.faq-text .yellow {
+    color: #ffff00;
+    font-weight: bold;
+}
+
+.faq-text .red {
+    color: #ff4444;
+    font-weight: bold;
+}
+
+.faq-text .key-inline {
+    display: inline-block;
+    padding: 2px 8px;
+    background: rgba(0, 240, 255, 0.2);
+    border: 1px solid rgba(0, 240, 255, 0.4);
+    border-radius: 3px;
+    font-size: 11px;
+    color: #00f0ff;
+    margin: 0 2px;
+}
+
+.faq-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid rgba(0, 240, 255, 0.2);
+}
+
+.faq-hint {
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 12px;
+    letter-spacing: 1px;
+}
+
+#faq-close-btn {
+    padding: 10px 30px;
+}

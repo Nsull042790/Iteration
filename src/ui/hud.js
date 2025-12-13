@@ -19,7 +19,7 @@ class HUD {
 
         // Messages
         this.messages = [];
-        this.messageTimeout = 180; // 3 seconds at 60fps
+        this.messageTimeout = 300; // 5 seconds at 60fps (extended for better readability)
 
         // Boss warning
         this.bossWarningTimer = 0;

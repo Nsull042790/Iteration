@@ -240,6 +240,71 @@
                 </div>
             </div>
         </div>
+
+        <!-- FAQ/Help Modal -->
+        <div id="faq-modal" class="screen hidden">
+            <div class="modal-content faq-content">
+                <div class="modal-header">
+                    <div class="modal-title">SYSTEM DATABASE</div>
+                    <div class="modal-subtitle">// INTEL BRIEFING</div>
+                </div>
+
+                <div class="faq-sections">
+                    <div class="faq-section">
+                        <div class="faq-title">👻 GHOSTS & HAUNTS</div>
+                        <div class="faq-text">
+                            When you die, a <span class="cyan">GHOST</span> is created at your death location.
+                            Ghosts replay your final moments before death. In future runs, you can see where
+                            you died and learn from past mistakes. The more ghosts, the more haunted the level becomes.
+                        </div>
+                    </div>
+
+                    <div class="faq-section">
+                        <div class="faq-title">⚔️ WEAPONS</div>
+                        <div class="faq-text">
+                            <span class="magenta">STRIKER</span> - Fast attacks, pierce at max level<br>
+                            <span class="magenta">RAZOR</span> - Causes bleed damage over time<br>
+                            <span class="magenta">CRUSHER</span> - Heavy hits with shockwave AOE<br>
+                            <br>
+                            Press <span class="key-inline">1</span> <span class="key-inline">2</span> <span class="key-inline">3</span> to switch weapons.
+                            Upgrade weapons between levels to unlock <span class="yellow">LASER SWORDS</span>.
+                        </div>
+                    </div>
+
+                    <div class="faq-section">
+                        <div class="faq-title">👹 BOSS ATTACKS</div>
+                        <div class="faq-text">
+                            Watch for <span class="red">RED DANGER ZONES</span> - these telegraph where attacks will land.
+                            <br><br>
+                            <span class="cyan">• DASH</span> - Boss charges in a line<br>
+                            <span class="cyan">• SLAM</span> - Jumps and creates shockwave on landing<br>
+                            <span class="cyan">• METEOR</span> - Multiple ground impacts (Phase 2+)<br>
+                            <span class="cyan">• SUMMON</span> - Spawns minions (Phase 2+)<br>
+                            <br>
+                            Bosses get faster and add new attacks as they lose health (Phase 2 at 66%, Phase 3 at 33%).
+                        </div>
+                    </div>
+
+                    <div class="faq-section">
+                        <div class="faq-title">💎 CYCLES & UPGRADES</div>
+                        <div class="faq-text">
+                            <span class="cyan">CYCLES</span> are your currency. Earn them by killing enemies and bosses.
+                            Moving, jumping, and attacking cost cycles. Run out and you slow down!
+                            <br><br>
+                            After each level, choose an <span class="magenta">UPGRADE</span> to power up your operative.
+                            Upgrades stack multiplicatively - choose wisely!
+                        </div>
+                    </div>
+                </div>
+
+                <div class="faq-footer">
+                    <div class="faq-hint">Press H anytime to open this help screen</div>
+                    <button id="faq-close-btn" class="start-btn">
+                        <span class="btn-text">CLOSE</span>
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Core Systems -->
@@ -262,6 +327,9 @@
     <script src="src/systems/drops.js"></script>
     <script src="src/systems/characters.js"></script>
     <script src="src/systems/weapons.js"></script>
+    <script src="src/systems/cosmetics.js"></script>
+    <script src="src/systems/meta-progression.js"></script>
+    <script src="src/systems/leaderboard.js"></script>
     <script src="src/systems/ghosts.js"></script>
     <script src="src/ui/hud.js"></script>
     <script src="src/core/renderer.js"></script>

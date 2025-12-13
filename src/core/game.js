@@ -18,6 +18,7 @@ class Game {
         // Game state
         this.state = 'loading'; // loading, title, controls, playing, paused, gameover
         this.isPaused = false;
+        this.showingFAQ = false;
 
         // Timing
         this.lastTime = 0;
@@ -42,6 +43,9 @@ class Game {
         this.dropSystem = new DropSystem();
         this.characterSystem = new CharacterSystem();
         this.weaponSystem = new WeaponSystem();
+        this.cosmeticsSystem = new CosmeticsSystem();
+        this.metaProgression = new MetaProgressionSystem();
+        this.leaderboard = new LeaderboardSystem();
         this.ghostSystem = new GhostSystem();
 
         // Laser projectiles from weapons
@@ -57,6 +61,9 @@ class Game {
             invincible: false,
             magnetRange: 60
         };
+
+        // Active magic imbue (Cold/Fire/Electric/Teleport)
+        this.activeImbue = null;
 
         // Permanent buffs from legendary drops
         this.permanentBuffs = {
@@ -160,9 +167,23 @@ class Game {
         const startX = 300;
         const spacing = (roomWidth - 400) / this.maxEnemiesInLevel;
 
+        // Get platforms for vertical enemy placement
+        const platforms = this.currentRoom ? this.currentRoom.getActivePlatforms() : [];
+        const validPlatforms = platforms.filter(p => p.y < 500 && p.y > 200); // Mid-level platforms
+
         for (let i = 0; i < this.maxEnemiesInLevel; i++) {
-            const x = startX + i * spacing + Utils.random(-50, 50);
-            const y = Utils.random(350, 500);
+            let x = startX + i * spacing + Utils.random(-50, 50);
+            let y;
+
+            // 40% chance to spawn on a platform for verticality (if platforms exist)
+            if (validPlatforms.length > 0 && Math.random() < 0.4) {
+                const platform = validPlatforms[Utils.randomInt(0, validPlatforms.length - 1)];
+                x = platform.x + Utils.random(20, platform.width - 20);
+                y = platform.y - 40; // Spawn on top of platform
+            } else {
+                // Ground level spawns with some variation
+                y = Utils.random(480, 520);
+            }
 
             const enemy = new Enemy(x, y);
 
@@ -300,13 +321,10 @@ class Game {
         // Get weapon upgrade options
         this.currentWeaponChoices = this.weaponSystem.getUpgradeOptions();
 
-        // Check if all weapons are maxed - skip selection if so
+        // Check if all weapons are maxed - show continue screen instead of auto-advancing
         const allMaxed = this.currentWeaponChoices.every(opt => opt.isMaxed);
         if (allMaxed) {
-            this.hud.addMessage('ALL WEAPONS MAXED - ADVANCING', 'system');
-            setTimeout(() => {
-                this.nextLevel();
-            }, 500);
+            this.showAllWeaponsMaxedScreen();
             return;
         }
 
@@ -509,6 +527,85 @@ class Game {
     }
 
     /**
+     * Show screen when all weapons are maxed (requires user input to continue)
+     */
+    showAllWeaponsMaxedScreen() {
+        this.showingUpgrades = true;
+        this.isPaused = true;
+
+        const modal = document.getElementById('upgrade-modal');
+        const choicesContainer = document.getElementById('upgrade-choices');
+        const title = modal.querySelector('.upgrade-title');
+        const subtitle = modal.querySelector('.modal-subtitle');
+
+        if (title) title.textContent = 'MAXIMUM POWER';
+        if (subtitle) subtitle.textContent = '// ALL WEAPONS FULLY EVOLVED';
+
+        // Show level complete summary with all maxed weapons
+        choicesContainer.innerHTML = `
+            <div class="celebration-content" style="text-align: center; padding: 30px;">
+                <div style="font-size: 48px; margin-bottom: 20px;">⚔️ ⚔️ ⚔️</div>
+                <div style="font-size: 28px; color: #ffff00; text-shadow: 0 0 20px #ffff00; margin-bottom: 15px; letter-spacing: 3px;">
+                    ALL WEAPONS MAXED
+                </div>
+                <div style="font-size: 16px; color: #00f0ff; margin-bottom: 25px; line-height: 1.8;">
+                    Your arsenal is complete.<br>
+                    All laser swords unlocked.
+                </div>
+                <div style="display: flex; justify-content: center; gap: 30px; margin-bottom: 30px;">
+                    <div style="text-align: center;">
+                        <div style="font-size: 12px; color: rgba(255,255,255,0.5);">LEVEL</div>
+                        <div style="font-size: 24px; color: #00f0ff;">${this.currentLevel}</div>
+                    </div>
+                    <div style="text-align: center;">
+                        <div style="font-size: 12px; color: rgba(255,255,255,0.5);">KILLS</div>
+                        <div style="font-size: 24px; color: #ff00aa;">${this.totalKills}</div>
+                    </div>
+                    <div style="text-align: center;">
+                        <div style="font-size: 12px; color: rgba(255,255,255,0.5);">CYCLES</div>
+                        <div style="font-size: 24px; color: #ffff00;">${this.cycles.getCycles()}</div>
+                    </div>
+                </div>
+                <div style="font-size: 14px; color: #ff00aa; text-shadow: 0 0 10px #ff00aa; animation: pulse 1s infinite;">
+                    Press SPACE or click to continue
+                </div>
+            </div>
+        `;
+
+        modal.classList.remove('hidden');
+
+        this.hud.addMessage('ALL WEAPONS MAXED - READY FOR NEXT LEVEL', 'system');
+
+        // Handle dismissal
+        const handleDismiss = () => {
+            modal.classList.add('hidden');
+            modal.removeEventListener('click', handleDismiss);
+            window.removeEventListener('keydown', handleDismissKey);
+            this.showingUpgrades = false;
+
+            // Reset modal title for next time
+            if (title) title.textContent = 'EVOLUTION DETECTED';
+            if (subtitle) subtitle.textContent = '// SELECT UPGRADE PROTOCOL';
+
+            setTimeout(() => {
+                this.nextLevel();
+            }, 300);
+        };
+
+        const handleDismissKey = (e) => {
+            if (e.code === 'Space' || e.code === 'Enter') {
+                handleDismiss();
+            }
+        };
+
+        // Add slight delay before allowing dismissal to prevent accidental skip
+        setTimeout(() => {
+            modal.addEventListener('click', handleDismiss);
+            window.addEventListener('keydown', handleDismissKey);
+        }, 500);
+    }
+
+    /**
      * Progress to next level
      */
     nextLevel() {
@@ -675,11 +772,23 @@ class Game {
         // Apply character to player
         this.characterSystem.applyToPlayer(this.player);
 
+        // Apply equipped cosmetics
+        this.cosmeticsSystem.applySuitToPlayer(this.player);
+
+        // Apply meta progression bonuses
+        this.metaProgression.applyToPlayer(this.player, this);
+
         // Flash effect
         const char = this.characterSystem.getSelected();
         this.renderer.flash(char.color, 0.5);
 
         this.hud.addMessage(`OPERATIVE ${char.name} SELECTED`, 'system');
+
+        // Show meta bonuses if any
+        const bonuses = this.metaProgression.calculateBonuses();
+        if (bonuses.healthBonus > 0 || bonuses.damageBonus > 0) {
+            this.hud.addMessage(`META BONUSES ACTIVE`, 'system');
+        }
 
         // Proceed to controls
         this.showControlsModal();
@@ -756,6 +865,45 @@ class Game {
     }
 
     /**
+     * Toggle FAQ/Help screen
+     */
+    toggleFAQ() {
+        const faqModal = document.getElementById('faq-modal');
+        if (!faqModal) return;
+
+        if (faqModal.classList.contains('hidden')) {
+            // Open FAQ
+            faqModal.classList.remove('hidden');
+            this.isPaused = true;
+            this.showingFAQ = true;
+
+            // Setup close handlers
+            const closeBtn = document.getElementById('faq-close-btn');
+            const handleClose = () => {
+                faqModal.classList.add('hidden');
+                this.isPaused = false;
+                this.showingFAQ = false;
+                closeBtn.removeEventListener('click', handleClose);
+                window.removeEventListener('keydown', handleCloseKey);
+            };
+
+            const handleCloseKey = (e) => {
+                if (e.code === 'KeyH' || e.code === 'Escape' || e.code === 'Space') {
+                    handleClose();
+                }
+            };
+
+            closeBtn.addEventListener('click', handleClose);
+            window.addEventListener('keydown', handleCloseKey);
+        } else {
+            // Close FAQ
+            faqModal.classList.add('hidden');
+            this.isPaused = false;
+            this.showingFAQ = false;
+        }
+    }
+
+    /**
      * Main game loop
      */
     loop(currentTime) {
@@ -805,6 +953,11 @@ class Game {
     update(deltaTime) {
         // Update input state
         this.input.update();
+
+        // Handle FAQ toggle with H key (works anytime during gameplay)
+        if (this.state === 'playing' && this.input.isKeyJustPressed('KeyH') && !this.showingUpgrades) {
+            this.toggleFAQ();
+        }
 
         // Don't update game logic if paused or not playing
         if (this.isPaused || this.state !== 'playing') {
@@ -1106,11 +1259,17 @@ class Game {
             speedBonus = 1 + speedPercent * 0.5; // Up to +50% at max speed
         }
 
+        // Meta progression damage bonus
+        const metaDamageBoost = 1 + (this.player.metaBonuses?.damageBonus || 0);
+
         // Calculate damage with potential crit
-        let rawDamage = baseDamage * weaponMultiplier * bladeMultiplier * upgradeMultiplier * tempDamageBoost * permDamageBoost * speedBonus;
+        let rawDamage = baseDamage * weaponMultiplier * bladeMultiplier * upgradeMultiplier * tempDamageBoost * permDamageBoost * speedBonus * metaDamageBoost;
 
         // Character special: Phantom's crit chance
         let extraCritChance = this.player.characterSpecial?.critChance || 0;
+
+        // Meta progression crit bonus
+        extraCritChance += (this.player.metaBonuses?.critBonus || 0);
 
         const { damage: finalDamage, isCrit } = this.upgradeSystem.calculateDamage(rawDamage, extraCritChance);
         const damage = Math.floor(finalDamage);
@@ -1138,14 +1297,60 @@ class Game {
                     this.spawnCritText(enemy.x, enemy.y - 20, damage);
                 }
 
+                // Weapon ability: Razor bleed (DoT that inherits crit!)
+                const weaponTier = this.weaponSystem.getActiveTierData();
+                if (weaponTier.ability === 'bleed' && !killed) {
+                    // Apply bleed: 5 damage per tick, 180 frames (3 seconds), crit inherited
+                    const bleedDamage = Math.floor(damage * 0.2); // 20% of hit damage per tick
+                    enemy.applyStatusEffect('bleed', bleedDamage, 180, isCrit);
+                }
+
+                // Weapon ability: Crusher shockwave knockback
+                if (weaponTier.ability === 'shockwave' && !killed) {
+                    // Strong knockback away from player
+                    const knockDir = Math.sign(enemy.x - this.player.x) || 1;
+                    enemy.velocityX = knockDir * 15;
+                    enemy.velocityY = -8;
+                }
+
+                // Magic Imbue effects
+                if (this.activeImbue && !killed) {
+                    switch (this.activeImbue.type) {
+                        case 'cold':
+                            // Slow enemy by 50% for 3 seconds
+                            enemy.applySlow(0.5, 180);
+                            enemy.applyStatusEffect('freeze', 0, 180, false);
+                            break;
+                        case 'fire':
+                            // Apply burn DoT
+                            const burnDamage = Math.floor(damage * 0.15);
+                            enemy.applyStatusEffect('burn', burnDamage, 180, isCrit);
+                            break;
+                        case 'electric':
+                            // Chain to nearby enemies
+                            this.triggerElectricChain(enemy.x, enemy.y, damage * 0.3, 150, 2);
+                            break;
+                    }
+                }
+
                 // Explosive ability - AOE damage
                 if (this.bladeEvolution.hasAbility('explosive') && tier.explosionRadius) {
                     this.triggerExplosion(enemy.x, enemy.y, tier.explosionRadius, damage * tier.explosionDamage);
                 }
 
                 if (killed) {
-                    // Gain cycles from kill (with upgrade multiplier)
-                    const cycleGain = Math.floor(50 * this.upgradeSystem.modifiers.cycleGainMultiplier);
+                    // Teleport imbue: warp to kill location
+                    if (this.activeImbue?.type === 'teleport') {
+                        this.player.x = enemy.x;
+                        this.player.y = enemy.y - 20;
+                        this.player.velocityY = 0;
+                        this.renderer.flash('#aa00ff', 0.3);
+                        this.spawnTeleportParticles(enemy.x, enemy.y);
+                    }
+
+                    // Gain cycles from kill (with upgrade multiplier + meta bonus)
+                    const metaCycleBonus = 1 + (this.player.metaBonuses?.cycleBonus || 0);
+                    const cycleGain = Math.floor(50 * this.upgradeSystem.modifiers.cycleGainMultiplier * metaCycleBonus);
                     this.cycles.gain(cycleGain);
                     this.killCount++;
                     this.totalKills++;
@@ -1155,12 +1360,13 @@ class Game {
                     this.player.health = Math.min(this.player.health + healAmount, this.player.maxHealth);
                     this.hud.addMessage(`+${cycleGain} CYCLES +${healAmount} HP`, 'success');
 
-                    // Gain blade XP from kill (with upgrade multiplier + character bonus)
+                    // Gain blade XP from kill (with upgrade multiplier + character + meta bonus)
                     let xpMultiplier = this.upgradeSystem.modifiers.xpMultiplier;
                     if (this.player.characterSpecial?.xpBonus) {
                         xpMultiplier *= (1 + this.player.characterSpecial.xpBonus);
                     }
                     xpMultiplier *= this.tempBuffs.xpMultiplier;
+                    xpMultiplier *= (1 + (this.player.metaBonuses?.xpBonus || 0));
                     const xpGain = Math.floor(10 * xpMultiplier);
                     this.addBladeXP(xpGain);
 
@@ -1190,6 +1396,10 @@ class Game {
         if (this.player.characterSpecial?.lifesteal) {
             lifestealPercent += this.player.characterSpecial.lifesteal;
         }
+        // Meta progression lifesteal
+        if (this.player.metaBonuses?.lifestealBonus) {
+            lifestealPercent += this.player.metaBonuses.lifestealBonus;
+        }
 
         if (lifestealPercent > 0 && totalDamageDealt > 0) {
             const healAmount = Math.floor(totalDamageDealt * lifestealPercent);
@@ -1207,6 +1417,13 @@ class Game {
                 // Hit the boss with blade damage + upgrade multipliers
                 const bossDamage = Math.floor(20 * bladeMultiplier * upgradeMultiplier);
                 const killed = this.boss.takeDamage(bossDamage);
+
+                // Weapon ability: Razor bleed on boss (DoT that inherits crit!)
+                const bossWeaponTier = this.weaponSystem.getActiveTierData();
+                if (bossWeaponTier.ability === 'bleed' && !killed) {
+                    const bleedDamage = Math.floor(bossDamage * 0.15); // 15% of hit damage per tick
+                    this.boss.applyStatusEffect('bleed', bleedDamage, 180, isCrit);
+                }
 
                 // Lifesteal on boss
                 if (lifestealPercent > 0) {
@@ -1340,6 +1557,70 @@ class Game {
                     if (chainsLeft <= 0) break;
                 }
             }
+        }
+    }
+
+    /**
+     * Trigger electric chain from imbue (different from blade chain ability)
+     */
+    triggerElectricChain(x, y, damage, range, maxChains) {
+        const alreadyHit = new Set();
+        let currentX = x;
+        let currentY = y;
+
+        for (let i = 0; i < maxChains; i++) {
+            let closestEnemy = null;
+            let closestDist = range;
+
+            for (const enemy of this.enemies) {
+                if (!enemy.active || alreadyHit.has(enemy)) continue;
+
+                const dx = enemy.x - currentX;
+                const dy = enemy.y - currentY;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+
+                if (dist < closestDist) {
+                    closestDist = dist;
+                    closestEnemy = enemy;
+                }
+            }
+
+            if (closestEnemy) {
+                closestEnemy.takeDamage(Math.floor(damage));
+                closestEnemy.applyStatusEffect('electric', 0, 30, false); // Visual only
+                alreadyHit.add(closestEnemy);
+
+                // Spawn electric visual
+                this.spawnChainLightning(currentX, currentY, closestEnemy.x, closestEnemy.y, '#ffff00');
+
+                currentX = closestEnemy.x;
+                currentY = closestEnemy.y;
+            } else {
+                break;
+            }
+        }
+    }
+
+    /**
+     * Spawn teleport particles
+     */
+    spawnTeleportParticles(x, y) {
+        for (let i = 0; i < 15; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const speed = Utils.random(2, 5);
+            this.bladeWaves.push({
+                x: x,
+                y: y,
+                vx: Math.cos(angle) * speed,
+                vy: Math.sin(angle) * speed,
+                width: 8,
+                height: 8,
+                damage: 0,
+                color: '#aa00ff',
+                lifetime: 20,
+                active: true,
+                isParticle: true
+            });
         }
     }
 
@@ -1850,6 +2131,11 @@ class Game {
         // Render weapon slots
         this.weaponSystem.renderSlots(ctx, this.canvas.width - 220, 20);
 
+        // Render active imbue indicator
+        if (this.activeImbue) {
+            this.renderImbueIndicator(ctx, this.canvas.width - 220, 80);
+        }
+
         // Render pause overlay
         if (this.isPaused) {
             this.renderPauseOverlay(ctx);
@@ -1865,14 +2151,71 @@ class Game {
     }
 
     /**
+     * Render active magic imbue indicator
+     */
+    renderImbueIndicator(ctx, x, y) {
+        ctx.save();
+
+        const imbue = this.activeImbue;
+        const pulse = Math.sin(Date.now() / 200) * 0.3 + 0.7;
+
+        // Background
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+        ctx.strokeStyle = imbue.color;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.roundRect(x, y, 200, 35, 5);
+        ctx.fill();
+        ctx.stroke();
+
+        // Glow
+        ctx.shadowColor = imbue.color;
+        ctx.shadowBlur = 10 * pulse;
+
+        // Icon based on type
+        let icon = '◆';
+        switch (imbue.type) {
+            case 'cold': icon = '❄'; break;
+            case 'fire': icon = '🔥'; break;
+            case 'electric': icon = '⚡'; break;
+            case 'teleport': icon = '✧'; break;
+        }
+
+        // Icon
+        ctx.font = 'bold 18px monospace';
+        ctx.fillStyle = imbue.color;
+        ctx.textAlign = 'left';
+        ctx.fillText(icon, x + 10, y + 24);
+
+        // Text
+        ctx.font = 'bold 12px monospace';
+        ctx.fillStyle = imbue.color;
+        ctx.fillText(`${imbue.name} IMBUE`, x + 35, y + 18);
+
+        // Find remaining duration from active buffs
+        const buff = this.dropSystem.activeBuffs.find(b => b.type.isImbue && b.type.imbueType === imbue.type);
+        if (buff) {
+            const seconds = Math.ceil(buff.remaining / 60);
+            ctx.font = '10px monospace';
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+            ctx.fillText(`${seconds}s remaining`, x + 35, y + 30);
+        }
+
+        ctx.restore();
+    }
+
+    /**
      * Render pause overlay
      */
     renderPauseOverlay(ctx) {
         ctx.save();
 
         // Darken screen
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
         ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+        const centerX = this.canvas.width / 2;
+        const centerY = this.canvas.height / 2;
 
         // Pause text
         ctx.textAlign = 'center';
@@ -1880,12 +2223,101 @@ class Game {
         ctx.fillStyle = GAME_CONFIG.COLORS.CYAN;
         ctx.shadowColor = GAME_CONFIG.COLORS.CYAN;
         ctx.shadowBlur = 20;
-        ctx.fillText('PAUSED', this.canvas.width / 2, this.canvas.height / 2);
+        ctx.fillText('PAUSED', centerX, 80);
 
-        ctx.font = '16px "Courier New", monospace';
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+        // Character info
+        ctx.font = 'bold 18px "Courier New", monospace';
+        ctx.shadowBlur = 10;
+        const char = this.characterSystem.getSelected();
+        ctx.fillText(`${char.name} - Level ${this.currentLevel}`, centerX, 120);
+
+        // Stats box
         ctx.shadowBlur = 0;
-        ctx.fillText('Press ESC or P to resume', this.canvas.width / 2, this.canvas.height / 2 + 40);
+        ctx.fillStyle = 'rgba(0, 240, 255, 0.1)';
+        ctx.strokeStyle = 'rgba(0, 240, 255, 0.3)';
+        ctx.lineWidth = 1;
+        ctx.fillRect(centerX - 300, 140, 600, 280);
+        ctx.strokeRect(centerX - 300, 140, 600, 280);
+
+        // Current stats
+        ctx.textAlign = 'left';
+        ctx.font = '14px "Courier New", monospace';
+        ctx.fillStyle = GAME_CONFIG.COLORS.CYAN;
+        ctx.fillText('CURRENT STATS:', centerX - 280, 170);
+
+        ctx.font = '12px "Courier New", monospace';
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+        const modifiers = this.upgradeSystem.modifiers;
+        const stats = [
+            `Damage Multiplier: ${(modifiers.damageMultiplier * 100).toFixed(0)}%`,
+            `Attack Speed: ${(modifiers.attackSpeedMultiplier * 100).toFixed(0)}%`,
+            `Move Speed: ${(modifiers.moveSpeedMultiplier * 100).toFixed(0)}%`,
+            `Max Health: ${this.player.maxHealth}`,
+            `Crit Chance: ${(modifiers.critChance * 100).toFixed(0)}%`,
+            `Cycle Gain: ${(modifiers.cycleGainMultiplier * 100).toFixed(0)}%`,
+            `Lifesteal: ${(modifiers.lifesteal * 100).toFixed(0)}%`
+        ];
+
+        stats.forEach((stat, i) => {
+            ctx.fillText(stat, centerX - 280, 195 + i * 18);
+        });
+
+        // Weapons info
+        ctx.fillStyle = GAME_CONFIG.COLORS.MAGENTA;
+        ctx.font = '14px "Courier New", monospace';
+        ctx.fillText('WEAPONS:', centerX + 20, 170);
+
+        ctx.font = '12px "Courier New", monospace';
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+        const weapons = this.weaponSystem.weapons;
+        weapons.forEach((weapon, i) => {
+            const tier = weapon.tiers[weapon.currentTier];
+            const level = weapon.currentTier + 1;
+            const maxLevel = weapon.tiers.length;
+            ctx.fillText(`${weapon.name}: Lv${level}/${maxLevel} - ${tier.name}`, centerX + 20, 195 + i * 18);
+        });
+
+        // Active buffs
+        ctx.fillStyle = '#ffff00';
+        ctx.font = '14px "Courier New", monospace';
+        ctx.fillText('ACTIVE BUFFS:', centerX + 20, 270);
+
+        ctx.font = '12px "Courier New", monospace';
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+        let buffY = 295;
+        if (this.tempBuffs.damageBoost > 1) {
+            ctx.fillText(`+${((this.tempBuffs.damageBoost - 1) * 100).toFixed(0)}% Damage`, centerX + 20, buffY);
+            buffY += 18;
+        }
+        if (this.tempBuffs.speedBoost > 1) {
+            ctx.fillText(`+${((this.tempBuffs.speedBoost - 1) * 100).toFixed(0)}% Speed`, centerX + 20, buffY);
+            buffY += 18;
+        }
+        if (this.tempBuffs.shield) {
+            ctx.fillText(`Shield (${this.tempBuffs.shieldHits} hits)`, centerX + 20, buffY);
+            buffY += 18;
+        }
+        if (buffY === 295) {
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+            ctx.fillText('None active', centerX + 20, buffY);
+        }
+
+        // Blade evolution info
+        ctx.fillStyle = GAME_CONFIG.COLORS.CYAN;
+        ctx.font = '14px "Courier New", monospace';
+        ctx.textAlign = 'left';
+        ctx.fillText('BLADE EVOLUTION:', centerX - 280, 340);
+
+        const bladeTier = this.bladeEvolution.getCurrentTier();
+        ctx.font = '12px "Courier New", monospace';
+        ctx.fillStyle = bladeTier.color;
+        ctx.fillText(`${bladeTier.name} (${(this.bladeEvolution.getDamageMultiplier() * 100).toFixed(0)}% DMG)`, centerX - 280, 365);
+
+        // Controls reminder
+        ctx.textAlign = 'center';
+        ctx.font = '14px "Courier New", monospace';
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+        ctx.fillText('Press ESC or P to resume | Press H for help', centerX, this.canvas.height - 40);
 
         ctx.restore();
     }
@@ -1959,10 +2391,37 @@ class Game {
         const killsEl = document.getElementById('gameover-kills');
         const bladeEl = document.getElementById('gameover-blade');
 
+        // Award data cores for this run
+        const bossKills = Math.floor(this.currentLevel / 3); // Rough estimate
+        const coresEarned = this.metaProgression.awardDataCores(
+            this.currentLevel,
+            this.totalKills,
+            bossKills
+        );
+
+        // Add to leaderboard
+        const leaderboardResult = this.leaderboard.addEntry({
+            level: this.currentLevel,
+            kills: this.totalKills,
+            character: this.characterSystem.selectedCharacter.toUpperCase(),
+            bladeTier: this.bladeEvolution.getBladeName(),
+            dataCoresEarned: coresEarned
+        });
+
         // Update stats
         levelEl.textContent = this.currentLevel;
         killsEl.textContent = this.totalKills;
         bladeEl.textContent = this.bladeEvolution.getBladeName();
+
+        // Show data cores earned
+        this.hud.addMessage(`+${coresEarned} DATA CORES earned!`, 'evolution');
+
+        // Show leaderboard ranking
+        if (leaderboardResult.rank === 1) {
+            this.hud.addMessage(`NEW HIGH SCORE! #${leaderboardResult.rank}`, 'evolution');
+        } else if (leaderboardResult.rank <= 10) {
+            this.hud.addMessage(`LEADERBOARD RANK: #${leaderboardResult.rank}`, 'success');
+        }
 
         modal.classList.remove('hidden');
 
@@ -2044,6 +2503,7 @@ class Game {
         this.ghostSystem.reset();
 
         // Reset temp buffs
+        this.activeImbue = null;
         this.tempBuffs = {
             damageBoost: 1.0,
             speedBoost: 1.0,
@@ -2061,6 +2521,12 @@ class Game {
 
         // Re-apply character stats
         this.characterSystem.applyToPlayer(this.player);
+
+        // Re-apply cosmetics
+        this.cosmeticsSystem.applySuitToPlayer(this.player);
+
+        // Re-apply meta progression bonuses
+        this.metaProgression.applyToPlayer(this.player, this);
 
         // Generate fresh random room
         this.currentRoom = generateRandomRoom(1);

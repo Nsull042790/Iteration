@@ -91,6 +91,21 @@
                 <span class="btn-glitch"></span>
             </button>
 
+            <div class="title-buttons">
+                <button id="codex-btn" class="title-action-btn">
+                    <span class="btn-icon">📖</span>
+                    <span class="btn-text">CODEX</span>
+                </button>
+                <button id="leaderboard-btn" class="title-action-btn">
+                    <span class="btn-icon">🏆</span>
+                    <span class="btn-text">SCORES</span>
+                </button>
+                <button id="upgrades-btn" class="title-action-btn">
+                    <span class="btn-icon">⬆</span>
+                    <span class="btn-text">UPGRADES</span>
+                </button>
+            </div>
+
             <div class="title-hint">
                 <span class="key-hint">SPACE</span> or <span class="key-hint">ENTER</span> to breach containment
             </div>
@@ -150,9 +165,13 @@
                         <span class="btn-text">RESTART ITERATION</span>
                         <span class="btn-icon">↻</span>
                     </button>
+                    <button id="mainmenu-button" class="start-btn mainmenu-btn">
+                        <span class="btn-text">MAIN MENU</span>
+                        <span class="btn-icon">⌂</span>
+                    </button>
                 </div>
 
-                <div class="gameover-hint">Press SPACE or ENTER to restart</div>
+                <div class="gameover-hint">Press SPACE to restart | ESC for main menu</div>
             </div>
         </div>
 
@@ -247,63 +266,216 @@
 
         <!-- FAQ/Help Modal -->
         <div id="faq-modal" class="screen hidden">
-            <div class="modal-content faq-content">
+            <div class="modal-content faq-content codex-content">
                 <div class="modal-header">
-                    <div class="modal-title">SYSTEM DATABASE</div>
-                    <div class="modal-subtitle">// INTEL BRIEFING</div>
+                    <div class="modal-title">SYSTEM CODEX</div>
+                    <div class="modal-subtitle">// COMPLETE INTEL DATABASE</div>
                 </div>
 
-                <div class="faq-sections">
-                    <div class="faq-section">
-                        <div class="faq-title">👻 GHOSTS & HAUNTS</div>
-                        <div class="faq-text">
-                            When you die, a <span class="cyan">GHOST</span> is created at your death location.
-                            Ghosts replay your final moments before death. In future runs, you can see where
-                            you died and learn from past mistakes. The more ghosts, the more haunted the level becomes.
+                <div class="codex-tabs">
+                    <button class="codex-tab active" data-tab="basics">BASICS</button>
+                    <button class="codex-tab" data-tab="characters">OPERATIVES</button>
+                    <button class="codex-tab" data-tab="combat">COMBAT</button>
+                    <button class="codex-tab" data-tab="items">ITEMS</button>
+                    <button class="codex-tab" data-tab="meta">META</button>
+                </div>
+
+                <div class="codex-panels">
+                    <!-- BASICS TAB -->
+                    <div class="codex-panel active" data-panel="basics">
+                        <div class="faq-section">
+                            <div class="faq-title">💎 CYCLES</div>
+                            <div class="faq-text">
+                                <span class="cyan">CYCLES</span> are your life force and currency. Earn them by killing enemies.
+                                Moving, jumping, and attacking cost cycles. Run out and you die!
+                            </div>
+                        </div>
+                        <div class="faq-section">
+                            <div class="faq-title">👻 GHOSTS</div>
+                            <div class="faq-text">
+                                When you die, a <span class="cyan">GHOST</span> is created at your death location.
+                                Ghosts replay your final moments. Learn from past failures!
+                            </div>
+                        </div>
+                        <div class="faq-section">
+                            <div class="faq-title">⚡ BLADE EVOLUTION</div>
+                            <div class="faq-text">
+                                Gain XP by killing enemies. Your blade evolves through tiers:
+                                <span class="magenta">BASIC → CHARGED → PLASMA → QUANTUM → SINGULARITY</span>
+                            </div>
+                        </div>
+                        <div class="faq-section">
+                            <div class="faq-title">🎮 CONTROLS</div>
+                            <div class="faq-text">
+                                <span class="key-inline">A/D</span> Move | <span class="key-inline">SPACE</span> Jump |
+                                <span class="key-inline">CLICK</span> Attack | <span class="key-inline">SHIFT</span> Dash<br>
+                                <span class="key-inline">1-3</span> Switch Weapons | <span class="key-inline">ESC</span> Pause |
+                                <span class="key-inline">H</span> Help
+                            </div>
                         </div>
                     </div>
 
-                    <div class="faq-section">
-                        <div class="faq-title">⚔️ WEAPONS</div>
-                        <div class="faq-text">
-                            <span class="magenta">STRIKER</span> - Fast attacks, pierce at max level<br>
-                            <span class="magenta">RAZOR</span> - Causes bleed damage over time<br>
-                            <span class="magenta">CRUSHER</span> - Heavy hits with shockwave AOE<br>
-                            <br>
-                            Press <span class="key-inline">1</span> <span class="key-inline">2</span> <span class="key-inline">3</span> to switch weapons.
-                            Upgrade weapons between levels to unlock <span class="yellow">LASER SWORDS</span>.
+                    <!-- CHARACTERS TAB -->
+                    <div class="codex-panel" data-panel="characters">
+                        <div class="faq-section">
+                            <div class="faq-title"><span class="cyan">⚡ VECTOR</span></div>
+                            <div class="faq-text">
+                                Balanced operative. Standard health, speed, and damage.
+                                Perfect for learning the game.
+                            </div>
+                        </div>
+                        <div class="faq-section">
+                            <div class="faq-title"><span class="magenta">🛡️ TITAN</span></div>
+                            <div class="faq-text">
+                                Tank class. <span class="green">+50% HP, +20% damage</span> but
+                                <span class="red">-30% speed, lower jump</span>. Starts with extra cycles.
+                            </div>
+                        </div>
+                        <div class="faq-section">
+                            <div class="faq-title"><span class="yellow">💀 HAVOC</span></div>
+                            <div class="faq-text">
+                                Glass cannon. <span class="green">+50% speed, +40% crit, 3% lifesteal</span> but
+                                <span class="red">-50% HP, takes 10% more damage</span>.
+                            </div>
+                        </div>
+                        <div class="faq-section">
+                            <div class="faq-title"><span class="green">🔋 CHROME</span></div>
+                            <div class="faq-text">
+                                Sustain class. <span class="green">1 HP/sec regen, +50% cycle efficiency</span> but
+                                <span class="red">-20% damage</span>. Great for long runs.
+                            </div>
                         </div>
                     </div>
 
-                    <div class="faq-section">
-                        <div class="faq-title">👹 BOSS ATTACKS</div>
-                        <div class="faq-text">
-                            Watch for <span class="red">RED DANGER ZONES</span> - these telegraph where attacks will land.
-                            <br><br>
-                            <span class="cyan">• DASH</span> - Boss charges in a line<br>
-                            <span class="cyan">• SLAM</span> - Jumps and creates shockwave on landing<br>
-                            <span class="cyan">• METEOR</span> - Multiple ground impacts (Phase 2+)<br>
-                            <span class="cyan">• SUMMON</span> - Spawns minions (Phase 2+)<br>
-                            <br>
-                            Bosses get faster and add new attacks as they lose health (Phase 2 at 66%, Phase 3 at 33%).
+                    <!-- COMBAT TAB -->
+                    <div class="codex-panel" data-panel="combat">
+                        <div class="faq-section">
+                            <div class="faq-title">⚔️ WEAPONS</div>
+                            <div class="faq-text">
+                                <span class="magenta">STRIKER</span> - Fast attacks, pierce enemies at max level<br>
+                                <span class="magenta">RAZOR</span> - Causes bleed damage over time<br>
+                                <span class="magenta">CRUSHER</span> - Heavy hits with shockwave AOE + knockback
+                            </div>
+                        </div>
+                        <div class="faq-section">
+                            <div class="faq-title">👹 BOSSES</div>
+                            <div class="faq-text">
+                                Watch for <span class="red">RED DANGER ZONES</span> - dodge before attacks land!<br>
+                                <span class="cyan">DASH</span> - Charges in a line |
+                                <span class="cyan">SLAM</span> - Shockwave on landing<br>
+                                <span class="cyan">METEOR</span> - Multiple impacts |
+                                <span class="cyan">SUMMON</span> - Spawns minions
+                            </div>
+                        </div>
+                        <div class="faq-section">
+                            <div class="faq-title">🎯 CRITICAL HITS</div>
+                            <div class="faq-text">
+                                Critical hits deal <span class="yellow">2x damage</span> and apply to DoT effects too!
+                                Bleed and burn ticks inherit crit from the attack that caused them.
+                            </div>
                         </div>
                     </div>
 
-                    <div class="faq-section">
-                        <div class="faq-title">💎 CYCLES & UPGRADES</div>
-                        <div class="faq-text">
-                            <span class="cyan">CYCLES</span> are your currency. Earn them by killing enemies and bosses.
-                            Moving, jumping, and attacking cost cycles. Run out and you slow down!
-                            <br><br>
-                            After each level, choose an <span class="magenta">UPGRADE</span> to power up your operative.
-                            Upgrades stack multiplicatively - choose wisely!
+                    <!-- ITEMS TAB -->
+                    <div class="codex-panel" data-panel="items">
+                        <div class="faq-section">
+                            <div class="faq-title">✨ MAGIC IMBUES</div>
+                            <div class="faq-text">
+                                Rare drops that enchant your weapon for 30 seconds:<br>
+                                <span class="cyan">❄️ COLD</span> - Slows enemies by 50%<br>
+                                <span class="orange">🔥 FIRE</span> - Burns enemies for damage over time<br>
+                                <span class="yellow">⚡ ELECTRIC</span> - Chain lightning to nearby enemies<br>
+                                <span class="magenta">🌀 TELEPORT</span> - Warp to enemy location on kill
+                            </div>
+                        </div>
+                        <div class="faq-section">
+                            <div class="faq-title">🎨 COSMETICS</div>
+                            <div class="faq-text">
+                                Find <span class="cyan">HAT</span> and <span class="magenta">SUIT</span> schematics!
+                                Cosmetics are permanent unlocks stored across all runs.
+                                Access your collection from the title screen.
+                            </div>
+                        </div>
+                        <div class="faq-section">
+                            <div class="faq-title">💊 CONSUMABLES</div>
+                            <div class="faq-text">
+                                <span class="green">HEAL</span> - Restore health |
+                                <span class="cyan">SHIELD</span> - Block hits<br>
+                                <span class="yellow">DAMAGE BOOST</span> - Temporary power |
+                                <span class="magenta">XP BURST</span> - Instant evolution XP
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- META TAB -->
+                    <div class="codex-panel" data-panel="meta">
+                        <div class="faq-section">
+                            <div class="faq-title">🔷 DATA CORES</div>
+                            <div class="faq-text">
+                                Earn <span class="cyan">DATA CORES</span> when you die based on your performance.
+                                These persist between runs and can be spent on permanent upgrades.
+                            </div>
+                        </div>
+                        <div class="faq-section">
+                            <div class="faq-title">⬆️ PERMANENT UPGRADES</div>
+                            <div class="faq-text">
+                                Spend Data Cores on bonuses that apply to ALL future runs:<br>
+                                Max Health, Damage, XP Gain, Starting Cycles, Crit Chance, Speed, Lifesteal
+                            </div>
+                        </div>
+                        <div class="faq-section">
+                            <div class="faq-title">🏆 LEADERBOARD</div>
+                            <div class="faq-text">
+                                Your best runs are saved locally. Compete against yourself!
+                                Score is based on level reached, enemies killed, and character used.
+                            </div>
                         </div>
                     </div>
                 </div>
 
                 <div class="faq-footer">
-                    <div class="faq-hint">Press H anytime to open this help screen</div>
+                    <div class="faq-hint">Press H anytime to open this codex</div>
                     <button id="faq-close-btn" class="start-btn">
+                        <span class="btn-text">CLOSE</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Leaderboard Modal -->
+        <div id="leaderboard-modal" class="screen hidden">
+            <div class="modal-content leaderboard-content">
+                <div class="modal-header">
+                    <div class="modal-title">🏆 LEADERBOARD</div>
+                    <div class="modal-subtitle">// TOP ITERATIONS</div>
+                </div>
+
+                <div class="leaderboard-list" id="leaderboard-list">
+                    <!-- Entries will be generated here -->
+                </div>
+
+                <div class="modal-footer">
+                    <button id="leaderboard-close-btn" class="start-btn">
+                        <span class="btn-text">CLOSE</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Meta Upgrades Modal -->
+        <div id="meta-modal" class="screen hidden">
+            <div class="modal-content meta-content">
+                <div class="modal-header">
+                    <div class="modal-title">⬆️ PERMANENT UPGRADES</div>
+                    <div class="modal-subtitle">// DATA CORES: <span id="meta-cores">0</span></div>
+                </div>
+
+                <div class="meta-upgrades-grid" id="meta-upgrades-grid">
+                    <!-- Upgrades will be generated here -->
+                </div>
+
+                <div class="modal-footer">
+                    <button id="meta-close-btn" class="start-btn">
                         <span class="btn-text">CLOSE</span>
                     </button>
                 </div>

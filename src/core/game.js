@@ -649,6 +649,9 @@ class Game {
 
         const titleScreen = document.getElementById('title-screen');
         const titleBtn = document.getElementById('title-start-btn');
+        const codexBtn = document.getElementById('codex-btn');
+        const leaderboardBtn = document.getElementById('leaderboard-btn');
+        const upgradesBtn = document.getElementById('upgrades-btn');
 
         titleScreen.classList.remove('hidden');
 
@@ -661,6 +664,15 @@ class Game {
 
         titleBtn.addEventListener('click', handleTitleClick);
 
+        // Codex button
+        codexBtn.onclick = () => this.showCodex();
+
+        // Leaderboard button
+        leaderboardBtn.onclick = () => this.showLeaderboardModal();
+
+        // Upgrades button
+        upgradesBtn.onclick = () => this.showMetaUpgradesModal();
+
         // Handle key press
         const handleTitleKey = (e) => {
             if (this.state === 'title' && (e.code === 'Space' || e.code === 'Enter')) {
@@ -670,6 +682,163 @@ class Game {
             }
         };
         window.addEventListener('keydown', handleTitleKey);
+
+        // Setup codex tabs
+        this.setupCodexTabs();
+    }
+
+    /**
+     * Setup codex tab switching
+     */
+    setupCodexTabs() {
+        const tabs = document.querySelectorAll('.codex-tab');
+        const panels = document.querySelectorAll('.codex-panel');
+
+        tabs.forEach(tab => {
+            tab.onclick = () => {
+                // Remove active from all
+                tabs.forEach(t => t.classList.remove('active'));
+                panels.forEach(p => p.classList.remove('active'));
+
+                // Add active to clicked
+                tab.classList.add('active');
+                const panel = document.querySelector(`.codex-panel[data-panel="${tab.dataset.tab}"]`);
+                if (panel) panel.classList.add('active');
+            };
+        });
+    }
+
+    /**
+     * Show codex/FAQ modal
+     */
+    showCodex() {
+        const modal = document.getElementById('faq-modal');
+        const closeBtn = document.getElementById('faq-close-btn');
+
+        modal.classList.remove('hidden');
+
+        closeBtn.onclick = () => {
+            modal.classList.add('hidden');
+        };
+
+        // ESC to close
+        const handleEsc = (e) => {
+            if (e.code === 'Escape' && !modal.classList.contains('hidden')) {
+                modal.classList.add('hidden');
+                window.removeEventListener('keydown', handleEsc);
+            }
+        };
+        window.addEventListener('keydown', handleEsc);
+    }
+
+    /**
+     * Show leaderboard modal
+     */
+    showLeaderboardModal() {
+        const modal = document.getElementById('leaderboard-modal');
+        const list = document.getElementById('leaderboard-list');
+        const closeBtn = document.getElementById('leaderboard-close-btn');
+
+        // Populate leaderboard
+        const entries = this.leaderboard.getTopEntries(10);
+
+        if (entries.length === 0) {
+            list.innerHTML = '<div class="leaderboard-empty">No runs recorded yet. Start playing!</div>';
+        } else {
+            list.innerHTML = entries.map((entry, index) => {
+                let rankClass = '';
+                if (index === 0) rankClass = 'gold';
+                else if (index === 1) rankClass = 'silver';
+                else if (index === 2) rankClass = 'bronze';
+
+                return `
+                    <div class="leaderboard-entry ${rankClass}">
+                        <div class="leaderboard-rank">#${index + 1}</div>
+                        <div class="leaderboard-info">
+                            <div class="leaderboard-character">${entry.character}</div>
+                            <div class="leaderboard-details">Level ${entry.level} • ${entry.kills} kills • ${entry.bladeTier}</div>
+                        </div>
+                        <div class="leaderboard-score">${entry.score.toLocaleString()}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        modal.classList.remove('hidden');
+
+        closeBtn.onclick = () => {
+            modal.classList.add('hidden');
+        };
+
+        const handleEsc = (e) => {
+            if (e.code === 'Escape' && !modal.classList.contains('hidden')) {
+                modal.classList.add('hidden');
+                window.removeEventListener('keydown', handleEsc);
+            }
+        };
+        window.addEventListener('keydown', handleEsc);
+    }
+
+    /**
+     * Show meta upgrades modal
+     */
+    showMetaUpgradesModal() {
+        const modal = document.getElementById('meta-modal');
+        const grid = document.getElementById('meta-upgrades-grid');
+        const coresDisplay = document.getElementById('meta-cores');
+        const closeBtn = document.getElementById('meta-close-btn');
+
+        const renderUpgrades = () => {
+            const cores = this.metaProgression.getDataCores();
+            coresDisplay.textContent = cores;
+
+            grid.innerHTML = this.metaProgression.upgrades.map(upgrade => {
+                const currentLevel = this.metaProgression.getUpgradeLevel(upgrade.id);
+                const isMaxed = currentLevel >= upgrade.maxLevel;
+                const cost = this.metaProgression.getUpgradeCost(upgrade.id);
+                const canAfford = cores >= cost;
+
+                const effectValue = upgrade.effect * (currentLevel + 1);
+                const effectText = upgrade.effectType === 'percent'
+                    ? `+${(effectValue * 100).toFixed(0)}%`
+                    : `+${effectValue}`;
+
+                return `
+                    <div class="meta-upgrade-card ${isMaxed ? 'maxed' : ''} ${canAfford && !isMaxed ? 'affordable' : ''}"
+                         data-upgrade="${upgrade.id}">
+                        <div class="meta-upgrade-name">${upgrade.name}</div>
+                        <div class="meta-upgrade-level">Level ${currentLevel}/${upgrade.maxLevel}</div>
+                        <div class="meta-upgrade-effect">${effectText} ${upgrade.description}</div>
+                        <div class="meta-upgrade-cost">${isMaxed ? 'MAXED' : `Cost: ${cost} cores`}</div>
+                    </div>
+                `;
+            }).join('');
+
+            // Add click handlers
+            grid.querySelectorAll('.meta-upgrade-card:not(.maxed)').forEach(card => {
+                card.onclick = () => {
+                    const upgradeId = card.dataset.upgrade;
+                    if (this.metaProgression.purchaseUpgrade(upgradeId)) {
+                        renderUpgrades();
+                    }
+                };
+            });
+        };
+
+        renderUpgrades();
+        modal.classList.remove('hidden');
+
+        closeBtn.onclick = () => {
+            modal.classList.add('hidden');
+        };
+
+        const handleEsc = (e) => {
+            if (e.code === 'Escape' && !modal.classList.contains('hidden')) {
+                modal.classList.add('hidden');
+                window.removeEventListener('keydown', handleEsc);
+            }
+        };
+        window.addEventListener('keydown', handleEsc);
     }
 
     /**
@@ -2387,6 +2556,7 @@ class Game {
     showGameOverModal() {
         const modal = document.getElementById('gameover-modal');
         const restartButton = document.getElementById('restart-button');
+        const mainMenuButton = document.getElementById('mainmenu-button');
         const levelEl = document.getElementById('gameover-level');
         const killsEl = document.getElementById('gameover-kills');
         const bladeEl = document.getElementById('gameover-blade');
@@ -2425,24 +2595,94 @@ class Game {
 
         modal.classList.remove('hidden');
 
+        // Cleanup function
+        const cleanup = () => {
+            restartButton.removeEventListener('click', handleRestart);
+            mainMenuButton.removeEventListener('click', handleMainMenu);
+            window.removeEventListener('keydown', handleKey);
+        };
+
         // Handle restart button click
         const handleRestart = () => {
             modal.classList.add('hidden');
-            restartButton.removeEventListener('click', handleRestart);
-            window.removeEventListener('keydown', handleRestartKey);
+            cleanup();
             this.resetRun();
         };
 
+        // Handle main menu button click
+        const handleMainMenu = () => {
+            modal.classList.add('hidden');
+            cleanup();
+            this.returnToMainMenu();
+        };
+
         // Handle key press
-        const handleRestartKey = (e) => {
-            if (this.state === 'gameover' && (e.code === 'Space' || e.code === 'Enter')) {
-                e.preventDefault();
-                handleRestart();
+        const handleKey = (e) => {
+            if (this.state === 'gameover') {
+                if (e.code === 'Space' || e.code === 'Enter') {
+                    e.preventDefault();
+                    handleRestart();
+                } else if (e.code === 'Escape') {
+                    e.preventDefault();
+                    handleMainMenu();
+                }
             }
         };
 
         restartButton.addEventListener('click', handleRestart);
-        window.addEventListener('keydown', handleRestartKey);
+        mainMenuButton.addEventListener('click', handleMainMenu);
+        window.addEventListener('keydown', handleKey);
+    }
+
+    /**
+     * Return to main menu from game over
+     */
+    returnToMainMenu() {
+        // Reset game state
+        this.state = 'title';
+
+        // Reset all game systems
+        this.currentLevel = 1;
+        this.roomNumber = 1;
+        this.currentZoneIndex = 0;
+        this.currentZone = this.zones[0];
+        this.killCount = 0;
+        this.totalKills = 0;
+
+        // Reset player
+        this.player.active = true;
+        this.player.health = this.player.maxHealth;
+        this.player.velocityX = 0;
+        this.player.velocityY = 0;
+
+        // Reset all systems
+        this.cycles.reset();
+        this.bladeEvolution.reset();
+        this.upgradeSystem.reset();
+        this.dropSystem.reset();
+        this.weaponSystem.reset();
+        this.laserProjectiles = [];
+        this.laserHits = [];
+        this.ghostSystem.reset();
+        this.activeImbue = null;
+        this.tempBuffs = {
+            damageBoost: 1.0,
+            speedBoost: 1.0,
+            xpMultiplier: 1.0,
+            shield: false,
+            shieldHits: 0,
+            invincible: false,
+            invincibleTimer: 0
+        };
+
+        // Clear enemies and drops
+        this.enemies = [];
+        this.boss = null;
+        this.drops = [];
+        this.particles = [];
+
+        // Show title screen
+        this.showTitleScreen();
     }
 
     /**

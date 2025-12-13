@@ -854,6 +854,239 @@ body {
 
 .cyan { color: #00f0ff; }
 .magenta { color: #ff00aa; }
+.green { color: #00ff88; }
+.red { color: #ff4444; }
+.yellow { color: #ffff00; }
+.orange { color: #ff8800; }
+
+/* Title Screen Buttons */
+.title-buttons {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin-top: 20px;
+    z-index: 10;
+    position: relative;
+}
+
+.title-action-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background: rgba(0, 0, 0, 0.6);
+    border: 1px solid rgba(0, 240, 255, 0.3);
+    color: #00f0ff;
+    font-family: inherit;
+    font-size: 12px;
+    letter-spacing: 2px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.title-action-btn:hover {
+    background: rgba(0, 240, 255, 0.1);
+    border-color: #00f0ff;
+    box-shadow: 0 0 15px rgba(0, 240, 255, 0.3);
+    transform: translateY(-2px);
+}
+
+.title-action-btn .btn-icon {
+    font-size: 14px;
+}
+
+/* Codex Tabs */
+.codex-content {
+    max-width: 700px;
+    max-height: 80vh;
+}
+
+.codex-tabs {
+    display: flex;
+    gap: 5px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.codex-tab {
+    padding: 8px 16px;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(0, 240, 255, 0.2);
+    color: rgba(255, 255, 255, 0.5);
+    font-family: inherit;
+    font-size: 11px;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.codex-tab:hover {
+    color: #00f0ff;
+    border-color: rgba(0, 240, 255, 0.5);
+}
+
+.codex-tab.active {
+    background: rgba(0, 240, 255, 0.1);
+    border-color: #00f0ff;
+    color: #00f0ff;
+}
+
+.codex-panels {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.codex-panel {
+    display: none;
+}
+
+.codex-panel.active {
+    display: block;
+}
+
+/* Leaderboard Modal */
+.leaderboard-content {
+    max-width: 500px;
+}
+
+.leaderboard-list {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.leaderboard-entry {
+    display: flex;
+    align-items: center;
+    padding: 12px 15px;
+    background: rgba(0, 0, 0, 0.3);
+    border-left: 3px solid rgba(0, 240, 255, 0.3);
+    margin-bottom: 8px;
+    transition: all 0.2s ease;
+}
+
+.leaderboard-entry:hover {
+    background: rgba(0, 240, 255, 0.1);
+}
+
+.leaderboard-entry.gold {
+    border-color: #ffd700;
+    background: rgba(255, 215, 0, 0.1);
+}
+
+.leaderboard-entry.silver {
+    border-color: #c0c0c0;
+    background: rgba(192, 192, 192, 0.05);
+}
+
+.leaderboard-entry.bronze {
+    border-color: #cd7f32;
+    background: rgba(205, 127, 50, 0.05);
+}
+
+.leaderboard-rank {
+    font-size: 18px;
+    font-weight: bold;
+    width: 40px;
+    color: #00f0ff;
+}
+
+.leaderboard-entry.gold .leaderboard-rank { color: #ffd700; }
+.leaderboard-entry.silver .leaderboard-rank { color: #c0c0c0; }
+.leaderboard-entry.bronze .leaderboard-rank { color: #cd7f32; }
+
+.leaderboard-info {
+    flex: 1;
+}
+
+.leaderboard-character {
+    font-size: 14px;
+    color: #ff00aa;
+    font-weight: bold;
+}
+
+.leaderboard-details {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.5);
+    margin-top: 2px;
+}
+
+.leaderboard-score {
+    font-size: 16px;
+    color: #00ff88;
+    font-weight: bold;
+}
+
+.leaderboard-empty {
+    text-align: center;
+    padding: 40px;
+    color: rgba(255, 255, 255, 0.4);
+    font-style: italic;
+}
+
+/* Meta Upgrades Modal */
+.meta-content {
+    max-width: 600px;
+}
+
+.meta-upgrades-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.meta-upgrade-card {
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(0, 240, 255, 0.2);
+    padding: 15px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.meta-upgrade-card:hover:not(.maxed) {
+    background: rgba(0, 240, 255, 0.1);
+    border-color: #00f0ff;
+}
+
+.meta-upgrade-card.maxed {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.meta-upgrade-name {
+    font-size: 13px;
+    color: #00f0ff;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.meta-upgrade-level {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.5);
+    margin-bottom: 8px;
+}
+
+.meta-upgrade-effect {
+    font-size: 12px;
+    color: #00ff88;
+    margin-bottom: 8px;
+}
+
+.meta-upgrade-cost {
+    font-size: 11px;
+    color: #ff00aa;
+}
+
+.meta-upgrade-card.affordable .meta-upgrade-cost {
+    color: #00ff88;
+}
+
+#meta-cores {
+    color: #00f0ff;
+    font-weight: bold;
+}
 
 /* Terminal Footer */
 .terminal-footer {
@@ -1301,6 +1534,26 @@ body {
     box-shadow:
         0 2px 0 #660044,
         0 0 30px rgba(255, 0, 170, 0.5);
+}
+
+.mainmenu-btn {
+    background: linear-gradient(135deg, #00aaff 0%, #0066aa 100%);
+    box-shadow:
+        0 4px 0 #004466,
+        0 0 20px rgba(0, 170, 255, 0.3);
+}
+
+.mainmenu-btn:hover {
+    box-shadow:
+        0 2px 0 #004466,
+        0 0 30px rgba(0, 170, 255, 0.5);
+}
+
+.gameover-footer {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    flex-wrap: wrap;
 }
 
 .gameover-hint {

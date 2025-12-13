@@ -813,6 +813,34 @@ body {
     50% { opacity: 0.8; }
 }
 
+.game-credit {
+    position: absolute;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.5);
+    letter-spacing: 2px;
+    z-index: 10;
+    text-shadow: 0 0 10px rgba(0, 255, 136, 0.3);
+}
+
+.credit-highlight {
+    color: #00ff88;
+    font-weight: bold;
+    text-shadow: 0 0 15px rgba(0, 255, 136, 0.8), 0 0 30px rgba(0, 255, 136, 0.4);
+    animation: creditGlow 2s ease-in-out infinite;
+}
+
+@keyframes creditGlow {
+    0%, 100% {
+        text-shadow: 0 0 15px rgba(0, 255, 136, 0.8), 0 0 30px rgba(0, 255, 136, 0.4);
+    }
+    50% {
+        text-shadow: 0 0 20px rgba(0, 255, 136, 1), 0 0 40px rgba(0, 255, 136, 0.6), 0 0 60px rgba(0, 255, 136, 0.3);
+    }
+}
+
 .game-premise p {
     color: rgba(255, 255, 255, 0.6);
     font-size: 14px;

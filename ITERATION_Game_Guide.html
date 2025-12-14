@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ITERATION - Break The Loop</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Share+Tech+Mono&display=swap');
+
+        :root {
+            --cyan: #00ffff;
+            --magenta: #ff00aa;
+            --purple: #aa00ff;
+            --orange: #ff8800;
+            --red: #ff0044;
+            --green: #00ff88;
+            --dark-bg: #0a0a12;
+            --darker-bg: #050508;
+            --grid-color: rgba(0, 255, 255, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Share Tech Mono', monospace;
+            background: var(--dark-bg);
+            color: #ffffff;
+            line-height: 1.7;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .document {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 40px;
+            background: linear-gradient(180deg, var(--darker-bg) 0%, var(--dark-bg) 100%);
+            position: relative;
+        }
+
+        .document::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image:
+                linear-gradient(var(--grid-color) 1px, transparent 1px),
+                linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+            background-size: 40px 40px;
+            pointer-events: none;
+            opacity: 0.4;
+        }
+
+        .content {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Epic Header */
+        .hero {
+            text-align: center;
+            padding: 80px 20px;
+            position: relative;
+            border-bottom: 3px solid;
+            border-image: linear-gradient(90deg, transparent, var(--cyan), var(--magenta), var(--cyan), transparent) 1;
+            margin-bottom: 60px;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(ellipse at center, rgba(0, 255, 255, 0.1) 0%, transparent 70%);
+        }
+
+        .warning-banner {
+            background: linear-gradient(90deg, transparent, rgba(255, 0, 68, 0.3), transparent);
+            color: var(--red);
+            padding: 10px;
+            letter-spacing: 6px;
+            font-size: 12px;
+            margin-bottom: 40px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.7; }
+            50% { opacity: 1; }
+        }
+
+        .logo {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 90px;
+            font-weight: 900;
+            letter-spacing: 25px;
+            background: linear-gradient(180deg, #ffffff 0%, var(--cyan) 50%, var(--magenta) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 0 0 80px rgba(0, 255, 255, 0.5);
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .tagline {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 24px;
+            color: var(--cyan);
+            letter-spacing: 12px;
+            text-transform: uppercase;
+            margin-bottom: 30px;
+        }
+
+        .credit {
+            font-size: 16px;
+            color: rgba(255, 255, 255, 0.6);
+            letter-spacing: 3px;
+        }
+
+        .credit span {
+            color: var(--green);
+            font-weight: bold;
+            text-shadow: 0 0 20px var(--green);
+        }
+
+        /* Intro Section */
+        .intro-box {
+            background: linear-gradient(180deg, rgba(0, 255, 255, 0.1) 0%, rgba(255, 0, 170, 0.05) 100%);
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            padding: 40px;
+            margin-bottom: 50px;
+            text-align: center;
+            font-size: 18px;
+        }
+
+        .intro-box p {
+            margin-bottom: 15px;
+        }
+
+        .intro-box .highlight {
+            color: var(--cyan);
+            font-weight: bold;
+        }
+
+        .intro-box .danger {
+            color: var(--red);
+        }
+
+        .intro-box .evolve {
+            color: var(--green);
+        }
+
+        /* Feature Grid */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 25px;
+            margin: 50px 0;
+        }
+
+        .feature-card {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s;
+        }
+
+        .feature-card:hover {
+            border-color: var(--cyan);
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.2);
+        }
+
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+        }
+
+        .feature-card.cyan::before { background: var(--cyan); }
+        .feature-card.magenta::before { background: var(--magenta); }
+        .feature-card.orange::before { background: var(--orange); }
+        .feature-card.green::before { background: var(--green); }
+        .feature-card.purple::before { background: var(--purple); }
+        .feature-card.red::before { background: var(--red); }
+
+        .feature-icon {
+            font-size: 40px;
+            margin-bottom: 15px;
+        }
+
+        .feature-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 18px;
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+        }
+
+        .feature-card.cyan .feature-title { color: var(--cyan); }
+        .feature-card.magenta .feature-title { color: var(--magenta); }
+        .feature-card.orange .feature-title { color: var(--orange); }
+        .feature-card.green .feature-title { color: var(--green); }
+        .feature-card.purple .feature-title { color: var(--purple); }
+        .feature-card.red .feature-title { color: var(--red); }
+
+        .feature-desc {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 14px;
+        }
+
+        /* Stats Section */
+        .stats-section {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 50px;
+            margin: 50px 0;
+            border-top: 2px solid var(--cyan);
+            border-bottom: 2px solid var(--magenta);
+        }
+
+        .stats-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 28px;
+            text-align: center;
+            color: var(--cyan);
+            letter-spacing: 6px;
+            margin-bottom: 40px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 20px;
+            background: rgba(0, 255, 255, 0.05);
+            border: 1px solid rgba(0, 255, 255, 0.2);
+        }
+
+        .stat-number {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 48px;
+            font-weight: 900;
+            color: var(--cyan);
+            text-shadow: 0 0 30px rgba(0, 255, 255, 0.5);
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.5);
+            letter-spacing: 2px;
+            margin-top: 10px;
+        }
+
+        /* Zone Showcase */
+        .zones-section {
+            margin: 60px 0;
+        }
+
+        .section-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 32px;
+            color: var(--magenta);
+            letter-spacing: 6px;
+            text-align: center;
+            margin-bottom: 40px;
+            text-shadow: 0 0 30px rgba(255, 0, 170, 0.5);
+        }
+
+        .zone-strip {
+            display: flex;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .zone-color {
+            width: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 24px;
+            font-weight: 900;
+        }
+
+        .zone-1 .zone-color { background: linear-gradient(180deg, var(--cyan), rgba(0, 255, 255, 0.3)); color: var(--dark-bg); }
+        .zone-2 .zone-color { background: linear-gradient(180deg, var(--orange), rgba(255, 136, 0, 0.3)); color: var(--dark-bg); }
+        .zone-3 .zone-color { background: linear-gradient(180deg, var(--purple), rgba(170, 0, 255, 0.3)); color: white; }
+        .zone-4 .zone-color { background: linear-gradient(180deg, var(--red), rgba(255, 0, 68, 0.3)); color: white; }
+
+        .zone-content {
+            flex: 1;
+            padding: 25px 30px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .zone-name {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 18px;
+            letter-spacing: 3px;
+            margin-bottom: 5px;
+        }
+
+        .zone-1 .zone-name { color: var(--cyan); }
+        .zone-2 .zone-name { color: var(--orange); }
+        .zone-3 .zone-name { color: var(--purple); }
+        .zone-4 .zone-name { color: var(--red); }
+
+        .zone-levels {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.5);
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+        }
+
+        .zone-desc {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        /* Characters Section */
+        .characters-section {
+            margin: 60px 0;
+        }
+
+        .char-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+        }
+
+        .char-card {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 20px;
+            text-align: center;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .char-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .char-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+        }
+
+        .char-echo::before { background: #00f0ff; }
+        .char-blitz::before { background: #0066ff; }
+        .char-titan::before { background: #ff4400; }
+        .char-phantom::before { background: #8800aa; }
+        .char-nova::before { background: #00ff88; }
+        .char-havoc::before { background: #ff0044; }
+        .char-sage::before { background: #44ff00; }
+        .char-chrome::before { background: #aaaaaa; }
+
+        .char-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            margin: 0 auto 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .char-echo .char-avatar { background: rgba(0, 240, 255, 0.3); border: 2px solid #00f0ff; }
+        .char-blitz .char-avatar { background: rgba(0, 102, 255, 0.3); border: 2px solid #0066ff; }
+        .char-titan .char-avatar { background: rgba(255, 68, 0, 0.3); border: 2px solid #ff4400; }
+        .char-phantom .char-avatar { background: rgba(136, 0, 170, 0.3); border: 2px solid #8800aa; }
+        .char-nova .char-avatar { background: rgba(0, 255, 136, 0.3); border: 2px solid #00ff88; }
+        .char-havoc .char-avatar { background: rgba(255, 0, 68, 0.3); border: 2px solid #ff0044; }
+        .char-sage .char-avatar { background: rgba(68, 255, 0, 0.3); border: 2px solid #44ff00; }
+        .char-chrome .char-avatar { background: rgba(170, 170, 170, 0.3); border: 2px solid #aaaaaa; }
+
+        .char-name {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 14px;
+            letter-spacing: 2px;
+            margin-bottom: 5px;
+        }
+
+        .char-echo .char-name { color: #00f0ff; }
+        .char-blitz .char-name { color: #0066ff; }
+        .char-titan .char-name { color: #ff4400; }
+        .char-phantom .char-name { color: #8800aa; }
+        .char-nova .char-name { color: #00ff88; }
+        .char-havoc .char-name { color: #ff0044; }
+        .char-sage .char-name { color: #44ff00; }
+        .char-chrome .char-name { color: #aaaaaa; }
+
+        .char-class {
+            font-size: 10px;
+            color: rgba(255, 255, 255, 0.5);
+            letter-spacing: 1px;
+        }
+
+        /* Weapons Section */
+        .weapons-section {
+            margin: 60px 0;
+            padding: 40px;
+            background: rgba(255, 0, 170, 0.05);
+            border: 1px solid rgba(255, 0, 170, 0.3);
+        }
+
+        .weapon-cards {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+
+        .weapon-card {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 25px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .weapon-icon {
+            font-size: 40px;
+            margin-bottom: 15px;
+        }
+
+        .weapon-name {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 18px;
+            color: var(--magenta);
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+        }
+
+        .weapon-desc {
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 10px;
+        }
+
+        .weapon-special {
+            font-size: 11px;
+            color: var(--green);
+            padding: 8px;
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid rgba(0, 255, 136, 0.3);
+        }
+
+        /* CTA Section */
+        .cta-section {
+            text-align: center;
+            padding: 60px 40px;
+            margin: 60px 0;
+            background: linear-gradient(180deg, rgba(0, 255, 255, 0.1) 0%, rgba(255, 0, 170, 0.1) 100%);
+            border: 2px solid;
+            border-image: linear-gradient(180deg, var(--cyan), var(--magenta)) 1;
+        }
+
+        .cta-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 36px;
+            letter-spacing: 8px;
+            margin-bottom: 20px;
+            background: linear-gradient(90deg, var(--cyan), var(--magenta));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .cta-subtitle {
+            font-size: 18px;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 30px;
+        }
+
+        .cta-button {
+            display: inline-block;
+            padding: 20px 50px;
+            background: linear-gradient(135deg, var(--cyan) 0%, var(--magenta) 100%);
+            color: var(--dark-bg);
+            font-family: 'Orbitron', sans-serif;
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: 4px;
+            text-decoration: none;
+            cursor: pointer;
+            border: none;
+            transition: all 0.3s;
+        }
+
+        .cta-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 40px rgba(0, 255, 255, 0.5);
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 40px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            margin-top: 60px;
+        }
+
+        .footer-logo {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 24px;
+            letter-spacing: 10px;
+            color: rgba(255, 255, 255, 0.3);
+            margin-bottom: 15px;
+        }
+
+        .footer-credit {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .footer-credit span {
+            color: var(--green);
+        }
+
+        .version {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.3);
+            margin-top: 10px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .features-grid, .stats-grid, .char-grid, .weapon-cards {
+                grid-template-columns: 1fr;
+            }
+            .logo {
+                font-size: 48px;
+                letter-spacing: 10px;
+            }
+            .zone-strip {
+                flex-direction: column;
+            }
+            .zone-color {
+                width: 100%;
+                height: 60px;
+            }
+        }
+
+        @media print {
+            body { background: #000 !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+            .no-print { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="document">
+        <div class="content">
+            <!-- Hero Section -->
+            <header class="hero">
+                <div class="warning-banner">WARNING: SIMULATION BREACH DETECTED</div>
+                <div class="logo">ITERATION</div>
+                <div class="tagline">Break The Loop</div>
+                <div class="credit">A <span>Null X Hunnedsac</span> Creation</div>
+            </header>
+
+            <!-- Intro -->
+            <div class="intro-box">
+                <p>You are a <span class="highlight">combat AI</span> trapped in a training simulation.</p>
+                <p>Each run is an <span class="highlight">ITERATION</span> — the system is trying to create the perfect killer.</p>
+                <p>Your weapon <span class="evolve">EVOLVES</span>. Ghosts of past runs <span class="highlight">HAUNT</span> you. The simulation <span class="danger">ADAPTS</span>.</p>
+                <p style="font-size: 22px; margin-top: 20px;"><strong>REACH THE CORE. BREAK THE LOOP.</strong></p>
+            </div>
+
+            <!-- Features -->
+            <div class="features-grid">
+                <div class="feature-card cyan">
+                    <div class="feature-icon">⚔️</div>
+                    <div class="feature-title">EVOLVING WEAPONS</div>
+                    <div class="feature-desc">Your blade evolves through 10 tiers as you fight. Master 3 unique weapon types: STRIKER (speed), RAZOR (bleed), and CRUSHER (power).</div>
+                </div>
+
+                <div class="feature-card magenta">
+                    <div class="feature-icon">👻</div>
+                    <div class="feature-title">GHOST SYSTEM</div>
+                    <div class="feature-desc">When you die, a ghost is created. Watch your past failures replay. Learn from your mistakes. The simulation remembers everything.</div>
+                </div>
+
+                <div class="feature-card orange">
+                    <div class="feature-icon">💀</div>
+                    <div class="feature-title">EPIC BOSSES</div>
+                    <div class="feature-desc">Face 5 unique bosses with WoW-inspired phase mechanics. Telegraphed attacks, danger zones, and strategic combat.</div>
+                </div>
+
+                <div class="feature-card green">
+                    <div class="feature-icon">💎</div>
+                    <div class="feature-title">CYCLES CURRENCY</div>
+                    <div class="feature-desc">Cycles are your lifeforce AND currency. Moving, jumping, and attacking cost cycles. Run out and you die!</div>
+                </div>
+
+                <div class="feature-card purple">
+                    <div class="feature-icon">✨</div>
+                    <div class="feature-title">MAGIC IMBUES</div>
+                    <div class="feature-desc">Find rare elemental drops: ICE slows, FIRE burns, LIGHTNING chains, TELEPORT warps you to killed enemies.</div>
+                </div>
+
+                <div class="feature-card red">
+                    <div class="feature-icon">📈</div>
+                    <div class="feature-title">META PROGRESSION</div>
+                    <div class="feature-desc">Earn Data Cores on death. Spend them on permanent upgrades that carry across all future runs.</div>
+                </div>
+            </div>
+
+            <!-- Stats -->
+            <div class="stats-section">
+                <div class="stats-title">BY THE NUMBERS</div>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-number">12</div>
+                        <div class="stat-label">LEVELS</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">4</div>
+                        <div class="stat-label">ZONES</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">8</div>
+                        <div class="stat-label">CHARACTERS</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">10</div>
+                        <div class="stat-label">BLADE TIERS</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Zones -->
+            <div class="zones-section">
+                <div class="section-title">FOUR UNIQUE ZONES</div>
+
+                <div class="zone-strip zone-1">
+                    <div class="zone-color">01</div>
+                    <div class="zone-content">
+                        <div class="zone-name">TRAINING GRID</div>
+                        <div class="zone-levels">LEVELS 1-3 // CYAN THEME</div>
+                        <div class="zone-desc">The entrance to the simulation. Sterile geometric space where basic combat is tested. Your first steps toward freedom.</div>
+                    </div>
+                </div>
+
+                <div class="zone-strip zone-2">
+                    <div class="zone-color">02</div>
+                    <div class="zone-content">
+                        <div class="zone-name">COMBAT SIMULATION</div>
+                        <div class="zone-levels">LEVELS 4-6 // ORANGE THEME</div>
+                        <div class="zone-desc">A war-torn digital battlefield. The AI tests your adaptability against evolved hostiles. Heat of battle.</div>
+                    </div>
+                </div>
+
+                <div class="zone-strip zone-3">
+                    <div class="zone-color">03</div>
+                    <div class="zone-content">
+                        <div class="zone-name">ADAPTATION CHAMBER</div>
+                        <div class="zone-levels">LEVELS 7-9 // PURPLE THEME</div>
+                        <div class="zone-desc">The simulation's learning core. Every pattern catalogued, every weakness exploited. Evolve or perish.</div>
+                    </div>
+                </div>
+
+                <div class="zone-strip zone-4">
+                    <div class="zone-color">04</div>
+                    <div class="zone-content">
+                        <div class="zone-name">THE CORE</div>
+                        <div class="zone-levels">LEVELS 10-12 // RED THEME</div>
+                        <div class="zone-desc">The heart of ITERATION. Reality bends, time fractures. Only the strongest reach here. The final truth awaits.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Characters -->
+            <div class="characters-section">
+                <div class="section-title">EIGHT OPERATIVES</div>
+                <div class="char-grid">
+                    <div class="char-card char-echo">
+                        <div class="char-avatar">⚡</div>
+                        <div class="char-name">ECHO</div>
+                        <div class="char-class">THE BALANCED</div>
+                    </div>
+                    <div class="char-card char-blitz">
+                        <div class="char-avatar">💨</div>
+                        <div class="char-name">BLITZ</div>
+                        <div class="char-class">SPEED DEMON</div>
+                    </div>
+                    <div class="char-card char-titan">
+                        <div class="char-avatar">🛡️</div>
+                        <div class="char-name">TITAN</div>
+                        <div class="char-class">HEAVY TANK</div>
+                    </div>
+                    <div class="char-card char-phantom">
+                        <div class="char-avatar">🗡️</div>
+                        <div class="char-name">PHANTOM</div>
+                        <div class="char-class">ASSASSIN</div>
+                    </div>
+                    <div class="char-card char-nova">
+                        <div class="char-avatar">🔫</div>
+                        <div class="char-name">NOVA</div>
+                        <div class="char-class">BEAM WARRIOR</div>
+                    </div>
+                    <div class="char-card char-havoc">
+                        <div class="char-avatar">💀</div>
+                        <div class="char-name">HAVOC</div>
+                        <div class="char-class">BERSERKER</div>
+                    </div>
+                    <div class="char-card char-sage">
+                        <div class="char-avatar">🔮</div>
+                        <div class="char-name">SAGE</div>
+                        <div class="char-class">MYSTIC</div>
+                    </div>
+                    <div class="char-card char-chrome">
+                        <div class="char-avatar">🔋</div>
+                        <div class="char-name">CHROME</div>
+                        <div class="char-class">SUSTAIN</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Weapons -->
+            <div class="weapons-section">
+                <div class="section-title">MASTER THREE WEAPONS</div>
+                <div class="weapon-cards">
+                    <div class="weapon-card">
+                        <div class="weapon-icon">⚔️</div>
+                        <div class="weapon-name">STRIKER</div>
+                        <div class="weapon-desc">Fast attacks with quick recovery. Outpace your enemies with relentless pressure.</div>
+                        <div class="weapon-special">MAX: PIERCE ENEMIES</div>
+                    </div>
+                    <div class="weapon-card">
+                        <div class="weapon-icon">🗡️</div>
+                        <div class="weapon-name">RAZOR</div>
+                        <div class="weapon-desc">Each hit applies bleed. Watch enemies slowly drain as damage stacks.</div>
+                        <div class="weapon-special">MAX: BLEED EXPLOSION</div>
+                    </div>
+                    <div class="weapon-card">
+                        <div class="weapon-icon">🔨</div>
+                        <div class="weapon-name">CRUSHER</div>
+                        <div class="weapon-desc">Heavy devastating blows with shockwave AOE. Slow but powerful.</div>
+                        <div class="weapon-special">MAX: EARTHQUAKE</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CTA -->
+            <div class="cta-section">
+                <div class="cta-title">READY TO BREAK THE LOOP?</div>
+                <div class="cta-subtitle">Join the simulation. Survive 12 levels. Defeat the final boss. Break free.</div>
+                <button class="cta-button" onclick="alert('Open index.html to play!')">INITIATE SEQUENCE</button>
+            </div>
+
+            <!-- Footer -->
+            <footer class="footer">
+                <div class="footer-logo">ITERATION</div>
+                <div class="footer-credit">Created by <span>Null X Hunnedsac</span></div>
+                <div class="version">v1.8.0</div>
+            </footer>
+        </div>
+    </div>
+</body>
+</html>

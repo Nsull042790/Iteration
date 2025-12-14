@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ITERATION - Technical Architecture Document</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&family=Share+Tech+Mono&display=swap');
+
+        :root {
+            --cyan: #00ffff;
+            --magenta: #ff00aa;
+            --purple: #aa00ff;
+            --orange: #ff8800;
+            --red: #ff0044;
+            --green: #00ff88;
+            --yellow: #ffff00;
+            --dark-bg: #0a0a12;
+            --darker-bg: #050508;
+            --code-bg: #0d0d18;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Share Tech Mono', monospace;
+            background: var(--dark-bg);
+            color: #e0e0e0;
+            line-height: 1.7;
+            padding: 40px;
+        }
+
+        .document {
+            max-width: 1100px;
+            margin: 0 auto;
+            background: var(--darker-bg);
+            border: 1px solid rgba(0, 255, 255, 0.2);
+            padding: 50px;
+        }
+
+        /* Header */
+        .header {
+            border-bottom: 2px solid var(--cyan);
+            padding-bottom: 30px;
+            margin-bottom: 40px;
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 20px;
+        }
+
+        .logo {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 42px;
+            font-weight: 900;
+            letter-spacing: 8px;
+            color: var(--cyan);
+        }
+
+        .doc-type {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 12px;
+            color: var(--magenta);
+            letter-spacing: 3px;
+            padding: 8px 16px;
+            border: 1px solid var(--magenta);
+        }
+
+        .meta-info {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 20px;
+            border-left: 3px solid var(--cyan);
+        }
+
+        .meta-item {
+            font-size: 12px;
+        }
+
+        .meta-label {
+            color: rgba(255, 255, 255, 0.5);
+            letter-spacing: 1px;
+        }
+
+        .meta-value {
+            color: var(--cyan);
+            margin-top: 3px;
+        }
+
+        /* Sections */
+        .section {
+            margin-bottom: 50px;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .section-num {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 32px;
+            font-weight: 900;
+            color: var(--magenta);
+            opacity: 0.4;
+            margin-right: 20px;
+        }
+
+        .section-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 22px;
+            color: var(--cyan);
+            letter-spacing: 3px;
+        }
+
+        /* Code blocks */
+        .code-block {
+            background: var(--code-bg);
+            border: 1px solid rgba(0, 255, 255, 0.2);
+            border-left: 4px solid var(--cyan);
+            padding: 20px;
+            margin: 20px 0;
+            overflow-x: auto;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .code-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 11px;
+            color: var(--magenta);
+            letter-spacing: 2px;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .code-block .comment { color: #666; }
+        .code-block .keyword { color: var(--magenta); }
+        .code-block .string { color: var(--green); }
+        .code-block .number { color: var(--orange); }
+        .code-block .function { color: var(--cyan); }
+        .code-block .class { color: var(--yellow); }
+
+        /* File tree */
+        .file-tree {
+            background: var(--code-bg);
+            padding: 25px;
+            border: 1px solid rgba(0, 255, 255, 0.2);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+        }
+
+        .file-tree-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 12px;
+            color: var(--cyan);
+            letter-spacing: 2px;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .tree-item {
+            padding: 3px 0;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .tree-folder { color: var(--cyan); }
+        .tree-file { color: rgba(255, 255, 255, 0.6); }
+        .tree-main { color: var(--green); font-weight: bold; }
+
+        /* Tables */
+        .tech-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        .tech-table th {
+            font-family: 'Orbitron', sans-serif;
+            background: rgba(0, 255, 255, 0.1);
+            color: var(--cyan);
+            padding: 12px 15px;
+            text-align: left;
+            border: 1px solid rgba(0, 255, 255, 0.2);
+            font-size: 11px;
+            letter-spacing: 2px;
+        }
+
+        .tech-table td {
+            padding: 10px 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 13px;
+        }
+
+        .tech-table tr:nth-child(even) {
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .highlight-cyan { color: var(--cyan); }
+        .highlight-magenta { color: var(--magenta); }
+        .highlight-green { color: var(--green); }
+        .highlight-orange { color: var(--orange); }
+        .highlight-red { color: var(--red); }
+
+        /* Info boxes */
+        .info-box {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-left: 4px solid;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .info-box.cyan { border-left-color: var(--cyan); }
+        .info-box.magenta { border-left-color: var(--magenta); }
+        .info-box.orange { border-left-color: var(--orange); }
+        .info-box.green { border-left-color: var(--green); }
+
+        .info-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 12px;
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+        }
+
+        .info-box.cyan .info-title { color: var(--cyan); }
+        .info-box.magenta .info-title { color: var(--magenta); }
+        .info-box.orange .info-title { color: var(--orange); }
+        .info-box.green .info-title { color: var(--green); }
+
+        /* Architecture diagram */
+        .arch-diagram {
+            background: var(--code-bg);
+            padding: 30px;
+            margin: 20px 0;
+            border: 1px solid rgba(0, 255, 255, 0.2);
+            font-family: 'JetBrains Mono', monospace;
+            white-space: pre;
+            overflow-x: auto;
+            line-height: 1.4;
+            font-size: 12px;
+        }
+
+        /* System flow */
+        .flow-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin: 30px 0;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .flow-box {
+            background: rgba(0, 0, 0, 0.4);
+            border: 2px solid;
+            padding: 15px 25px;
+            text-align: center;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 12px;
+            letter-spacing: 1px;
+        }
+
+        .flow-arrow {
+            color: rgba(255, 255, 255, 0.3);
+            font-size: 24px;
+        }
+
+        /* Subsection */
+        .subsection-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 16px;
+            color: var(--magenta);
+            letter-spacing: 2px;
+            margin: 30px 0 15px;
+            padding-left: 15px;
+            border-left: 3px solid var(--magenta);
+        }
+
+        /* List styles */
+        .tech-list {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .tech-list li {
+            padding: 8px 0;
+            padding-left: 25px;
+            position: relative;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .tech-list li::before {
+            content: '>';
+            position: absolute;
+            left: 0;
+            color: var(--cyan);
+        }
+
+        /* Inline code */
+        code {
+            font-family: 'JetBrains Mono', monospace;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 2px 8px;
+            border-radius: 3px;
+            color: var(--orange);
+            font-size: 12px;
+        }
+
+        p {
+            margin-bottom: 15px;
+        }
+
+        /* Footer */
+        .footer {
+            margin-top: 60px;
+            padding-top: 30px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+        }
+
+        .footer-text {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.4);
+            letter-spacing: 2px;
+        }
+
+        .footer-text span {
+            color: var(--green);
+        }
+
+        @media print {
+            body { background: #000 !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+        }
+    </style>
+</head>
+<body>
+    <div class="document">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-top">
+                <div class="logo">ITERATION</div>
+                <div class="doc-type">TECHNICAL ARCHITECTURE</div>
+            </div>
+            <div class="meta-info">
+                <div class="meta-item">
+                    <div class="meta-label">VERSION</div>
+                    <div class="meta-value">1.8.0</div>
+                </div>
+                <div class="meta-item">
+                    <div class="meta-label">ENGINE</div>
+                    <div class="meta-value">Vanilla JavaScript + Canvas</div>
+                </div>
+                <div class="meta-item">
+                    <div class="meta-label">AUTHORS</div>
+                    <div class="meta-value">Null X Hunnedsac</div>
+                </div>
+                <div class="meta-item">
+                    <div class="meta-label">LAST UPDATED</div>
+                    <div class="meta-value">2025.12.14</div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Section 1: Project Structure -->
+        <section class="section">
+            <div class="section-header">
+                <span class="section-num">01</span>
+                <h2 class="section-title">PROJECT STRUCTURE</h2>
+            </div>
+
+            <div class="file-tree">
+                <div class="file-tree-title">/ ITERATION</div>
+<span class="tree-folder">├── src/</span>
+<span class="tree-folder">│   ├── core/</span>
+<span class="tree-file">│   │   ├── game.js          <span class="highlight-cyan"># Main game loop, state management</span></span>
+<span class="tree-file">│   │   ├── constants.js     <span class="highlight-cyan"># Global config, colors, physics</span></span>
+<span class="tree-file">│   │   ├── input.js         <span class="highlight-cyan"># Keyboard/mouse input handler</span></span>
+<span class="tree-file">│   │   ├── touch-controls.js <span class="highlight-cyan"># Mobile joystick + buttons</span></span>
+<span class="tree-file">│   │   ├── physics.js       <span class="highlight-cyan"># Collision detection, AABB</span></span>
+<span class="tree-file">│   │   ├── camera.js        <span class="highlight-cyan"># Viewport scrolling, shake</span></span>
+<span class="tree-file">│   │   └── renderer.js      <span class="highlight-cyan"># Canvas rendering pipeline</span></span>
+<span class="tree-folder">│   ├── entities/</span>
+<span class="tree-file">│   │   ├── entity.js        <span class="highlight-magenta"># Base entity class</span></span>
+<span class="tree-file">│   │   ├── player.js        <span class="highlight-magenta"># Player movement, attacks</span></span>
+<span class="tree-file">│   │   ├── enemy.js         <span class="highlight-magenta"># Enemy types, AI behaviors</span></span>
+<span class="tree-file">│   │   ├── boss.js          <span class="highlight-magenta"># Boss phases, attack patterns</span></span>
+<span class="tree-file">│   │   └── interactable.js  <span class="highlight-magenta"># Items, pickups, portals</span></span>
+<span class="tree-folder">│   ├── levels/</span>
+<span class="tree-file">│   │   ├── room.js          <span class="highlight-green"># Procedural room generation</span></span>
+<span class="tree-file">│   │   └── platform.js      <span class="highlight-green"># Platform types, rendering</span></span>
+<span class="tree-folder">│   ├── systems/</span>
+<span class="tree-file">│   │   ├── cycles.js        <span class="highlight-orange"># Cycle economy system</span></span>
+<span class="tree-file">│   │   ├── blade-evolution.js <span class="highlight-orange"># Weapon tier progression</span></span>
+<span class="tree-file">│   │   ├── weapons.js       <span class="highlight-orange"># 3 weapon types + upgrades</span></span>
+<span class="tree-file">│   │   ├── upgrades.js      <span class="highlight-orange"># Level-up upgrade choices</span></span>
+<span class="tree-file">│   │   ├── drops.js         <span class="highlight-orange"># Loot tables, orb spawning</span></span>
+<span class="tree-file">│   │   ├── characters.js    <span class="highlight-orange"># 8 playable characters</span></span>
+<span class="tree-file">│   │   ├── cosmetics.js     <span class="highlight-orange"># Hats, suits, unlocks</span></span>
+<span class="tree-file">│   │   ├── meta-progression.js <span class="highlight-orange"># Permanent upgrades</span></span>
+<span class="tree-file">│   │   ├── leaderboard.js   <span class="highlight-orange"># Local score tracking</span></span>
+<span class="tree-file">│   │   ├── audio.js         <span class="highlight-orange"># Web Audio API synthesis</span></span>
+<span class="tree-file">│   │   └── ghosts.js        <span class="highlight-orange"># Death replay system</span></span>
+<span class="tree-folder">│   ├── ui/</span>
+<span class="tree-file">│   │   └── hud.js           <span class="highlight-purple"># Health bars, damage numbers</span></span>
+<span class="tree-folder">│   └── utils/</span>
+<span class="tree-file">│       └── helpers.js       <span class="highlight-purple"># Math utils, lerp, random</span></span>
+<span class="tree-main">├── main.js                   <span class="highlight-green"># Entry point, initialization</span></span>
+<span class="tree-file">├── index.html               <span class="highlight-cyan"># HTML structure, modals</span></span>
+<span class="tree-file">└── styles.css               <span class="highlight-cyan"># Full CSS styling</span></span>
+            </div>
+        </section>
+
+        <!-- Section 2: Game Loop Architecture -->
+        <section class="section">
+            <div class="section-header">
+                <span class="section-num">02</span>
+                <h2 class="section-title">GAME LOOP ARCHITECTURE</h2>
+            </div>
+
+            <div class="flow-container">
+                <div class="flow-box" style="border-color: var(--cyan); color: var(--cyan);">INPUT</div>
+                <span class="flow-arrow">→</span>
+                <div class="flow-box" style="border-color: var(--green); color: var(--green);">UPDATE</div>
+                <span class="flow-arrow">→</span>
+                <div class="flow-box" style="border-color: var(--orange); color: var(--orange);">PHYSICS</div>
+                <span class="flow-arrow">→</span>
+                <div class="flow-box" style="border-color: var(--magenta); color: var(--magenta);">RENDER</div>
+                <span class="flow-arrow">→</span>
+                <div class="flow-box" style="border-color: var(--cyan); color: var(--cyan);">LOOP</div>
+            </div>
+
+            <div class="code-block">
+                <div class="code-title">GAME.JS - MAIN LOOP</div>
+<span class="function">gameLoop</span>(<span class="keyword">timestamp</span>) {
+    <span class="keyword">const</span> deltaTime = timestamp - <span class="keyword">this</span>.lastTime;
+    <span class="keyword">this</span>.lastTime = timestamp;
+
+    <span class="keyword">if</span> (!<span class="keyword">this</span>.isPaused) {
+        <span class="keyword">this</span>.<span class="function">update</span>(deltaTime);    <span class="comment">// Update all entities</span>
+        <span class="keyword">this</span>.<span class="function">checkCollisions</span>();    <span class="comment">// Physics/collision detection</span>
+    }
+
+    <span class="keyword">this</span>.<span class="function">render</span>();               <span class="comment">// Draw everything</span>
+
+    <span class="function">requestAnimationFrame</span>((<span class="keyword">t</span>) => <span class="keyword">this</span>.<span class="function">gameLoop</span>(t));
+}
+            </div>
+
+            <div class="info-box cyan">
+                <div class="info-title">FRAME RATE</div>
+                <p>Target: <code>60 FPS</code> via <code>requestAnimationFrame</code>. DeltaTime used for frame-independent movement. Physics updates capped at consistent tick rate to prevent tunneling.</p>
+            </div>
+        </section>
+
+        <!-- Section 3: Entity System -->
+        <section class="section">
+            <div class="section-header">
+                <span class="section-num">03</span>
+                <h2 class="section-title">ENTITY SYSTEM</h2>
+            </div>
+
+            <div class="arch-diagram">
+                            <span style="color: var(--cyan);">Entity (Base Class)</span>
+                                    │
+        ┌───────────────────────────┼───────────────────────────┐
+        ▼                           ▼                           ▼
+   <span style="color: var(--green);">Player</span>                      <span style="color: var(--red);">Enemy</span>                    <span style="color: var(--orange);">Interactable</span>
+        │                           │                           │
+        │                    ┌──────┴──────┐              ┌─────┴─────┐
+        │                    ▼             ▼              ▼           ▼
+        │                <span style="color: var(--red);">Grunt</span>         <span style="color: var(--magenta);">Boss</span>          <span style="color: var(--orange);">Portal</span>      <span style="color: var(--orange);">Orb</span>
+        │                <span style="color: var(--red);">Flyer</span>      (5 types)       <span style="color: var(--orange);">Item</span>        <span style="color: var(--orange);">Imbue</span>
+        │                <span style="color: var(--red);">Charger</span>                    <span style="color: var(--orange);">Drop</span>
+        │                <span style="color: var(--red);">Shooter</span>
+        ▼                <span style="color: var(--red);">Tank</span>
+<span style="color: var(--cyan);">Properties:</span>
+- x, y, width, height
+- velocityX, velocityY
+- health, maxHealth
+- isGrounded
+- facingRight
+            </div>
+
+            <div class="subsection-title">PLAYER UPDATE CYCLE</div>
+            <ul class="tech-list">
+                <li>Read input state from <code>InputHandler</code></li>
+                <li>Apply movement forces (velocity += input * speed)</li>
+                <li>Apply gravity (<code>GAME_CONFIG.GRAVITY = 0.6</code>)</li>
+                <li>Handle attack state machine (cooldowns, hitboxes)</li>
+                <li>Deduct cycle costs for actions</li>
+                <li>Update invincibility frames if damaged</li>
+            </ul>
+
+            <div class="subsection-title">BOSS PHASE SYSTEM</div>
+            <div class="code-block">
+                <div class="code-title">BOSS.JS - PHASE TRANSITIONS</div>
+<span class="comment">// Phase thresholds based on HP percentage</span>
+<span class="keyword">this</span>.phases = [
+    { threshold: <span class="number">1.0</span>, attacks: [<span class="string">'dash'</span>] },
+    { threshold: <span class="number">0.66</span>, attacks: [<span class="string">'dash'</span>, <span class="string">'slam'</span>] },
+    { threshold: <span class="number">0.33</span>, attacks: [<span class="string">'dash'</span>, <span class="string">'slam'</span>, <span class="string">'summon'</span>] }
+];
+
+<span class="comment">// Attack telegraphing</span>
+<span class="keyword">this</span>.dangerZones = [];  <span class="comment">// Visual warning areas</span>
+<span class="keyword">this</span>.telegraphTime = <span class="number">1000</span>;  <span class="comment">// ms before attack lands</span>
+            </div>
+        </section>
+
+        <!-- Section 4: Physics & Collision -->
+        <section class="section">
+            <div class="section-header">
+                <span class="section-num">04</span>
+                <h2 class="section-title">PHYSICS & COLLISION</h2>
+            </div>
+
+            <table class="tech-table">
+                <thead>
+                    <tr>
+                        <th>CONSTANT</th>
+                        <th>VALUE</th>
+                        <th>DESCRIPTION</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>GRAVITY</code></td>
+                        <td class="highlight-cyan">0.6</td>
+                        <td>Applied to velocityY each frame</td>
+                    </tr>
+                    <tr>
+                        <td><code>MAX_FALL_SPEED</code></td>
+                        <td class="highlight-cyan">15</td>
+                        <td>Terminal velocity cap</td>
+                    </tr>
+                    <tr>
+                        <td><code>FRICTION</code></td>
+                        <td class="highlight-cyan">0.85</td>
+                        <td>Ground movement dampening</td>
+                    </tr>
+                    <tr>
+                        <td><code>AIR_RESISTANCE</code></td>
+                        <td class="highlight-cyan">0.95</td>
+                        <td>Aerial movement dampening</td>
+                    </tr>
+                    <tr>
+                        <td><code>COYOTE_TIME</code></td>
+                        <td class="highlight-orange">6 frames</td>
+                        <td>Grace period after leaving platform</td>
+                    </tr>
+                    <tr>
+                        <td><code>JUMP_BUFFER</code></td>
+                        <td class="highlight-orange">8 frames</td>
+                        <td>Buffer jump input before landing</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="info-box magenta">
+                <div class="info-title">AABB COLLISION</div>
+                <p>All collision detection uses Axis-Aligned Bounding Boxes. The <code>Physics.checkCollision(a, b)</code> function returns collision data including penetration depth for resolution.</p>
+            </div>
+
+            <div class="code-block">
+                <div class="code-title">PHYSICS.JS - COLLISION CHECK</div>
+<span class="keyword">static</span> <span class="function">checkCollision</span>(a, b) {
+    <span class="keyword">return</span> a.x < b.x + b.width &&
+           a.x + a.width > b.x &&
+           a.y < b.y + b.height &&
+           a.y + a.height > b.y;
+}
+
+<span class="keyword">static</span> <span class="function">resolveCollision</span>(entity, platform) {
+    <span class="comment">// Push entity out of platform</span>
+    <span class="comment">// Set isGrounded = true if landing on top</span>
+    <span class="comment">// Handle one-way platforms (only collide from above)</span>
+}
+            </div>
+        </section>
+
+        <!-- Section 5: Zone Color System -->
+        <section class="section">
+            <div class="section-header">
+                <span class="section-num">05</span>
+                <h2 class="section-title">ZONE COLOR SYSTEM</h2>
+            </div>
+
+            <p>Each of the 4 zones has a distinct color palette applied to platforms, backgrounds, and effects.</p>
+
+            <table class="tech-table">
+                <thead>
+                    <tr>
+                        <th>ZONE</th>
+                        <th>LEVELS</th>
+                        <th>PRIMARY</th>
+                        <th>THEME</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>TRAINING GRID</td>
+                        <td>1-3</td>
+                        <td><span style="color: #00f0ff;">■</span> #00f0ff</td>
+                        <td>Cyan/Blue - Safe, familiar</td>
+                    </tr>
+                    <tr>
+                        <td>COMBAT SIMULATION</td>
+                        <td>4-6</td>
+                        <td><span style="color: #ff8800;">■</span> #ff8800</td>
+                        <td>Orange/Amber - Intense combat</td>
+                    </tr>
+                    <tr>
+                        <td>ADAPTATION CHAMBER</td>
+                        <td>7-9</td>
+                        <td><span style="color: #aa00ff;">■</span> #aa00ff</td>
+                        <td>Purple/Magenta - Mysterious</td>
+                    </tr>
+                    <tr>
+                        <td>THE CORE</td>
+                        <td>10-12</td>
+                        <td><span style="color: #ff0044;">■</span> #ff0044</td>
+                        <td>Red/Crimson - Danger, final</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="code-block">
+                <div class="code-title">CONSTANTS.JS - ZONE_COLORS ARRAY</div>
+<span class="class">ZONE_COLORS</span>: [
+    { <span class="comment">// Zone 0: TRAINING GRID</span>
+        primary: <span class="string">'#00f0ff'</span>,
+        platformEdge: <span class="string">'#00f0ff'</span>,
+        platformBase: <span class="string">'#0a1a2f'</span>,
+        grid: <span class="string">'#1a2a3f'</span>,
+        glow: <span class="string">'rgba(0, 240, 255, 0.5)'</span>
+    },
+    <span class="comment">// ... Zone 1, 2, 3</span>
+]
+            </div>
+        </section>
+
+        <!-- Section 6: Weapon System -->
+        <section class="section">
+            <div class="section-header">
+                <span class="section-num">06</span>
+                <h2 class="section-title">WEAPON SYSTEM</h2>
+            </div>
+
+            <table class="tech-table">
+                <thead>
+                    <tr>
+                        <th>WEAPON</th>
+                        <th>BASE DMG</th>
+                        <th>COOLDOWN</th>
+                        <th>SPECIAL</th>
+                        <th>MAX ABILITY</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="highlight-cyan">STRIKER</td>
+                        <td>15</td>
+                        <td>300ms</td>
+                        <td>Fast attacks</td>
+                        <td>Pierce through enemies</td>
+                    </tr>
+                    <tr>
+                        <td class="highlight-red">RAZOR</td>
+                        <td>12</td>
+                        <td>400ms</td>
+                        <td>Applies bleed DoT</td>
+                        <td>Bleed explosion on death</td>
+                    </tr>
+                    <tr>
+                        <td class="highlight-orange">CRUSHER</td>
+                        <td>25</td>
+                        <td>600ms</td>
+                        <td>Shockwave AOE</td>
+                        <td>Earthquake stun</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="info-box orange">
+                <div class="info-title">UPGRADE TIERS</div>
+                <p>Each weapon has 5 tiers: <code>TIER_1</code> → <code>TIER_2</code> → <code>TIER_3</code> → <code>TIER_4</code> → <code>TIER_MAX</code>. Each tier adds ~20% damage and unlocks new visual effects. At MAX tier, a unique ability is unlocked.</p>
+            </div>
+        </section>
+
+        <!-- Section 7: Audio System -->
+        <section class="section">
+            <div class="section-header">
+                <span class="section-num">07</span>
+                <h2 class="section-title">AUDIO SYSTEM</h2>
+            </div>
+
+            <p>All audio is synthesized in real-time using the <strong>Web Audio API</strong>. No external sound files required.</p>
+
+            <div class="code-block">
+                <div class="code-title">AUDIO.JS - SOUND SYNTHESIS</div>
+<span class="keyword">class</span> <span class="class">AudioSystem</span> {
+    <span class="function">constructor</span>() {
+        <span class="keyword">this</span>.ctx = <span class="keyword">new</span> (<span class="class">AudioContext</span> || webkitAudioContext)();
+        <span class="keyword">this</span>.masterGain = <span class="keyword">this</span>.ctx.<span class="function">createGain</span>();
+        <span class="keyword">this</span>.masterGain.<span class="function">connect</span>(<span class="keyword">this</span>.ctx.destination);
+    }
+
+    <span class="function">playSword</span>() {
+        <span class="comment">// Oscillator: sawtooth wave</span>
+        <span class="comment">// Frequency sweep: 800Hz → 200Hz over 100ms</span>
+        <span class="comment">// Envelope: quick attack, fast decay</span>
+    }
+
+    <span class="function">ensureReady</span>() {
+        <span class="keyword">if</span> (<span class="keyword">this</span>.ctx.state === <span class="string">'suspended'</span>) {
+            <span class="keyword">this</span>.ctx.<span class="function">resume</span>();
+        }
+    }
+}
+            </div>
+
+            <ul class="tech-list">
+                <li><code>playSword()</code> - Sawtooth sweep for melee attacks</li>
+                <li><code>playHit()</code> - White noise burst for damage</li>
+                <li><code>playJump()</code> - Quick pitch rise</li>
+                <li><code>playBossMusic()</code> - Looping bass drone with arpeggios</li>
+                <li><code>playVictory()</code> - Major chord fanfare</li>
+            </ul>
+        </section>
+
+        <!-- Section 8: Procedural Generation -->
+        <section class="section">
+            <div class="section-header">
+                <span class="section-num">08</span>
+                <h2 class="section-title">PROCEDURAL GENERATION</h2>
+            </div>
+
+            <div class="code-block">
+                <div class="code-title">ROOM.JS - LEVEL GENERATION</div>
+<span class="keyword">function</span> <span class="function">generateRandomRoom</span>(level, zoneIndex) {
+    <span class="keyword">const</span> room = <span class="keyword">new</span> <span class="class">Room</span>();
+    <span class="keyword">const</span> zoneColors = <span class="class">GAME_CONFIG</span>.ZONE_COLORS[zoneIndex];
+
+    <span class="comment">// 1. Add floor platforms</span>
+    <span class="function">addFloorPlatforms</span>(room, zoneColors);
+
+    <span class="comment">// 2. Add vertical sections with gaps</span>
+    <span class="function">addVerticalPlatforms</span>(room, level, zoneColors);
+
+    <span class="comment">// 3. Add floating platforms (more at higher levels)</span>
+    <span class="keyword">const</span> platformCount = <span class="number">5</span> + Math.<span class="function">floor</span>(level / <span class="number">2</span>);
+    <span class="function">addFloatingPlatforms</span>(room, platformCount, zoneColors);
+
+    <span class="comment">// 4. Add decorative elements</span>
+    <span class="function">addDecorations</span>(room, zoneColors);
+
+    <span class="keyword">return</span> room;
+}
+            </div>
+
+            <div class="info-box green">
+                <div class="info-title">PLATFORM OVERLAP PREVENTION</div>
+                <p>New platforms check against existing platforms using <code>checkOverlap()</code>. If overlap detected, position is adjusted or platform is skipped. Minimum gap of 40px maintained between platforms.</p>
+            </div>
+        </section>
+
+        <!-- Section 9: Data Persistence -->
+        <section class="section">
+            <div class="section-header">
+                <span class="section-num">09</span>
+                <h2 class="section-title">DATA PERSISTENCE</h2>
+            </div>
+
+            <p>All persistent data stored in <code>localStorage</code>:</p>
+
+            <table class="tech-table">
+                <thead>
+                    <tr>
+                        <th>KEY</th>
+                        <th>TYPE</th>
+                        <th>DESCRIPTION</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>iteration_leaderboard</code></td>
+                        <td>Array</td>
+                        <td>Top 10 scores with character, level, kills</td>
+                    </tr>
+                    <tr>
+                        <td><code>iteration_data_cores</code></td>
+                        <td>Number</td>
+                        <td>Currency for meta upgrades</td>
+                    </tr>
+                    <tr>
+                        <td><code>iteration_meta_upgrades</code></td>
+                        <td>Object</td>
+                        <td>Permanent upgrade levels</td>
+                    </tr>
+                    <tr>
+                        <td><code>iteration_cosmetics</code></td>
+                        <td>Object</td>
+                        <td>Unlocked hats/suits</td>
+                    </tr>
+                    <tr>
+                        <td><code>iteration_ghosts</code></td>
+                        <td>Array</td>
+                        <td>Death replay data (limited to 5)</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Section 10: Version History -->
+        <section class="section">
+            <div class="section-header">
+                <span class="section-num">10</span>
+                <h2 class="section-title">VERSION HISTORY</h2>
+            </div>
+
+            <table class="tech-table">
+                <thead>
+                    <tr>
+                        <th>VERSION</th>
+                        <th>CHANGES</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span class="highlight-cyan">v1.8.0</span></td>
+                        <td>Zone color system for 4 distinct visual themes, terminal window margin fix, epic boss intro for final boss, enhanced boss visuals</td>
+                    </tr>
+                    <tr>
+                        <td><span class="highlight-cyan">v1.7.0</span></td>
+                        <td>Zone-specific platform colors, CORRUPTED CORE epic intro sequence, simplified pause screen</td>
+                    </tr>
+                    <tr>
+                        <td><span class="highlight-cyan">v1.6.1</span></td>
+                        <td>Mouse click support for attack and interact</td>
+                    </tr>
+                    <tr>
+                        <td><span class="highlight-cyan">v1.6.0</span></td>
+                        <td>Weapon system improvements, 3 unique weapon types with upgrade tiers</td>
+                    </tr>
+                    <tr>
+                        <td><span class="highlight-cyan">v1.5.8</span></td>
+                        <td>Epic victory screen for completing all 12 levels</td>
+                    </tr>
+                    <tr>
+                        <td><span class="highlight-cyan">v1.5.7</span></td>
+                        <td>3 second delay after boss death for orb collection</td>
+                    </tr>
+                    <tr>
+                        <td><span class="highlight-cyan">v1.5.5</span></td>
+                        <td>Explicit continue screen after weapon upgrade</td>
+                    </tr>
+                    <tr>
+                        <td><span class="highlight-cyan">v1.5.3</span></td>
+                        <td>Audio reliability with ensureReady() helper</td>
+                    </tr>
+                    <tr>
+                        <td><span class="highlight-cyan">v1.4.0</span></td>
+                        <td>Consolidated level complete and weapon upgrade screens</td>
+                    </tr>
+                    <tr>
+                        <td><span class="highlight-cyan">v1.3.0</span></td>
+                        <td>God mode testing toggle, platform overlap fixes</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Section 11: Build & Deploy -->
+        <section class="section">
+            <div class="section-header">
+                <span class="section-num">11</span>
+                <h2 class="section-title">BUILD & DEPLOY</h2>
+            </div>
+
+            <div class="info-box cyan">
+                <div class="info-title">NO BUILD STEP REQUIRED</div>
+                <p>ITERATION is built with vanilla JavaScript. No transpilation, bundling, or npm required. Simply serve the files via any HTTP server or open <code>index.html</code> directly in a browser.</p>
+            </div>
+
+            <div class="subsection-title">CACHE BUSTING</div>
+            <p>All script tags include version query parameters:</p>
+            <div class="code-block">
+&lt;script src="src/core/game.js?v=<span class="number">1.8.0</span>"&gt;&lt;/script&gt;
+            </div>
+            <p>Increment version number to force browser cache refresh on updates.</p>
+
+            <div class="subsection-title">MOBILE SUPPORT</div>
+            <ul class="tech-list">
+                <li>Touch controls auto-detect mobile via user agent</li>
+                <li>Virtual joystick for movement</li>
+                <li>Touch buttons for jump, attack, interact, weapon switch</li>
+                <li>Responsive canvas scaling</li>
+            </ul>
+        </section>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="footer-text">ITERATION TECHNICAL ARCHITECTURE v1.8.0</div>
+            <div class="footer-text" style="margin-top: 10px;">Created by <span>Null X Hunnedsac</span></div>
+        </footer>
+    </div>
+</body>
+</html>

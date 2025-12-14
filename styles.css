@@ -320,6 +320,7 @@ body {
 .terminal-window {
     width: 90%;
     max-width: 900px;
+    margin-top: 50px; /* Clear the warning banner */
     background: linear-gradient(180deg, rgba(18, 18, 26, 0.95) 0%, rgba(10, 10, 15, 0.98) 100%);
     border: 2px solid;
     border-image: linear-gradient(180deg, #00f0ff, #ff00aa) 1;

@@ -300,6 +300,12 @@ class Game {
         // Get boss name from Boss class for consistency
         const bossName = Boss.getNameForLevel(this.currentLevel);
 
+        // Special epic intro for final boss (level 12 - CORRUPTED CORE)
+        if (this.currentLevel === 12) {
+            this.spawnFinalBoss(bossName);
+            return;
+        }
+
         // Show boss warning and play warning sound
         this.hud.showBossWarning(bossName);
         this.audio.playBossWarning();
@@ -321,6 +327,190 @@ class Game {
             this.boss.name = bossName;
             this.hud.addMessage(`THREAT DETECTED: ${this.boss.name}`, 'warning');
         }, 2000);
+    }
+
+    /**
+     * Epic intro sequence for the final boss - CORRUPTED CORE
+     */
+    spawnFinalBoss(bossName) {
+        // Pause gameplay during intro
+        this.isPaused = true;
+        this.finalBossIntroActive = true;
+        this.finalBossIntroPhase = 0;
+        this.finalBossIntroTimer = 0;
+
+        // Stop current music
+        this.audio.stopMusic();
+
+        // Phase 1: Screen goes dark with static
+        this.renderer.glitch(3, 120);
+        this.camera.addShake(5, 180);
+
+        // Play ominous warning
+        this.audio.playBossWarning();
+
+        // Start the cinematic intro sequence
+        this.finalBossIntroSequence = [
+            { delay: 0, action: () => {
+                this.hud.addMessage('◈ SYSTEM ALERT ◈', 'warning');
+            }},
+            { delay: 60, action: () => {
+                this.renderer.flash('#ff0044', 0.8);
+                this.camera.addShake(15, 30);
+            }},
+            { delay: 120, action: () => {
+                this.hud.addMessage('CORE BREACH DETECTED', 'warning');
+            }},
+            { delay: 180, action: () => {
+                this.renderer.glitch(5, 60);
+                this.camera.addShake(20, 45);
+            }},
+            { delay: 240, action: () => {
+                this.hud.addMessage('THE SIMULATION IS FIGHTING BACK', 'warning');
+            }},
+            { delay: 360, action: () => {
+                this.renderer.flash('#ff0044', 1.0);
+                this.camera.addShake(25, 60);
+                this.audio.playBossWarning();
+            }},
+            { delay: 420, action: () => {
+                // Show epic boss title
+                this.finalBossIntroPhase = 1; // Show title card
+            }},
+            { delay: 600, action: () => {
+                // Spawn the boss
+                const roomWidth = this.currentRoom ? this.currentRoom.width : 1600;
+                const bossX = roomWidth / 2 - 50;
+                const bossY = 100;
+
+                this.boss = new Boss(bossX, bossY, this.currentLevel);
+                this.boss.name = bossName;
+                this.boss.isFinalBoss = true;
+
+                // Boss descends from above
+                this.boss.isEntering = true;
+                this.boss.entryTimer = 120;
+
+                // Start boss music
+                this.audio.startBossMusic();
+
+                this.renderer.flash('#ff0044', 0.6);
+                this.camera.addShake(30, 90);
+            }},
+            { delay: 720, action: () => {
+                // End intro
+                this.finalBossIntroActive = false;
+                this.finalBossIntroPhase = 0;
+                this.isPaused = false;
+                this.hud.addMessage(`◈ ${bossName} ◈`, 'warning');
+            }}
+        ];
+
+        this.finalBossIntroIndex = 0;
+    }
+
+    /**
+     * Update final boss intro sequence
+     */
+    updateFinalBossIntro() {
+        if (!this.finalBossIntroSequence) return;
+
+        this.finalBossIntroTimer++;
+
+        // Process sequence events
+        while (this.finalBossIntroIndex < this.finalBossIntroSequence.length) {
+            const event = this.finalBossIntroSequence[this.finalBossIntroIndex];
+            if (this.finalBossIntroTimer >= event.delay) {
+                event.action();
+                this.finalBossIntroIndex++;
+            } else {
+                break;
+            }
+        }
+    }
+
+    /**
+     * Render final boss intro overlay
+     */
+    renderFinalBossIntro(ctx) {
+        if (!this.finalBossIntroActive) return;
+
+        // Dark overlay with red tint
+        ctx.save();
+
+        // Animated darkness
+        const pulse = Math.sin(this.finalBossIntroTimer / 10) * 0.1;
+        ctx.fillStyle = `rgba(20, 0, 0, ${0.7 + pulse})`;
+        ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+        // Glitch lines
+        if (Math.random() > 0.7) {
+            ctx.fillStyle = 'rgba(255, 0, 68, 0.3)';
+            const lineY = Math.random() * this.canvas.height;
+            ctx.fillRect(0, lineY, this.canvas.width, 2 + Math.random() * 5);
+        }
+
+        // Phase 1: Title card
+        if (this.finalBossIntroPhase === 1) {
+            const centerX = this.canvas.width / 2;
+            const centerY = this.canvas.height / 2;
+
+            // Background glow
+            const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, 300);
+            gradient.addColorStop(0, 'rgba(255, 0, 68, 0.3)');
+            gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+            // Animated lines
+            ctx.strokeStyle = '#ff0044';
+            ctx.lineWidth = 2;
+            ctx.globalAlpha = 0.5;
+
+            // Horizontal scan lines
+            for (let i = 0; i < 5; i++) {
+                const lineY = centerY + (i - 2) * 80;
+                const offset = Math.sin(this.finalBossIntroTimer / 20 + i) * 50;
+                ctx.beginPath();
+                ctx.moveTo(centerX - 400 + offset, lineY);
+                ctx.lineTo(centerX + 400 + offset, lineY);
+                ctx.stroke();
+            }
+
+            ctx.globalAlpha = 1;
+
+            // Boss title with epic styling
+            ctx.textAlign = 'center';
+
+            // "FINAL CONFRONTATION" subtitle
+            ctx.font = '16px "Courier New", monospace';
+            ctx.fillStyle = '#ff0044';
+            ctx.shadowColor = '#ff0044';
+            ctx.shadowBlur = 20;
+            ctx.fillText('◈ FINAL CONFRONTATION ◈', centerX, centerY - 80);
+
+            // Main boss name with pulsing
+            const titlePulse = Math.sin(this.finalBossIntroTimer / 8) * 0.3 + 1;
+            ctx.font = `bold ${48 * titlePulse}px "Courier New", monospace`;
+            ctx.fillStyle = '#ff0044';
+            ctx.shadowBlur = 40;
+            ctx.fillText('CORRUPTED CORE', centerX, centerY);
+
+            // Subtitle
+            ctx.font = '14px "Courier New", monospace';
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+            ctx.shadowBlur = 10;
+            ctx.fillText('THE HEART OF THE SIMULATION', centerX, centerY + 40);
+
+            // Warning text
+            ctx.font = '12px "Courier New", monospace';
+            ctx.fillStyle = 'rgba(255, 0, 68, 0.8)';
+            const warnPulse = Math.sin(this.finalBossIntroTimer / 15) > 0 ? 1 : 0.3;
+            ctx.globalAlpha = warnPulse;
+            ctx.fillText('▲ MAXIMUM THREAT LEVEL ▲', centerX, centerY + 80);
+        }
+
+        ctx.restore();
     }
 
     /**
@@ -843,8 +1033,8 @@ class Game {
         this.renderer.flash('#ffffff', 0.5);
 
         setTimeout(() => {
-            // Generate new random room for this level
-            this.currentRoom = generateRandomRoom(this.currentLevel);
+            // Generate new random room for this level with zone-specific colors
+            this.currentRoom = generateRandomRoom(this.currentLevel, this.currentZoneIndex);
 
             // Update camera bounds for new room
             this.camera.setBounds(0, 0, this.currentRoom.width, this.currentRoom.height);
@@ -1431,6 +1621,11 @@ class Game {
     update(deltaTime) {
         // Update input state
         this.input.update();
+
+        // Update final boss intro sequence (runs even when paused)
+        if (this.finalBossIntroActive) {
+            this.updateFinalBossIntro();
+        }
 
         // Handle FAQ toggle with H key (works anytime during gameplay)
         if (this.state === 'playing' && this.input.isKeyJustPressed('KeyH') && !this.showingUpgrades) {
@@ -2649,9 +2844,14 @@ class Game {
             this.renderImbueIndicator(ctx, this.canvas.width - 220, 80);
         }
 
-        // Render pause overlay
-        if (this.isPaused) {
+        // Render pause overlay (but not during final boss intro)
+        if (this.isPaused && !this.finalBossIntroActive) {
             this.renderPauseOverlay(ctx);
+        }
+
+        // Render final boss intro overlay
+        if (this.finalBossIntroActive) {
+            this.renderFinalBossIntro(ctx);
         }
 
         // Debug info
@@ -3029,8 +3229,8 @@ class Game {
         // Re-apply meta progression bonuses
         this.metaProgression.applyToPlayer(this.player, this);
 
-        // Generate fresh random room
-        this.currentRoom = generateRandomRoom(1);
+        // Generate fresh random room (level 1, zone 0)
+        this.currentRoom = generateRandomRoom(1, 0);
         this.camera.setBounds(0, 0, this.currentRoom.width, this.currentRoom.height);
 
         // Update player spawn position for new room

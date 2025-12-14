@@ -64,7 +64,7 @@ const GAME_CONFIG = {
         CYCLES_CRITICAL: '#ff0044'
     },
 
-    // Zones
+    // Zones with color themes
     ZONES: {
         TRAINING_GRID: {
             name: 'TRAINING GRID',
@@ -88,6 +88,54 @@ const GAME_CONFIG = {
         }
     },
 
+    // Zone-specific color palettes
+    ZONE_COLORS: [
+        // Zone 0: TRAINING GRID - Cyan/Blue (familiar, safe)
+        {
+            primary: '#00f0ff',
+            secondary: '#007788',
+            background: '#0a0a1a',
+            accent: '#00ffff',
+            platformEdge: '#00f0ff',
+            platformBase: '#0a1a2f',
+            grid: '#1a2a3f',
+            glow: 'rgba(0, 240, 255, 0.5)'
+        },
+        // Zone 1: COMBAT SIMULATION - Orange/Amber (intense, combat)
+        {
+            primary: '#ff8800',
+            secondary: '#aa5500',
+            background: '#1a0a05',
+            accent: '#ffaa00',
+            platformEdge: '#ff8800',
+            platformBase: '#2a1a0a',
+            grid: '#3a2a1a',
+            glow: 'rgba(255, 136, 0, 0.5)'
+        },
+        // Zone 2: ADAPTATION CHAMBER - Purple/Magenta (mysterious, evolving)
+        {
+            primary: '#aa00ff',
+            secondary: '#660099',
+            background: '#0a051a',
+            accent: '#cc44ff',
+            platformEdge: '#aa00ff',
+            platformBase: '#1a0a2a',
+            grid: '#2a1a3a',
+            glow: 'rgba(170, 0, 255, 0.5)'
+        },
+        // Zone 3: THE CORE - Red/Crimson (danger, final)
+        {
+            primary: '#ff0044',
+            secondary: '#aa0033',
+            background: '#1a0505',
+            accent: '#ff3366',
+            platformEdge: '#ff0044',
+            platformBase: '#2a0a0a',
+            grid: '#3a1a1a',
+            glow: 'rgba(255, 0, 68, 0.5)'
+        }
+    ],
+
     // Room dimensions
     ROOM: {
         WIDTH: 1280,
@@ -105,4 +153,6 @@ Object.freeze(GAME_CONFIG.PLAYER);
 Object.freeze(GAME_CONFIG.CYCLES);
 Object.freeze(GAME_CONFIG.COLORS);
 Object.freeze(GAME_CONFIG.ZONES);
+Object.freeze(GAME_CONFIG.ZONE_COLORS);
+GAME_CONFIG.ZONE_COLORS.forEach(z => Object.freeze(z));
 Object.freeze(GAME_CONFIG.ROOM);

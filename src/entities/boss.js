@@ -156,8 +156,23 @@ class Boss extends Entity {
         ];
 
         // Select visual type based on level (cycle through for higher levels)
-        const typeIndex = (level - 1) % visualTypes.length;
-        this.visuals = visualTypes[typeIndex];
+        // Level 12 (final boss) always uses CORRUPTED CORE appearance
+        const typeIndex = (level === 12) ? 4 : (level - 1) % visualTypes.length;
+        this.visuals = { ...visualTypes[typeIndex] };
+
+        // Special enhanced visuals for level 12 - CORRUPTED CORE
+        if (level === 12) {
+            this.isFinalBoss = true;
+            this.visuals.primaryColor = '#ff0044';
+            this.visuals.secondaryColor = '#880022';
+            this.visuals.glowColor = '#ff0044';
+            this.visuals.eyeCount = 8;  // More menacing eyes
+            this.visuals.orbitCount = 12; // More orbital elements
+            this.visuals.orbitStyle = 'chaos';
+            this.visuals.hasSpikes = true;
+            this.visuals.coreStyle = 'void';
+            this.visuals.scale = 1.3;  // Larger
+        }
 
         // Add some randomness for variety
         this.visualSeed = Math.random() * 1000;
@@ -1040,6 +1055,25 @@ class Boss extends Entity {
         screenPos.y += (Math.random() - 0.5) * this.shakeAmount;
 
         ctx.save();
+
+        // Final boss scale and additional effects
+        if (this.isFinalBoss && this.visuals.scale) {
+            const baseScale = this.visuals.scale;
+            const pulseMod = Math.sin(this.pulsePhase * 0.5) * 0.05;
+            ctx.translate(
+                screenPos.x + this.width / 2,
+                screenPos.y + this.height / 2
+            );
+            ctx.scale(baseScale + pulseMod, baseScale + pulseMod);
+            ctx.translate(
+                -(screenPos.x + this.width / 2),
+                -(screenPos.y + this.height / 2)
+            );
+
+            // Extra glow for final boss
+            ctx.shadowColor = '#ff0044';
+            ctx.shadowBlur = 40 + Math.sin(this.pulsePhase) * 15;
+        }
 
         // Entry animation
         if (this.isEntering) {

@@ -495,24 +495,31 @@ function createTestRoom() {
  * Level 1: Forgiving, ground-based with platforms to explore
  * Level 2+: More vertical, deadly floor introduced
  * Level 3+: Full vertical challenge
+ * @param {number} level - Current level (1-12)
+ * @param {number} zoneIndex - Current zone (0-3)
  */
-function generateRandomRoom(level = 1) {
+function generateRandomRoom(level = 1, zoneIndex = 0) {
     const room = new Room(GAME_CONFIG.ROOM.WIDTH * 1.5, GAME_CONFIG.ROOM.HEIGHT);
     room.name = 'COMBAT ZONE ' + level;
 
-    // Walls
-    room.createPlatform(-32, 0, 32, room.height, { style: 'solid' });
-    room.createPlatform(room.width, 0, 32, room.height, { style: 'solid' });
+    // Get zone-specific colors
+    const zoneColors = GAME_CONFIG.ZONE_COLORS[zoneIndex] || GAME_CONFIG.ZONE_COLORS[0];
+    room.zoneColors = zoneColors;
+
+    // Walls - use zone colors
+    room.createPlatform(-32, 0, 32, room.height, { style: 'solid', zoneColors });
+    room.createPlatform(room.width, 0, 32, room.height, { style: 'solid', zoneColors });
 
     // Floor - safe for level 1, deadly for higher levels
     if (level === 1) {
         // Safe floor for beginners
-        room.createPlatform(0, room.height - 32, room.width, 32, { style: 'grid' });
+        room.createPlatform(0, room.height - 32, room.width, 32, { style: 'grid', zoneColors });
     } else {
         // Deadly pit for higher levels
         room.createPlatform(0, room.height - 20, room.width, 20, {
             style: 'solid',
-            deadly: true
+            deadly: true,
+            zoneColors
         });
     }
 
@@ -521,7 +528,8 @@ function generateRandomRoom(level = 1) {
                    level === 2 ? ['solid', 'grid', 'circuit'] :
                    ['solid', 'grid', 'circuit', 'neon', 'hex'];
 
-    const accentColors = ['#00f0ff', '#ff00aa', '#00ff88'];
+    // Use zone-specific accent colors
+    const accentColors = [zoneColors.primary, zoneColors.accent, zoneColors.secondary];
 
     // Difficulty scaling
     const platformWidth = level === 1 ? { min: 120, max: 200 } :
@@ -562,7 +570,7 @@ function generateRandomRoom(level = 1) {
 
     // === SPAWN PLATFORM ===
     const spawnY = baseY;
-    addPlatform(60, spawnY, 150, 24, { style: 'grid', oneWay: false });
+    addPlatform(60, spawnY, 150, 24, { style: 'grid', oneWay: false, zoneColors });
 
     // === GENERATE PLATFORMS PER TIER ===
     for (let tier = 0; tier < maxTiers; tier++) {
@@ -590,6 +598,7 @@ function generateRandomRoom(level = 1) {
             addPlatform(x, y, width, 22, {
                 style: style,
                 oneWay: tier > 0,
+                zoneColors,
                 accentColor: style !== 'solid' && style !== 'grid' ?
                     accentColors[Utils.randomInt(0, accentColors.length - 1)] : null
             });
@@ -614,7 +623,8 @@ function generateRandomRoom(level = 1) {
 
         addPlatform(x, y, width, 20, {
             style: 'solid',
-            oneWay: true
+            oneWay: true,
+            zoneColors
         });
     }
 
@@ -642,7 +652,8 @@ function generateRandomRoom(level = 1) {
                 moveEndY: y,
                 moveSpeed: 1.5,
                 oneWay: true,
-                accentColor: '#00ff88'
+                zoneColors,
+                accentColor: zoneColors.primary
             });
         }
     }
@@ -666,7 +677,8 @@ function generateRandomRoom(level = 1) {
                 moveEndX: x,
                 moveEndY: endY,
                 moveSpeed: 1.2,
-                oneWay: true
+                oneWay: true,
+                zoneColors
             });
         }
     }
@@ -684,7 +696,8 @@ function generateRandomRoom(level = 1) {
             addPlatform(safeX, safeY, 160, 26, {
                 style: 'circuit',
                 oneWay: true,
-                accentColor: '#00f0ff'
+                zoneColors,
+                accentColor: zoneColors.primary
             });
         }
     }

@@ -24,6 +24,9 @@ class Platform {
         this.glowIntensity = options.glowIntensity || 1;
         this.accentColor = options.accentColor || null;
 
+        // Zone-specific colors (passed from room generation)
+        this.zoneColors = options.zoneColors || null;
+
         // Moving platform properties
         if (this.moving) {
             this.moveStartX = x;
@@ -137,12 +140,17 @@ class Platform {
      * Render solid platform style
      */
     renderSolid(ctx, screenPos, pulse) {
+        // Get zone-specific colors or defaults
+        const baseColor = this.zoneColors?.platformBase || GAME_CONFIG.COLORS.PLATFORM;
+        const edgeColor = this.zoneColors?.platformEdge || GAME_CONFIG.COLORS.PLATFORM_EDGE;
+        const dimColor = this.zoneColors?.secondary || GAME_CONFIG.COLORS.CYAN_DIM;
+
         // Main body
-        ctx.fillStyle = GAME_CONFIG.COLORS.PLATFORM;
+        ctx.fillStyle = baseColor;
         ctx.fillRect(screenPos.x, screenPos.y, this.width, this.height);
 
         // Top edge glow
-        ctx.strokeStyle = GAME_CONFIG.COLORS.CYAN_DIM;
+        ctx.strokeStyle = dimColor;
         ctx.lineWidth = 2;
         ctx.globalAlpha = pulse * this.glowIntensity;
 
@@ -152,7 +160,7 @@ class Platform {
         ctx.stroke();
 
         // Edge highlights
-        ctx.strokeStyle = GAME_CONFIG.COLORS.PLATFORM_EDGE;
+        ctx.strokeStyle = edgeColor;
         ctx.lineWidth = 1;
         ctx.globalAlpha = 0.5 * pulse;
 
@@ -175,12 +183,17 @@ class Platform {
     renderGrid(ctx, screenPos, pulse) {
         const tileSize = GAME_CONFIG.ROOM.TILE_SIZE;
 
+        // Get zone-specific colors or defaults
+        const baseColor = this.zoneColors?.platformBase || GAME_CONFIG.COLORS.PLATFORM;
+        const gridColor = this.zoneColors?.grid || GAME_CONFIG.COLORS.GRID_ACCENT;
+        const primaryColor = this.zoneColors?.primary || GAME_CONFIG.COLORS.CYAN;
+
         // Background
-        ctx.fillStyle = GAME_CONFIG.COLORS.PLATFORM;
+        ctx.fillStyle = baseColor;
         ctx.fillRect(screenPos.x, screenPos.y, this.width, this.height);
 
         // Grid lines
-        ctx.strokeStyle = GAME_CONFIG.COLORS.GRID_ACCENT;
+        ctx.strokeStyle = gridColor;
         ctx.lineWidth = 1;
         ctx.globalAlpha = 0.5;
 
@@ -201,7 +214,7 @@ class Platform {
         }
 
         // Top edge
-        ctx.strokeStyle = GAME_CONFIG.COLORS.CYAN;
+        ctx.strokeStyle = primaryColor;
         ctx.lineWidth = 2;
         ctx.globalAlpha = pulse;
 
@@ -215,8 +228,12 @@ class Platform {
      * Render energy platform style (for moving/special platforms)
      */
     renderEnergy(ctx, screenPos, pulse) {
+        // Get zone-specific colors or defaults
+        const primaryColor = this.zoneColors?.primary || GAME_CONFIG.COLORS.CYAN;
+        const glowColor = this.zoneColors?.glow || 'rgba(0, 240, 255, 0.6)';
+
         // Glow effect
-        ctx.shadowColor = GAME_CONFIG.COLORS.CYAN;
+        ctx.shadowColor = primaryColor;
         ctx.shadowBlur = 10 * pulse;
 
         // Energy field
@@ -224,15 +241,15 @@ class Platform {
             screenPos.x, screenPos.y,
             screenPos.x, screenPos.y + this.height
         );
-        gradient.addColorStop(0, 'rgba(0, 240, 255, 0.6)');
-        gradient.addColorStop(0.5, 'rgba(0, 120, 136, 0.4)');
-        gradient.addColorStop(1, 'rgba(0, 240, 255, 0.6)');
+        gradient.addColorStop(0, glowColor);
+        gradient.addColorStop(0.5, this.zoneColors?.secondary || 'rgba(0, 120, 136, 0.4)');
+        gradient.addColorStop(1, glowColor);
 
         ctx.fillStyle = gradient;
         ctx.fillRect(screenPos.x, screenPos.y, this.width, this.height);
 
         // Border
-        ctx.strokeStyle = GAME_CONFIG.COLORS.CYAN;
+        ctx.strokeStyle = primaryColor;
         ctx.lineWidth = 2;
         ctx.strokeRect(screenPos.x, screenPos.y, this.width, this.height);
 
@@ -253,7 +270,7 @@ class Platform {
      * Render circuit board style platform
      */
     renderCircuit(ctx, screenPos, pulse) {
-        const color = this.accentColor || GAME_CONFIG.COLORS.CYAN;
+        const color = this.accentColor || this.zoneColors?.primary || GAME_CONFIG.COLORS.CYAN;
 
         // Dark background
         ctx.fillStyle = '#0a0a12';
@@ -324,7 +341,7 @@ class Platform {
      * Render hexagonal pattern platform
      */
     renderHex(ctx, screenPos, pulse) {
-        const color = this.accentColor || '#ff00aa';
+        const color = this.accentColor || this.zoneColors?.accent || '#ff00aa';
 
         // Dark base
         ctx.fillStyle = '#0d0815';
@@ -380,7 +397,7 @@ class Platform {
      * Render neon light style platform
      */
     renderNeon(ctx, screenPos, pulse) {
-        const color = this.accentColor || '#00ff88';
+        const color = this.accentColor || this.zoneColors?.primary || '#00ff88';
 
         // Transparent base with slight tint
         ctx.fillStyle = 'rgba(0, 255, 136, 0.1)';

@@ -337,10 +337,10 @@ class Game {
             this.player.health = Math.min(this.player.health + healAmount, this.player.maxHealth);
         }
 
-        // Show combined level complete + upgrade screen after a brief delay
+        // Show combined level complete + upgrade screen after delay for orb collection
         setTimeout(() => {
             this.showLevelCompleteWithUpgrades(completedLevel);
-        }, 1000);
+        }, 3000);  // 3 seconds to collect boss drops
     }
 
     /**

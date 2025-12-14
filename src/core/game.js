@@ -326,16 +326,15 @@ class Game {
             this.currentZone = this.zones[this.currentZoneIndex];
         }
 
-        // Bonus cycles for completing level
+        // Bonus cycles for completing level (tracked for summary, no HUD spam)
         const levelBonus = 100 + completedLevel * 25;
         this.cycles.gain(levelBonus);
-        this.hud.addMessage(`LEVEL ${completedLevel} COMPLETE! +${levelBonus} CYCLES`, 'success');
+        this.trackReward('cycles', { amount: levelBonus });
 
         // Second Wind upgrade - heal after boss
         if (this.upgradeSystem.hasUpgrade('second_wind')) {
             const healAmount = Math.floor(this.player.maxHealth * 0.30);
             this.player.health = Math.min(this.player.health + healAmount, this.player.maxHealth);
-            this.hud.addMessage(`SECOND WIND: +${healAmount} HP`, 'success');
         }
 
         // Show combined level complete + upgrade screen after a brief delay
@@ -648,16 +647,14 @@ class Game {
      * Progress to next level
      */
     nextLevel() {
-        // Reset level state BEFORE unpausing to prevent race conditions
+        // Reset level state - keep paused until enemies spawn to prevent boss race condition
         this.levelComplete = false;
-        this.boss = null;  // Clear boss reference immediately to prevent double completion
-        this.bossSpawned = false;
+        this.boss = null;
+        this.bossSpawned = true;  // Temporarily true to prevent premature boss spawn
+        this.enemies = [];  // Clear old enemies
 
         // Reset level rewards tracking for new level
         this.levelRewards = this.createEmptyLevelRewards();
-
-        // Now unpause
-        this.isPaused = false;
 
         this.renderer.flash('#ffffff', 0.5);
 
@@ -669,7 +666,7 @@ class Game {
             this.camera.setBounds(0, 0, this.currentRoom.width, this.currentRoom.height);
 
             // Spawn enemies and interactables for new room
-            this.spawnEnemies();
+            this.spawnEnemies();  // This resets bossSpawned to false
             this.spawnInteractables();
 
             // Reset player position
@@ -678,12 +675,8 @@ class Game {
             this.player.velocityX = 0;
             this.player.velocityY = 0;
 
-            // Zone change message
-            if (this.currentLevel % 3 === 1 && this.currentLevel > 1) {
-                this.hud.addMessage(`ENTERING: ${this.currentZone}`, 'system');
-            }
-
-            this.hud.addMessage(`LEVEL ${this.currentLevel} - ${this.currentZone}`, 'system');
+            // NOW unpause - enemies are spawned, safe to start
+            this.isPaused = false;
         }, 500);
     }
 

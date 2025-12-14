@@ -119,10 +119,22 @@ class AudioSystem {
     // ========================================
 
     /**
+     * Ensure audio context is ready to play
+     */
+    ensureReady() {
+        if (!this.initialized) return false;
+        if (this.muted) return false;
+        if (this.context && this.context.state === 'suspended') {
+            this.context.resume();
+        }
+        return true;
+    }
+
+    /**
      * Play blade swing sound
      */
     playSwing(weaponType = 'striker') {
-        if (!this.initialized || this.muted) return;
+        if (!this.ensureReady()) return;
 
         const now = this.context.currentTime;
 
@@ -160,7 +172,7 @@ class AudioSystem {
      * Play hit sound
      */
     playHit(isCrit = false) {
-        if (!this.initialized || this.muted) return;
+        if (!this.ensureReady()) return;
 
         const now = this.context.currentTime;
 
@@ -202,7 +214,7 @@ class AudioSystem {
      * Play enemy death sound
      */
     playEnemyDeath() {
-        if (!this.initialized || this.muted) return;
+        if (!this.ensureReady()) return;
 
         const now = this.context.currentTime;
 
@@ -233,7 +245,7 @@ class AudioSystem {
      * Play player hurt sound
      */
     playPlayerHurt() {
-        if (!this.initialized || this.muted) return;
+        if (!this.ensureReady()) return;
 
         const now = this.context.currentTime;
 
@@ -261,7 +273,7 @@ class AudioSystem {
      * Play player death sound
      */
     playPlayerDeath() {
-        if (!this.initialized || this.muted) return;
+        if (!this.ensureReady()) return;
 
         const now = this.context.currentTime;
 
@@ -289,7 +301,7 @@ class AudioSystem {
      * Play pickup sound
      */
     playPickup(type = 'generic') {
-        if (!this.initialized || this.muted) return;
+        if (!this.ensureReady()) return;
 
         const now = this.context.currentTime;
 
@@ -347,7 +359,7 @@ class AudioSystem {
      * Play level up / evolution sound
      */
     playLevelUp() {
-        if (!this.initialized || this.muted) return;
+        if (!this.ensureReady()) return;
 
         const now = this.context.currentTime;
 
@@ -375,7 +387,7 @@ class AudioSystem {
      * Play boss attack warning
      */
     playBossWarning() {
-        if (!this.initialized || this.muted) return;
+        if (!this.ensureReady()) return;
 
         const now = this.context.currentTime;
 
@@ -401,7 +413,7 @@ class AudioSystem {
      * Play boss slam sound
      */
     playBossSlam() {
-        if (!this.initialized || this.muted) return;
+        if (!this.ensureReady()) return;
 
         const now = this.context.currentTime;
 
@@ -451,7 +463,7 @@ class AudioSystem {
      * Play dash sound
      */
     playDash() {
-        if (!this.initialized || this.muted) return;
+        if (!this.ensureReady()) return;
 
         const now = this.context.currentTime;
 
@@ -490,7 +502,7 @@ class AudioSystem {
      * Play jump sound
      */
     playJump() {
-        if (!this.initialized || this.muted) return;
+        if (!this.ensureReady()) return;
 
         const now = this.context.currentTime;
 
@@ -514,7 +526,7 @@ class AudioSystem {
      * Play UI click sound
      */
     playUIClick() {
-        if (!this.initialized || this.muted) return;
+        if (!this.ensureReady()) return;
 
         const now = this.context.currentTime;
 
@@ -537,7 +549,7 @@ class AudioSystem {
      * Play UI hover sound
      */
     playUIHover() {
-        if (!this.initialized || this.muted) return;
+        if (!this.ensureReady()) return;
 
         const now = this.context.currentTime;
 

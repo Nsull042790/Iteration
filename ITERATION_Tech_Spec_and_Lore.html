@@ -534,6 +534,101 @@
             text-transform: uppercase;
         }
 
+        /* Character cards */
+        .characters-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .char-card {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .char-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+        }
+
+        .char-echo::before { background: #00f0ff; }
+        .char-blitz::before { background: #0066ff; }
+        .char-titan::before { background: #ff4400; }
+        .char-phantom::before { background: #8800aa; }
+        .char-nova::before { background: #00ff88; }
+        .char-havoc::before { background: #ff0044; }
+        .char-sage::before { background: #44ff00; }
+        .char-chrome::before { background: #aaaaaa; }
+
+        .char-name {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 18px;
+            letter-spacing: 2px;
+            margin-bottom: 3px;
+        }
+
+        .char-echo .char-name { color: #00f0ff; }
+        .char-blitz .char-name { color: #0066ff; }
+        .char-titan .char-name { color: #ff4400; }
+        .char-phantom .char-name { color: #8800aa; }
+        .char-nova .char-name { color: #00ff88; }
+        .char-havoc .char-name { color: #ff0044; }
+        .char-sage .char-name { color: #44ff00; }
+        .char-chrome .char-name { color: #aaaaaa; }
+
+        .char-subtitle {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.5);
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+        }
+
+        .char-desc {
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 10px;
+        }
+
+        .char-special {
+            font-size: 11px;
+            padding: 8px;
+            background: rgba(0, 0, 0, 0.4);
+            border-left: 2px solid;
+        }
+
+        .char-echo .char-special { border-color: #00f0ff; }
+        .char-blitz .char-special { border-color: #0066ff; }
+        .char-titan .char-special { border-color: #ff4400; }
+        .char-phantom .char-special { border-color: #8800aa; }
+        .char-nova .char-special { border-color: #00ff88; }
+        .char-havoc .char-special { border-color: #ff0044; }
+        .char-sage .char-special { border-color: #44ff00; }
+        .char-chrome .char-special { border-color: #aaaaaa; }
+
+        .char-special-name {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 10px;
+            letter-spacing: 1px;
+            margin-bottom: 3px;
+        }
+
+        .char-echo .char-special-name { color: #00f0ff; }
+        .char-blitz .char-special-name { color: #0066ff; }
+        .char-titan .char-special-name { color: #ff4400; }
+        .char-phantom .char-special-name { color: #8800aa; }
+        .char-nova .char-special-name { color: #00ff88; }
+        .char-havoc .char-special-name { color: #ff0044; }
+        .char-sage .char-special-name { color: #44ff00; }
+        .char-chrome .char-special-name { color: #aaaaaa; }
+
         /* Hidden truths */
         .hidden-truth {
             text-align: center;
@@ -989,6 +1084,100 @@
                     <div class="blade-tier">
                         <div class="blade-num">10</div>
                         <div class="blade-name">INFINITE</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section 7: The Operatives -->
+            <section class="section">
+                <div class="section-header">
+                    <span class="section-number">07</span>
+                    <h2 class="section-title">The Operatives</h2>
+                </div>
+
+                <p style="color: rgba(255,255,255,0.7); margin-bottom: 30px;">
+                    Eight combat-enhanced operatives remain within the simulation. Each brings unique abilities and playstyles inspired by 90s gaming legends.
+                </p>
+
+                <div class="characters-grid">
+                    <div class="char-card char-echo">
+                        <div class="char-name">ECHO</div>
+                        <div class="char-subtitle">THE ORIGINAL</div>
+                        <div class="char-desc">Balanced combat AI. Jack of all trades.</div>
+                        <div class="char-special">
+                            <div class="char-special-name">⚡ ADAPTIVE</div>
+                            <div>+10% XP gain</div>
+                        </div>
+                    </div>
+
+                    <div class="char-card char-blitz">
+                        <div class="char-name">BLITZ</div>
+                        <div class="char-subtitle">SPEED DEMON</div>
+                        <div class="char-desc">Blazing fast. Gotta go fast!</div>
+                        <div class="char-special">
+                            <div class="char-special-name">⚡ MOMENTUM</div>
+                            <div>Damage scales with speed</div>
+                        </div>
+                    </div>
+
+                    <div class="char-card char-titan">
+                        <div class="char-name">TITAN</div>
+                        <div class="char-subtitle">HEAVY HITTER</div>
+                        <div class="char-desc">Slow but devastating. Tank mode.</div>
+                        <div class="char-special">
+                            <div class="char-special-name">⚡ HEAVY ARMOR</div>
+                            <div>-20% damage taken, lower jump</div>
+                        </div>
+                    </div>
+
+                    <div class="char-card char-phantom">
+                        <div class="char-name">PHANTOM</div>
+                        <div class="char-subtitle">SHADOW WALKER</div>
+                        <div class="char-desc">Swift and deadly. Strike from shadows.</div>
+                        <div class="char-special">
+                            <div class="char-special-name">⚡ ASSASSIN</div>
+                            <div>25% crit chance</div>
+                        </div>
+                    </div>
+
+                    <div class="char-card char-nova">
+                        <div class="char-name">NOVA</div>
+                        <div class="char-subtitle">BEAM WARRIOR</div>
+                        <div class="char-desc">Charged attacks. Arm cannon specialist.</div>
+                        <div class="char-special">
+                            <div class="char-special-name">⚡ CHARGE SHOT</div>
+                            <div>Blade waves deal +50% damage</div>
+                        </div>
+                    </div>
+
+                    <div class="char-card char-havoc">
+                        <div class="char-name">HAVOC</div>
+                        <div class="char-subtitle">BERSERKER</div>
+                        <div class="char-desc">Glass cannon. High risk, high reward.</div>
+                        <div class="char-special">
+                            <div class="char-special-name">⚡ BLOODLUST</div>
+                            <div>+3% lifesteal, +10% damage taken</div>
+                        </div>
+                    </div>
+
+                    <div class="char-card char-sage">
+                        <div class="char-name">SAGE</div>
+                        <div class="char-subtitle">MYSTIC BLADE</div>
+                        <div class="char-desc">Ancient power. Magic enhanced.</div>
+                        <div class="char-special">
+                            <div class="char-special-name">⚡ AURA</div>
+                            <div>Explosions are 30% larger</div>
+                        </div>
+                    </div>
+
+                    <div class="char-card char-chrome">
+                        <div class="char-name">CHROME</div>
+                        <div class="char-subtitle">METAL WARRIOR</div>
+                        <div class="char-desc">Cybernetic enhancement. Balanced power.</div>
+                        <div class="char-special">
+                            <div class="char-special-name">⚡ REGENERATE</div>
+                            <div>Heal 1 HP per second</div>
+                        </div>
                     </div>
                 </div>
             </section>

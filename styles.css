@@ -408,7 +408,7 @@ body {
 }
 
 .terminal-body {
-    padding: 30px 40px 40px 40px; /* Extra bottom padding to clear the border */
+    padding: 30px 40px 60px 40px; /* Extra bottom padding to clear the border */
 }
 
 /* Typing Animation */

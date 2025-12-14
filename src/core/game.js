@@ -310,6 +310,10 @@ class Game {
         if (this.levelComplete) return;
 
         this.levelComplete = true;
+
+        // Store the level we just completed BEFORE incrementing
+        const completedLevel = this.currentLevel;
+
         this.currentLevel++;
         this.roomNumber++;
 
@@ -320,9 +324,9 @@ class Game {
         }
 
         // Bonus cycles for completing level
-        const levelBonus = 100 + this.currentLevel * 25;
+        const levelBonus = 100 + completedLevel * 25;
         this.cycles.gain(levelBonus);
-        this.hud.addMessage(`LEVEL COMPLETE! +${levelBonus} CYCLES`, 'success');
+        this.hud.addMessage(`LEVEL ${completedLevel} COMPLETE! +${levelBonus} CYCLES`, 'success');
 
         // Second Wind upgrade - heal after boss
         if (this.upgradeSystem.hasUpgrade('second_wind')) {
@@ -333,14 +337,14 @@ class Game {
 
         // Show combined level complete + upgrade screen after a brief delay
         setTimeout(() => {
-            this.showLevelCompleteWithUpgrades();
+            this.showLevelCompleteWithUpgrades(completedLevel);
         }, 1000);
     }
 
     /**
      * Show combined level complete summary with weapon upgrade selection
      */
-    showLevelCompleteWithUpgrades() {
+    showLevelCompleteWithUpgrades(completedLevel) {
         // Get weapon upgrade options
         this.currentWeaponChoices = this.weaponSystem.getUpgradeOptions();
         const allMaxed = this.currentWeaponChoices.every(opt => opt.isMaxed);
@@ -354,7 +358,7 @@ class Game {
         const subtitle = modal.querySelector('.modal-subtitle');
 
         if (title) title.textContent = 'LEVEL COMPLETE';
-        if (subtitle) subtitle.textContent = `// LEVEL ${this.currentLevel} CLEARED`;
+        if (subtitle) subtitle.textContent = `// LEVEL ${completedLevel} CLEARED`;
 
         // Get current blade info
         const bladeTier = this.bladeEvolution.getCurrentTier();
@@ -364,8 +368,8 @@ class Game {
             <div class="level-stats-header" style="text-align: center; margin-bottom: 20px;">
                 <div style="display: flex; justify-content: center; gap: 40px; margin-bottom: 15px;">
                     <div class="summary-stat">
-                        <div style="font-size: 10px; color: rgba(255,255,255,0.5); letter-spacing: 2px;">LEVEL</div>
-                        <div style="font-size: 24px; color: #00f0ff; font-weight: bold;">${this.currentLevel}</div>
+                        <div style="font-size: 10px; color: rgba(255,255,255,0.5); letter-spacing: 2px;">LEVEL CLEARED</div>
+                        <div style="font-size: 24px; color: #00f0ff; font-weight: bold;">${completedLevel}</div>
                     </div>
                     <div class="summary-stat">
                         <div style="font-size: 10px; color: rgba(255,255,255,0.5); letter-spacing: 2px;">KILLS</div>
@@ -393,7 +397,7 @@ class Game {
                     <div style="font-size: 24px; color: #ffff00; margin-bottom: 10px;">ALL WEAPONS MAXED</div>
                     <div style="font-size: 14px; color: #00f0ff; margin-bottom: 20px;">Your arsenal is complete!</div>
                     <button id="continue-level-btn" class="start-btn" style="padding: 15px 40px;">
-                        <span class="btn-text">CONTINUE TO LEVEL ${this.currentLevel + 1}</span>
+                        <span class="btn-text">CONTINUE TO LEVEL ${this.currentLevel}</span>
                     </button>
                     <div style="margin-top: 10px; font-size: 11px; color: rgba(255,255,255,0.3);">Press SPACE to continue</div>
                 </div>

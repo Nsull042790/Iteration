@@ -2718,13 +2718,13 @@ class Game {
     }
 
     /**
-     * Render pause overlay
+     * Render pause overlay - simple version
      */
     renderPauseOverlay(ctx) {
         ctx.save();
 
         // Darken screen
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
         ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
         const centerX = this.canvas.width / 2;
@@ -2732,105 +2732,18 @@ class Game {
 
         // Pause text
         ctx.textAlign = 'center';
-        ctx.font = 'bold 48px "Courier New", monospace';
+        ctx.font = 'bold 64px "Courier New", monospace';
         ctx.fillStyle = GAME_CONFIG.COLORS.CYAN;
         ctx.shadowColor = GAME_CONFIG.COLORS.CYAN;
-        ctx.shadowBlur = 20;
-        ctx.fillText('PAUSED', centerX, 80);
-
-        // Character info
-        ctx.font = 'bold 18px "Courier New", monospace';
-        ctx.shadowBlur = 10;
-        const char = this.characterSystem.getSelected();
-        ctx.fillText(`${char.name} - Level ${this.currentLevel}`, centerX, 120);
-
-        // Stats box
-        ctx.shadowBlur = 0;
-        ctx.fillStyle = 'rgba(0, 240, 255, 0.1)';
-        ctx.strokeStyle = 'rgba(0, 240, 255, 0.3)';
-        ctx.lineWidth = 1;
-        ctx.fillRect(centerX - 300, 140, 600, 280);
-        ctx.strokeRect(centerX - 300, 140, 600, 280);
-
-        // Current stats
-        ctx.textAlign = 'left';
-        ctx.font = '14px "Courier New", monospace';
-        ctx.fillStyle = GAME_CONFIG.COLORS.CYAN;
-        ctx.fillText('CURRENT STATS:', centerX - 280, 170);
-
-        ctx.font = '12px "Courier New", monospace';
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-        const modifiers = this.upgradeSystem.modifiers;
-        const stats = [
-            `Damage Multiplier: ${(modifiers.damageMultiplier * 100).toFixed(0)}%`,
-            `Attack Speed: ${(modifiers.attackSpeedMultiplier * 100).toFixed(0)}%`,
-            `Move Speed: ${(modifiers.moveSpeedMultiplier * 100).toFixed(0)}%`,
-            `Max Health: ${this.player.maxHealth}`,
-            `Crit Chance: ${(modifiers.critChance * 100).toFixed(0)}%`,
-            `Cycle Gain: ${(modifiers.cycleGainMultiplier * 100).toFixed(0)}%`,
-            `Lifesteal: ${(modifiers.lifesteal * 100).toFixed(0)}%`
-        ];
-
-        stats.forEach((stat, i) => {
-            ctx.fillText(stat, centerX - 280, 195 + i * 18);
-        });
-
-        // Weapons info
-        ctx.fillStyle = GAME_CONFIG.COLORS.MAGENTA;
-        ctx.font = '14px "Courier New", monospace';
-        ctx.fillText('WEAPONS:', centerX + 20, 170);
-
-        ctx.font = '12px "Courier New", monospace';
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-        const weapons = this.weaponSystem.weapons;
-        weapons.forEach((weapon, i) => {
-            const tier = weapon.tiers[weapon.currentTier];
-            const level = weapon.currentTier + 1;
-            const maxLevel = weapon.tiers.length;
-            ctx.fillText(`${weapon.name}: Lv${level}/${maxLevel} - ${tier.name}`, centerX + 20, 195 + i * 18);
-        });
-
-        // Active buffs
-        ctx.fillStyle = '#ffff00';
-        ctx.font = '14px "Courier New", monospace';
-        ctx.fillText('ACTIVE BUFFS:', centerX + 20, 270);
-
-        ctx.font = '12px "Courier New", monospace';
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-        let buffY = 295;
-        if (this.tempBuffs.damageBoost > 1) {
-            ctx.fillText(`+${((this.tempBuffs.damageBoost - 1) * 100).toFixed(0)}% Damage`, centerX + 20, buffY);
-            buffY += 18;
-        }
-        if (this.tempBuffs.speedBoost > 1) {
-            ctx.fillText(`+${((this.tempBuffs.speedBoost - 1) * 100).toFixed(0)}% Speed`, centerX + 20, buffY);
-            buffY += 18;
-        }
-        if (this.tempBuffs.shield) {
-            ctx.fillText(`Shield (${this.tempBuffs.shieldHits} hits)`, centerX + 20, buffY);
-            buffY += 18;
-        }
-        if (buffY === 295) {
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
-            ctx.fillText('None active', centerX + 20, buffY);
-        }
-
-        // Blade evolution info
-        ctx.fillStyle = GAME_CONFIG.COLORS.CYAN;
-        ctx.font = '14px "Courier New", monospace';
-        ctx.textAlign = 'left';
-        ctx.fillText('BLADE EVOLUTION:', centerX - 280, 340);
-
-        const bladeTier = this.bladeEvolution.getCurrentTier();
-        ctx.font = '12px "Courier New", monospace';
-        ctx.fillStyle = bladeTier.color;
-        ctx.fillText(`${bladeTier.name} (${(this.bladeEvolution.getDamageMultiplier() * 100).toFixed(0)}% DMG)`, centerX - 280, 365);
+        ctx.shadowBlur = 30;
+        ctx.fillText('PAUSED', centerX, centerY - 20);
 
         // Controls reminder
-        ctx.textAlign = 'center';
-        ctx.font = '14px "Courier New", monospace';
+        ctx.shadowBlur = 0;
+        ctx.font = '16px "Courier New", monospace';
         ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
-        ctx.fillText('Press ESC or P to resume | Press H for help', centerX, this.canvas.height - 40);
+        ctx.fillText('Press ESC or P to resume', centerX, centerY + 30);
+        ctx.fillText('Press H for help', centerX, centerY + 55);
 
         ctx.restore();
     }

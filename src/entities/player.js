@@ -322,9 +322,9 @@ class Player extends Entity {
         const centerX = screenPos.x + this.width / 2;
         const centerY = screenPos.y + this.height / 2;
 
-        // Get suit colors (default or equipped)
-        const bodyColor = this.suitBodyColor || GAME_CONFIG.COLORS.PLAYER;
-        const coreColor = this.suitCoreColor || GAME_CONFIG.COLORS.PLAYER_CORE;
+        // Get colors: suit (equipped) > character (selected) > default
+        const bodyColor = this.suitBodyColor || this.characterColor || GAME_CONFIG.COLORS.PLAYER;
+        const coreColor = this.suitCoreColor || this.characterSecondaryColor || GAME_CONFIG.COLORS.PLAYER_CORE;
 
         ctx.save();
 

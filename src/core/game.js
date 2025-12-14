@@ -569,16 +569,18 @@ class Game {
         const choicesContainer = document.getElementById('upgrade-choices');
         const title = modal.querySelector('.upgrade-title');
         const subtitle = modal.querySelector('.modal-subtitle');
+        const hint = modal.querySelector('.upgrade-hint');
 
         if (title) title.textContent = 'READY';
         if (subtitle) subtitle.textContent = '// PREPARE FOR NEXT LEVEL';
+        if (hint) hint.style.display = 'none';  // Hide the "1, 2, 3" hint
 
         choicesContainer.innerHTML = `
-            <div style="text-align: center; padding: 30px;">
-                ${upgradedWeapon ? `<div style="font-size: 18px; color: #00ff88; margin-bottom: 20px;">WEAPON UPGRADED: ${upgradedWeapon}</div>` : ''}
-                <div style="font-size: 24px; color: #00f0ff; margin-bottom: 15px;">LEVEL ${this.currentLevel}</div>
-                <div style="font-size: 14px; color: rgba(255,255,255,0.6); margin-bottom: 25px;">${this.currentZone}</div>
-                <button id="continue-level-btn" class="start-btn" style="padding: 15px 40px;">
+            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 20px; min-height: 200px;">
+                ${upgradedWeapon ? `<div style="font-size: 18px; color: #00ff88; margin-bottom: 25px; text-align: center;">WEAPON UPGRADED: ${upgradedWeapon}</div>` : ''}
+                <div style="font-size: 32px; color: #00f0ff; margin-bottom: 10px; text-align: center; font-weight: bold;">LEVEL ${this.currentLevel}</div>
+                <div style="font-size: 16px; color: rgba(255,255,255,0.6); margin-bottom: 35px; text-align: center;">${this.currentZone}</div>
+                <button id="continue-level-btn" class="start-btn" style="padding: 18px 50px;">
                     <span class="btn-text">CONTINUE</span>
                 </button>
                 <div style="margin-top: 15px; font-size: 11px; color: rgba(255,255,255,0.3);">Press SPACE to continue</div>
@@ -589,6 +591,7 @@ class Game {
 
         const handleContinue = () => {
             modal.classList.add('hidden');
+            if (hint) hint.style.display = '';  // Restore hint for weapon selection
             window.removeEventListener('keydown', handleContinueKey);
             if (title) title.textContent = 'EVOLUTION DETECTED';
             if (subtitle) subtitle.textContent = '// SELECT UPGRADE PROTOCOL';

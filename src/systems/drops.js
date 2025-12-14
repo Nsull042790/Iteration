@@ -439,6 +439,17 @@ class DropSystem {
         game.hud.addMessage(`${drop.type.icon} ${drop.type.name}: ${message}`,
             drop.type.rarity === 'legendary' ? 'evolution' : 'success');
 
+        // Play pickup sound based on drop type
+        if (game.audio) {
+            let soundType = 'generic';
+            if (drop.type.id === 'health_orb') soundType = 'health';
+            else if (drop.type.id === 'xp_orb') soundType = 'xp';
+            else if (drop.type.id === 'cycle_orb') soundType = 'cycles';
+            else if (drop.type.isImbue) soundType = 'imbue';
+            else if (drop.type.isCosmetic) soundType = 'cosmetic';
+            game.audio.playPickup(soundType);
+        }
+
         // Screen effects based on rarity
         if (drop.type.rarity === 'legendary') {
             game.renderer.flash(drop.type.color, 0.6);

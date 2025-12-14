@@ -47,6 +47,7 @@ class Game {
         this.metaProgression = new MetaProgressionSystem();
         this.leaderboard = new LeaderboardSystem();
         this.ghostSystem = new GhostSystem();
+        this.audio = window.audioSystem;
 
         // Laser projectiles from weapons
         this.laserProjectiles = [];
@@ -261,8 +262,12 @@ class Game {
         ];
         const bossName = bossNames[Math.min(this.currentLevel - 1, bossNames.length - 1)];
 
-        // Show boss warning
+        // Show boss warning and play warning sound
         this.hud.showBossWarning(bossName);
+        this.audio.playBossWarning();
+
+        // Switch to boss music
+        this.audio.startBossMusic();
 
         // Camera shake
         this.camera.addShake(10, 60);
@@ -448,9 +453,9 @@ class Game {
             }
         }
 
-        // Proceed to next level after brief delay
+        // Show level complete summary with continue button
         setTimeout(() => {
-            this.nextLevel();
+            this.showLevelCompleteSummary();
         }, 500);
     }
 
@@ -508,8 +513,9 @@ class Game {
             if (title) title.textContent = 'EVOLUTION DETECTED';
             if (subtitle) subtitle.textContent = '// SELECT UPGRADE PROTOCOL';
 
+            // Show level summary instead of going directly to next level
             setTimeout(() => {
-                this.nextLevel();
+                this.showLevelCompleteSummary();
             }, 300);
         };
 
@@ -587,8 +593,9 @@ class Game {
             if (title) title.textContent = 'EVOLUTION DETECTED';
             if (subtitle) subtitle.textContent = '// SELECT UPGRADE PROTOCOL';
 
+            // Show level summary instead of going directly to next level
             setTimeout(() => {
-                this.nextLevel();
+                this.showLevelCompleteSummary();
             }, 300);
         };
 
@@ -603,6 +610,122 @@ class Game {
             modal.addEventListener('click', handleDismiss);
             window.addEventListener('keydown', handleDismissKey);
         }, 500);
+    }
+
+    /**
+     * Show level complete summary before advancing
+     */
+    showLevelCompleteSummary() {
+        this.isPaused = true;
+
+        const modal = document.getElementById('upgrade-modal');
+        const choicesContainer = document.getElementById('upgrade-choices');
+        const title = modal.querySelector('.upgrade-title');
+        const subtitle = modal.querySelector('.modal-subtitle');
+
+        if (title) title.textContent = 'LEVEL COMPLETE';
+        if (subtitle) subtitle.textContent = `// LEVEL ${this.currentLevel} CLEARED`;
+
+        // Get active buffs info
+        const activeBuffs = this.dropSystem.activeBuffs || [];
+        const buffInfo = activeBuffs.map(b => `${b.type.icon} ${b.type.name}`).join(' • ') || 'None';
+
+        // Get current blade info
+        const bladeTier = this.bladeEvolution.getCurrentTier();
+
+        // Get imbue info
+        const imbueInfo = this.activeImbue
+            ? `${this.activeImbue.type.toUpperCase()} (${Math.ceil(this.activeImbue.duration / 60)}s)`
+            : 'None';
+
+        // Show comprehensive summary
+        choicesContainer.innerHTML = `
+            <div class="level-summary" style="text-align: center; padding: 20px; max-width: 500px; margin: 0 auto;">
+                <div style="font-size: 48px; margin-bottom: 15px;">🎯</div>
+
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 25px;">
+                    <div class="summary-stat">
+                        <div style="font-size: 11px; color: rgba(255,255,255,0.5); letter-spacing: 2px;">LEVEL</div>
+                        <div style="font-size: 28px; color: #00f0ff; font-weight: bold;">${this.currentLevel}</div>
+                    </div>
+                    <div class="summary-stat">
+                        <div style="font-size: 11px; color: rgba(255,255,255,0.5); letter-spacing: 2px;">TOTAL KILLS</div>
+                        <div style="font-size: 28px; color: #ff00aa; font-weight: bold;">${this.totalKills}</div>
+                    </div>
+                    <div class="summary-stat">
+                        <div style="font-size: 11px; color: rgba(255,255,255,0.5); letter-spacing: 2px;">CYCLES</div>
+                        <div style="font-size: 28px; color: #ffff00; font-weight: bold;">${this.cycles.getCycles()}</div>
+                    </div>
+                </div>
+
+                <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(0,240,255,0.2); padding: 15px; margin-bottom: 20px;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; text-align: left;">
+                        <div>
+                            <div style="font-size: 10px; color: rgba(255,255,255,0.4); letter-spacing: 1px;">BLADE TIER</div>
+                            <div style="font-size: 14px; color: ${bladeTier.color}; font-weight: bold;">${bladeTier.name}</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 10px; color: rgba(255,255,255,0.4); letter-spacing: 1px;">MAGIC IMBUE</div>
+                            <div style="font-size: 14px; color: #aa00ff;">${imbueInfo}</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 10px; color: rgba(255,255,255,0.4); letter-spacing: 1px;">HEALTH</div>
+                            <div style="font-size: 14px; color: #ff4444;">${this.player.health}/${this.player.maxHealth}</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 10px; color: rgba(255,255,255,0.4); letter-spacing: 1px;">ACTIVE BUFFS</div>
+                            <div style="font-size: 12px; color: #00ff88; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${buffInfo}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 20px;">
+                    <div style="font-size: 12px; color: rgba(255,255,255,0.5); margin-bottom: 8px;">NEXT ZONE</div>
+                    <div style="font-size: 16px; color: ${this.currentZone.color}; font-weight: bold; text-shadow: 0 0 10px ${this.currentZone.color};">
+                        ${this.currentZone.name}
+                    </div>
+                </div>
+
+                <button id="continue-level-btn" class="start-btn" style="margin-top: 15px; padding: 15px 40px;">
+                    <span class="btn-text">CONTINUE TO LEVEL ${this.currentLevel + 1}</span>
+                    <span class="btn-icon">→</span>
+                </button>
+
+                <div style="margin-top: 15px; font-size: 11px; color: rgba(255,255,255,0.3);">
+                    Press SPACE or ENTER to continue
+                </div>
+            </div>
+        `;
+
+        modal.classList.remove('hidden');
+
+        // Play UI click
+        this.audio.playUIClick();
+
+        // Handle continue
+        const handleContinue = () => {
+            modal.classList.add('hidden');
+            continueBtn.removeEventListener('click', handleContinue);
+            window.removeEventListener('keydown', handleContinueKey);
+
+            // Reset modal title for next time
+            if (title) title.textContent = 'EVOLUTION DETECTED';
+            if (subtitle) subtitle.textContent = '// SELECT UPGRADE PROTOCOL';
+
+            this.audio.playUIClick();
+            this.nextLevel();
+        };
+
+        const handleContinueKey = (e) => {
+            if (e.code === 'Space' || e.code === 'Enter') {
+                e.preventDefault();
+                handleContinue();
+            }
+        };
+
+        const continueBtn = document.getElementById('continue-level-btn');
+        continueBtn.addEventListener('click', handleContinue);
+        window.addEventListener('keydown', handleContinueKey);
     }
 
     /**
@@ -657,6 +780,11 @@ class Game {
 
         // Handle button click
         const handleTitleClick = () => {
+            // Initialize audio on first user interaction
+            this.audio.init();
+            this.audio.startTitleMusic();
+            this.audio.playUIClick();
+
             titleScreen.classList.add('hidden');
             titleBtn.removeEventListener('click', handleTitleClick);
             this.showCharacterSelect();
@@ -1013,6 +1141,9 @@ class Game {
         this.state = 'playing';
         const char = this.characterSystem.getSelected();
         this.hud.addMessage(`${char.name} ONLINE - SIMULATION INITIALIZED`, 'system');
+
+        // Start gameplay music
+        this.audio.startGameplayMusic();
     }
 
     /**
@@ -1225,6 +1356,7 @@ class Game {
                 if (this.player.active && enemy.collidesWith(this.player)) {
                     const actualDamage = this.calculateDamageTaken(enemy.damage);
                     if (actualDamage > 0 && this.player.takeDamage(actualDamage)) {
+                        this.audio.playPlayerHurt();
                         this.cycles.applyDamagePenalty();
                         this.camera.addShake(5, 10);
                         this.renderer.flash(GAME_CONFIG.COLORS.MAGENTA, 0.3);
@@ -1269,6 +1401,7 @@ class Game {
             if (this.player.active && this.boss.collidesWith(this.player)) {
                 const actualDamage = this.calculateDamageTaken(this.boss.damage);
                 if (actualDamage > 0 && this.player.takeDamage(actualDamage)) {
+                    this.audio.playPlayerHurt();
                     this.cycles.applyDamagePenalty();
                     this.camera.addShake(8, 15);
                     this.renderer.flash(GAME_CONFIG.COLORS.MAGENTA, 0.4);
@@ -1287,6 +1420,7 @@ class Game {
                         proj.active = false;
                         const actualDamage = this.calculateDamageTaken(this.boss.damage * 0.5);
                         if (actualDamage > 0 && this.player.takeDamage(actualDamage)) {
+                            this.audio.playPlayerHurt();
                             this.cycles.applyDamagePenalty();
                             this.camera.addShake(4, 8);
                             // Check for death immediately after taking damage
@@ -1461,6 +1595,9 @@ class Game {
                 totalDamageDealt += damage;
                 hitEnemies.push({ enemy, x: enemy.x, y: enemy.y, killed });
 
+                // Play hit sound
+                this.audio.playHit(isCrit);
+
                 // Crit indicator
                 if (isCrit) {
                     this.spawnCritText(enemy.x, enemy.y - 20, damage);
@@ -1508,6 +1645,9 @@ class Game {
                 }
 
                 if (killed) {
+                    // Play death sound
+                    this.audio.playEnemyDeath();
+
                     // Teleport imbue: warp to kill location
                     if (this.activeImbue?.type === 'teleport') {
                         this.player.x = enemy.x;
@@ -1621,6 +1761,9 @@ class Game {
 
         // Weapon laser ability - spawn laser on attack (once per attack)
         if (this.player.attackFrame === 1) {
+            // Play swing sound
+            this.audio.playSwing(this.weaponSystem.activeWeapon);
+
             const weaponTier = this.weaponSystem.getActiveTierData();
 
             // Max tier weapon always shoots laser
@@ -2204,6 +2347,9 @@ class Game {
             const newTier = this.bladeEvolution.getCurrentTier();
             this.hud.addMessage(`BLADE EVOLVED: ${newTier.name}`, 'evolution');
 
+            // Play level up sound
+            this.audio.playLevelUp();
+
             // Show ability unlock message
             if (newTier.ability) {
                 setTimeout(() => {
@@ -2527,6 +2673,10 @@ class Game {
 
         this.player.active = false;
         this.state = 'gameover';
+
+        // Play death sound and stop music
+        this.audio.playPlayerDeath();
+        this.audio.stopMusic();
 
         // Record death for ghost system
         this.ghostSystem.recordDeath({

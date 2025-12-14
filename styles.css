@@ -1094,9 +1094,8 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding-top: 20px;
+    padding: 20px 0;
     margin-top: 30px;
-    margin-bottom: 15px;
     border-top: 1px solid #2a2a3f;
     flex-wrap: wrap;
     gap: 15px;

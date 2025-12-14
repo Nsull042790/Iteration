@@ -331,99 +331,157 @@ class Game {
             this.hud.addMessage(`SECOND WIND: +${healAmount} HP`, 'success');
         }
 
-        // Show upgrade selection after a brief delay
+        // Show combined level complete + upgrade screen after a brief delay
         setTimeout(() => {
-            this.showUpgradeSelection();
+            this.showLevelCompleteWithUpgrades();
         }, 1000);
     }
 
     /**
-     * Show upgrade selection screen - weapon upgrades
+     * Show combined level complete summary with weapon upgrade selection
      */
-    showUpgradeSelection() {
+    showLevelCompleteWithUpgrades() {
         // Get weapon upgrade options
         this.currentWeaponChoices = this.weaponSystem.getUpgradeOptions();
-
-        // Check if all weapons are maxed - show continue screen instead of auto-advancing
         const allMaxed = this.currentWeaponChoices.every(opt => opt.isMaxed);
-        if (allMaxed) {
-            this.showAllWeaponsMaxedScreen();
-            return;
-        }
 
-        this.showingUpgrades = true;
+        this.showingUpgrades = !allMaxed;
         this.isPaused = true;
 
         const modal = document.getElementById('upgrade-modal');
         const choicesContainer = document.getElementById('upgrade-choices');
         const title = modal.querySelector('.upgrade-title');
-        if (title) title.textContent = 'CHOOSE WEAPON TO UPGRADE';
+        const subtitle = modal.querySelector('.modal-subtitle');
 
-        // Clear previous choices
-        choicesContainer.innerHTML = '';
+        if (title) title.textContent = 'LEVEL COMPLETE';
+        if (subtitle) subtitle.textContent = `// LEVEL ${this.currentLevel} CLEARED`;
 
-        // Create weapon upgrade cards
-        this.currentWeaponChoices.forEach((option, index) => {
-            const card = document.createElement('div');
-            card.className = 'upgrade-card weapon-upgrade';
-            card.style.setProperty('--upgrade-color', option.color);
+        // Get current blade info
+        const bladeTier = this.bladeEvolution.getCurrentTier();
 
-            if (option.isMaxed) {
-                // Max level weapon - not selectable
-                card.innerHTML = `
-                    <span class="upgrade-rarity legendary">MAX LEVEL</span>
-                    <div class="upgrade-icon">⚔</div>
-                    <div class="upgrade-name">${option.currentTier.name}</div>
-                    <div class="upgrade-description">${option.weaponName} - FULLY EVOLVED</div>
-                    <div class="upgrade-effects">
-                        <div class="upgrade-positive">LASER SWORD UNLOCKED</div>
-                        <div class="weapon-stats">
-                            <div>DMG: ${(option.currentTier.damage * 100).toFixed(0)}%</div>
-                            <div>SPD: ${(option.currentTier.speed * 100).toFixed(0)}%</div>
-                        </div>
+        // Build stats section
+        const statsHtml = `
+            <div class="level-stats-header" style="text-align: center; margin-bottom: 20px;">
+                <div style="display: flex; justify-content: center; gap: 40px; margin-bottom: 15px;">
+                    <div class="summary-stat">
+                        <div style="font-size: 10px; color: rgba(255,255,255,0.5); letter-spacing: 2px;">LEVEL</div>
+                        <div style="font-size: 24px; color: #00f0ff; font-weight: bold;">${this.currentLevel}</div>
                     </div>
-                `;
-                card.classList.add('maxed');
-            } else {
-                // Upgradeable weapon
-                const isLaserNext = option.nextTier.isLaser;
-                card.innerHTML = `
-                    <span class="upgrade-rarity ${isLaserNext ? 'legendary' : 'uncommon'}">LV${option.currentLevel} → LV${option.nextLevel}</span>
-                    <div class="upgrade-icon">⚔</div>
-                    <div class="upgrade-name">${option.nextTier.name}</div>
-                    <div class="upgrade-description">${option.weaponName}</div>
-                    <div class="upgrade-effects">
-                        <div class="upgrade-positive">DMG: ${(option.currentTier.damage * 100).toFixed(0)}% → ${(option.nextTier.damage * 100).toFixed(0)}%</div>
-                        <div class="upgrade-positive">SPD: ${(option.currentTier.speed * 100).toFixed(0)}% → ${(option.nextTier.speed * 100).toFixed(0)}%</div>
-                        ${option.nextTier.ability ? `<div class="upgrade-positive">+${option.nextTier.ability.toUpperCase()}</div>` : ''}
-                        ${isLaserNext ? '<div class="upgrade-positive laser-unlock">LASER SWORD UNLOCKED!</div>' : ''}
+                    <div class="summary-stat">
+                        <div style="font-size: 10px; color: rgba(255,255,255,0.5); letter-spacing: 2px;">KILLS</div>
+                        <div style="font-size: 24px; color: #ff00aa; font-weight: bold;">${this.totalKills}</div>
                     </div>
-                    <div class="weapon-tier-progress">
-                        ${Array(option.maxLevel).fill(0).map((_, i) =>
-                            `<span class="tier-dot ${i < option.currentLevel ? 'filled' : ''} ${i === option.currentLevel ? 'next' : ''}"></span>`
-                        ).join('')}
+                    <div class="summary-stat">
+                        <div style="font-size: 10px; color: rgba(255,255,255,0.5); letter-spacing: 2px;">CYCLES</div>
+                        <div style="font-size: 24px; color: #ffff00; font-weight: bold;">${this.cycles.getCycles()}</div>
                     </div>
-                    <span class="upgrade-key">${index + 1}</span>
-                `;
-                card.addEventListener('click', () => this.selectWeaponUpgrade(index));
-            }
+                    <div class="summary-stat">
+                        <div style="font-size: 10px; color: rgba(255,255,255,0.5); letter-spacing: 2px;">BLADE</div>
+                        <div style="font-size: 14px; color: ${bladeTier.color}; font-weight: bold;">${bladeTier.name}</div>
+                    </div>
+                </div>
+            </div>
+        `;
 
-            choicesContainer.appendChild(card);
-        });
+        // Clear and add stats
+        choicesContainer.innerHTML = statsHtml;
 
-        modal.classList.remove('hidden');
+        if (allMaxed) {
+            // All weapons maxed - just show continue button
+            choicesContainer.innerHTML += `
+                <div style="text-align: center; padding: 20px;">
+                    <div style="font-size: 24px; color: #ffff00; margin-bottom: 10px;">ALL WEAPONS MAXED</div>
+                    <div style="font-size: 14px; color: #00f0ff; margin-bottom: 20px;">Your arsenal is complete!</div>
+                    <button id="continue-level-btn" class="start-btn" style="padding: 15px 40px;">
+                        <span class="btn-text">CONTINUE TO LEVEL ${this.currentLevel + 1}</span>
+                    </button>
+                    <div style="margin-top: 10px; font-size: 11px; color: rgba(255,255,255,0.3);">Press SPACE to continue</div>
+                </div>
+            `;
 
-        // Setup keyboard listener (only for non-maxed weapons)
-        this.upgradeKeyHandler = (e) => {
-            if (!this.showingUpgrades) return;
-            if (e.key === '1' || e.key === '2' || e.key === '3') {
-                const index = parseInt(e.key) - 1;
-                if (index < this.currentWeaponChoices.length && !this.currentWeaponChoices[index].isMaxed) {
-                    this.selectWeaponUpgrade(index);
+            modal.classList.remove('hidden');
+
+            const handleContinue = () => {
+                modal.classList.add('hidden');
+                window.removeEventListener('keydown', handleContinueKey);
+                if (title) title.textContent = 'EVOLUTION DETECTED';
+                if (subtitle) subtitle.textContent = '// SELECT UPGRADE PROTOCOL';
+                this.nextLevel();
+            };
+
+            const handleContinueKey = (e) => {
+                if (e.code === 'Space' || e.code === 'Enter') {
+                    e.preventDefault();
+                    handleContinue();
                 }
-            }
-        };
-        window.addEventListener('keydown', this.upgradeKeyHandler);
+            };
+
+            document.getElementById('continue-level-btn').addEventListener('click', handleContinue);
+            window.addEventListener('keydown', handleContinueKey);
+        } else {
+            // Add upgrade selection header
+            choicesContainer.innerHTML += `
+                <div style="text-align: center; margin-bottom: 15px; padding-top: 10px; border-top: 1px solid rgba(0,240,255,0.2);">
+                    <div style="font-size: 14px; color: #00f0ff; letter-spacing: 2px;">CHOOSE WEAPON TO UPGRADE</div>
+                </div>
+                <div id="weapon-choices" style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;"></div>
+            `;
+
+            const weaponContainer = choicesContainer.querySelector('#weapon-choices');
+
+            // Create weapon upgrade cards
+            this.currentWeaponChoices.forEach((option, index) => {
+                const card = document.createElement('div');
+                card.className = 'upgrade-card weapon-upgrade';
+                card.style.setProperty('--upgrade-color', option.color);
+
+                if (option.isMaxed) {
+                    card.innerHTML = `
+                        <span class="upgrade-rarity legendary">MAX LEVEL</span>
+                        <div class="upgrade-icon">⚔</div>
+                        <div class="upgrade-name">${option.currentTier.name}</div>
+                        <div class="upgrade-description">${option.weaponName} - MAXED</div>
+                        <div class="upgrade-effects">
+                            <div class="upgrade-positive">LASER UNLOCKED</div>
+                        </div>
+                    `;
+                    card.classList.add('maxed');
+                } else {
+                    const isLaserNext = option.nextTier.isLaser;
+                    card.innerHTML = `
+                        <span class="upgrade-rarity ${isLaserNext ? 'legendary' : 'uncommon'}">LV${option.currentLevel} → LV${option.nextLevel}</span>
+                        <div class="upgrade-icon">⚔</div>
+                        <div class="upgrade-name">${option.nextTier.name}</div>
+                        <div class="upgrade-description">${option.weaponName}</div>
+                        <div class="upgrade-effects">
+                            <div class="upgrade-positive">DMG: ${(option.currentTier.damage * 100).toFixed(0)}% → ${(option.nextTier.damage * 100).toFixed(0)}%</div>
+                            <div class="upgrade-positive">SPD: ${(option.currentTier.speed * 100).toFixed(0)}% → ${(option.nextTier.speed * 100).toFixed(0)}%</div>
+                            ${isLaserNext ? '<div class="upgrade-positive laser-unlock">LASER SWORD!</div>' : ''}
+                        </div>
+                        <span class="upgrade-key">${index + 1}</span>
+                    `;
+                    card.addEventListener('click', () => this.selectWeaponUpgrade(index));
+                }
+
+                weaponContainer.appendChild(card);
+            });
+
+            modal.classList.remove('hidden');
+
+            // Setup keyboard listener
+            this.upgradeKeyHandler = (e) => {
+                if (!this.showingUpgrades) return;
+                if (e.key === '1' || e.key === '2' || e.key === '3') {
+                    const index = parseInt(e.key) - 1;
+                    if (index < this.currentWeaponChoices.length && !this.currentWeaponChoices[index].isMaxed) {
+                        this.selectWeaponUpgrade(index);
+                    }
+                }
+            };
+            window.addEventListener('keydown', this.upgradeKeyHandler);
+        }
+
+        this.audio.playUIClick();
     }
 
     /**
@@ -471,9 +529,9 @@ class Game {
             }
         }
 
-        // Show level complete summary with continue button
+        // Go directly to next level (stats already shown in combined screen)
         setTimeout(() => {
-            this.showLevelCompleteSummary();
+            this.nextLevel();
         }, 500);
     }
 
@@ -531,9 +589,9 @@ class Game {
             if (title) title.textContent = 'EVOLUTION DETECTED';
             if (subtitle) subtitle.textContent = '// SELECT UPGRADE PROTOCOL';
 
-            // Show level summary instead of going directly to next level
+            // Go directly to next level (stats already shown)
             setTimeout(() => {
-                this.showLevelCompleteSummary();
+                this.nextLevel();
             }, 300);
         };
 
@@ -611,9 +669,9 @@ class Game {
             if (title) title.textContent = 'EVOLUTION DETECTED';
             if (subtitle) subtitle.textContent = '// SELECT UPGRADE PROTOCOL';
 
-            // Show level summary instead of going directly to next level
+            // Go directly to next level
             setTimeout(() => {
-                this.showLevelCompleteSummary();
+                this.nextLevel();
             }, 300);
         };
 
@@ -631,7 +689,7 @@ class Game {
     }
 
     /**
-     * Show level complete summary before advancing
+     * Show level complete summary before advancing (legacy - kept for compatibility)
      */
     showLevelCompleteSummary() {
         this.isPaused = true;

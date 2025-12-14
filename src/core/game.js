@@ -120,6 +120,21 @@ class Game {
             }
         });
 
+        // Pause audio when tab is hidden
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                // Tab hidden - pause audio
+                if (this.audio && this.audio.context) {
+                    this.audio.context.suspend();
+                }
+            } else {
+                // Tab visible - resume audio
+                if (this.audio && this.audio.context) {
+                    this.audio.context.resume();
+                }
+            }
+        });
+
         // Create player
         this.player = new Player(100, 100);
 

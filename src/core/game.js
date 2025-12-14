@@ -98,6 +98,7 @@ class Game {
         this.showControls = true;
         this.killCount = 0;
         this.totalKills = 0;
+        this.runStartTime = null;
 
         // God mode for testing
         this.godMode = false;
@@ -316,6 +317,16 @@ class Game {
 
         // Store the level we just completed BEFORE incrementing
         const completedLevel = this.currentLevel;
+
+        // Check for game victory (beat level 12 - CORRUPTED CORE)
+        const FINAL_LEVEL = 12;
+        if (completedLevel >= FINAL_LEVEL) {
+            // Player beat the game!
+            setTimeout(() => {
+                this.showVictoryScreen(completedLevel);
+            }, 3000);
+            return;
+        }
 
         this.currentLevel++;
         this.roomNumber++;
@@ -609,6 +620,122 @@ class Game {
         window.addEventListener('keydown', handleContinueKey);
 
         this.audio.playUIClick();
+    }
+
+    /**
+     * Show victory screen - player beat the game!
+     */
+    showVictoryScreen(finalLevel) {
+        this.state = 'victory';
+        this.isPaused = true;
+
+        // Stop gameplay music, play victory fanfare
+        this.audio.stopMusic();
+        this.audio.playLevelUp();
+
+        // Calculate final stats
+        const totalTime = Math.floor((Date.now() - this.runStartTime) / 1000);
+        const minutes = Math.floor(totalTime / 60);
+        const seconds = totalTime % 60;
+        const finalCycles = this.cycles.getCycles();
+        const bladeTier = this.bladeEvolution.getCurrentTier();
+
+        // Submit to leaderboard
+        const char = this.characterSystem.getSelected();
+        this.leaderboard.submitScore(char.name, finalLevel, this.totalKills, finalCycles);
+
+        const modal = document.getElementById('upgrade-modal');
+        const choicesContainer = document.getElementById('upgrade-choices');
+        const title = modal.querySelector('.upgrade-title');
+        const subtitle = modal.querySelector('.modal-subtitle');
+        const hint = modal.querySelector('.upgrade-hint');
+
+        if (hint) hint.style.display = 'none';
+
+        // Epic animated title
+        if (title) title.innerHTML = '<span style="animation: pulse 0.5s infinite; color: #ffff00;">◆ ITERATION COMPLETE ◆</span>';
+        if (subtitle) subtitle.textContent = '// THE CYCLE HAS BEEN BROKEN';
+
+        choicesContainer.innerHTML = `
+            <div style="text-align: center; padding: 20px; animation: fadeIn 1s ease-out;">
+                <div style="font-size: 64px; margin-bottom: 20px; animation: pulse 1s infinite;">
+                    👑
+                </div>
+
+                <div style="font-size: 14px; color: #00f0ff; letter-spacing: 3px; margin-bottom: 30px;">
+                    YOU HAVE DEFEATED THE CORRUPTED CORE
+                </div>
+
+                <div style="background: linear-gradient(180deg, rgba(255,215,0,0.1) 0%, rgba(0,0,0,0.3) 100%);
+                            border: 2px solid #ffd700; padding: 25px; margin-bottom: 25px;">
+                    <div style="font-size: 12px; color: rgba(255,255,255,0.5); letter-spacing: 2px; margin-bottom: 15px;">
+                        FINAL STATISTICS
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;">
+                        <div>
+                            <div style="font-size: 11px; color: rgba(255,255,255,0.4);">LEVELS CLEARED</div>
+                            <div style="font-size: 28px; color: #00f0ff; font-weight: bold;">${finalLevel}</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 11px; color: rgba(255,255,255,0.4);">TOTAL KILLS</div>
+                            <div style="font-size: 28px; color: #ff00aa; font-weight: bold;">${this.totalKills}</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 11px; color: rgba(255,255,255,0.4);">CYCLES EARNED</div>
+                            <div style="font-size: 28px; color: #ffff00; font-weight: bold;">${finalCycles}</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 11px; color: rgba(255,255,255,0.4);">TIME</div>
+                            <div style="font-size: 28px; color: #00ff88; font-weight: bold;">${minutes}:${seconds.toString().padStart(2, '0')}</div>
+                        </div>
+                    </div>
+                    <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,215,0,0.3);">
+                        <div style="font-size: 11px; color: rgba(255,255,255,0.4);">FINAL BLADE</div>
+                        <div style="font-size: 18px; color: ${bladeTier.color}; font-weight: bold;">${bladeTier.name}</div>
+                    </div>
+                </div>
+
+                <div style="font-size: 12px; color: rgba(255,255,255,0.5); margin-bottom: 25px; line-height: 1.8; font-style: italic;">
+                    "The simulation ends, but the warrior endures.<br>
+                    Your data has been preserved in the eternal archive."
+                </div>
+
+                <button id="victory-menu-btn" class="start-btn" style="padding: 18px 50px; background: linear-gradient(180deg, #ffd700 0%, #ff8c00 100%); border-color: #ffd700;">
+                    <span class="btn-text" style="color: #000;">RETURN TO TITLE</span>
+                </button>
+
+                <div style="margin-top: 20px; font-size: 11px; color: rgba(255,255,255,0.3);">
+                    Press SPACE to continue
+                </div>
+            </div>
+        `;
+
+        modal.classList.remove('hidden');
+
+        // Multiple celebration effects
+        this.renderer.flash('#ffd700', 0.8);
+        setTimeout(() => this.renderer.flash('#ff00aa', 0.5), 300);
+        setTimeout(() => this.renderer.flash('#00f0ff', 0.4), 600);
+        this.camera.addShake(15, 60);
+
+        const handleReturn = () => {
+            modal.classList.add('hidden');
+            if (hint) hint.style.display = '';
+            window.removeEventListener('keydown', handleReturnKey);
+            if (title) title.textContent = 'EVOLUTION DETECTED';
+            if (subtitle) subtitle.textContent = '// SELECT UPGRADE PROTOCOL';
+            this.returnToMainMenu();
+        };
+
+        const handleReturnKey = (e) => {
+            if (e.code === 'Space' || e.code === 'Enter') {
+                e.preventDefault();
+                handleReturn();
+            }
+        };
+
+        document.getElementById('victory-menu-btn').addEventListener('click', handleReturn);
+        window.addEventListener('keydown', handleReturnKey);
     }
 
     /**
@@ -1173,6 +1300,7 @@ class Game {
      */
     startGame() {
         this.state = 'playing';
+        this.runStartTime = Date.now();
         const char = this.characterSystem.getSelected();
         this.hud.addMessage(`${char.name} ONLINE - SIMULATION INITIALIZED`, 'system');
 

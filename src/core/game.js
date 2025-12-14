@@ -1428,18 +1428,30 @@ class Game {
 
         // Weapon switching with 1, 2, 3 keys
         if (this.input.isKeyJustPressed('Digit1') || this.input.isKeyJustPressed('Numpad1')) {
+            console.log('Digit1 pressed, attempting switch to slot 0');
             if (this.weaponSystem.switchTo(0)) {
+                console.log('Switched to weapon:', this.weaponSystem.getActiveTierData().name);
                 this.hud.addMessage(`WEAPON: ${this.weaponSystem.getActiveTierData().name}`, 'system');
+            } else {
+                console.log('Switch failed - cooldown:', this.weaponSystem.switchCooldown);
             }
         }
         if (this.input.isKeyJustPressed('Digit2') || this.input.isKeyJustPressed('Numpad2')) {
+            console.log('Digit2 pressed, attempting switch to slot 1');
             if (this.weaponSystem.switchTo(1)) {
+                console.log('Switched to weapon:', this.weaponSystem.getActiveTierData().name);
                 this.hud.addMessage(`WEAPON: ${this.weaponSystem.getActiveTierData().name}`, 'system');
+            } else {
+                console.log('Switch failed - cooldown:', this.weaponSystem.switchCooldown);
             }
         }
         if (this.input.isKeyJustPressed('Digit3') || this.input.isKeyJustPressed('Numpad3')) {
+            console.log('Digit3 pressed, attempting switch to slot 2');
             if (this.weaponSystem.switchTo(2)) {
+                console.log('Switched to weapon:', this.weaponSystem.getActiveTierData().name);
                 this.hud.addMessage(`WEAPON: ${this.weaponSystem.getActiveTierData().name}`, 'system');
+            } else {
+                console.log('Switch failed - cooldown:', this.weaponSystem.switchCooldown);
             }
         }
 

@@ -274,15 +274,8 @@ class Game {
 
         this.bossSpawned = true;
 
-        // Generate boss name based on level
-        const bossNames = [
-            'GUARDIAN ALPHA',
-            'SENTINEL PRIME',
-            'ENFORCER OMEGA',
-            'CORE DEFENDER',
-            'SYSTEM OVERLORD'
-        ];
-        const bossName = bossNames[Math.min(this.currentLevel - 1, bossNames.length - 1)];
+        // Get boss name from Boss class for consistency
+        const bossName = Boss.getNameForLevel(this.currentLevel);
 
         // Show boss warning and play warning sound
         this.hud.showBossWarning(bossName);
@@ -1428,30 +1421,21 @@ class Game {
 
         // Weapon switching with 1, 2, 3 keys
         if (this.input.isKeyJustPressed('Digit1') || this.input.isKeyJustPressed('Numpad1')) {
-            console.log('Digit1 pressed, attempting switch to slot 0');
             if (this.weaponSystem.switchTo(0)) {
-                console.log('Switched to weapon:', this.weaponSystem.getActiveTierData().name);
+                this.audio.playWeaponSwitch();
                 this.hud.addMessage(`WEAPON: ${this.weaponSystem.getActiveTierData().name}`, 'system');
-            } else {
-                console.log('Switch failed - cooldown:', this.weaponSystem.switchCooldown);
             }
         }
         if (this.input.isKeyJustPressed('Digit2') || this.input.isKeyJustPressed('Numpad2')) {
-            console.log('Digit2 pressed, attempting switch to slot 1');
             if (this.weaponSystem.switchTo(1)) {
-                console.log('Switched to weapon:', this.weaponSystem.getActiveTierData().name);
+                this.audio.playWeaponSwitch();
                 this.hud.addMessage(`WEAPON: ${this.weaponSystem.getActiveTierData().name}`, 'system');
-            } else {
-                console.log('Switch failed - cooldown:', this.weaponSystem.switchCooldown);
             }
         }
         if (this.input.isKeyJustPressed('Digit3') || this.input.isKeyJustPressed('Numpad3')) {
-            console.log('Digit3 pressed, attempting switch to slot 2');
             if (this.weaponSystem.switchTo(2)) {
-                console.log('Switched to weapon:', this.weaponSystem.getActiveTierData().name);
+                this.audio.playWeaponSwitch();
                 this.hud.addMessage(`WEAPON: ${this.weaponSystem.getActiveTierData().name}`, 'system');
-            } else {
-                console.log('Switch failed - cooldown:', this.weaponSystem.switchCooldown);
             }
         }
 

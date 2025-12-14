@@ -384,6 +384,46 @@ class AudioSystem {
     }
 
     /**
+     * Play weapon switch sound
+     */
+    playWeaponSwitch() {
+        if (!this.ensureReady()) return;
+
+        const now = this.context.currentTime;
+
+        // Quick mechanical click/switch sound
+        const osc = this.context.createOscillator();
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(800, now);
+        osc.frequency.exponentialDecayTo(200, now + 0.05);
+
+        const gain = this.context.createGain();
+        gain.gain.setValueAtTime(0.15, now);
+        gain.gain.exponentialDecayTo(0.01, now + 0.08);
+
+        osc.connect(gain);
+        gain.connect(this.sfxGain);
+
+        osc.start(now);
+        osc.stop(now + 0.1);
+
+        // Secondary click for depth
+        const osc2 = this.context.createOscillator();
+        osc2.type = 'triangle';
+        osc2.frequency.value = 1200;
+
+        const gain2 = this.context.createGain();
+        gain2.gain.setValueAtTime(0.1, now + 0.02);
+        gain2.gain.exponentialDecayTo(0.01, now + 0.06);
+
+        osc2.connect(gain2);
+        gain2.connect(this.sfxGain);
+
+        osc2.start(now + 0.02);
+        osc2.stop(now + 0.08);
+    }
+
+    /**
      * Play boss attack warning
      */
     playBossWarning() {

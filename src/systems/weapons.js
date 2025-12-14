@@ -367,6 +367,13 @@ class WeaponSystem {
             ctx.textAlign = 'right';
             ctx.fillText(String(i + 1), slotX + slotWidth - 5, y + 12);
 
+            // Cooldown overlay (only on non-active slots when on cooldown)
+            if (!isActive && this.switchCooldown > 0) {
+                const cooldownPercent = this.switchCooldown / 15; // 15 is max cooldown
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+                ctx.fillRect(slotX, y, slotWidth, slotHeight * cooldownPercent);
+            }
+
             ctx.restore();
         }
     }

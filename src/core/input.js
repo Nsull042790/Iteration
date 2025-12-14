@@ -21,6 +21,22 @@ class InputHandler {
         this.touchJustPressed = {};
         this.previousTouchState = {};
 
+        // Mouse state
+        this.mouse = {
+            leftDown: false,
+            rightDown: false,
+            x: 0,
+            y: 0
+        };
+        this.mouseJustPressed = {
+            left: false,
+            right: false
+        };
+        this.previousMouseState = {
+            left: false,
+            right: false
+        };
+
         // Key mappings (rebindable in future)
         // Left hand: WASD + Space for movement
         // Right hand: Arrow keys for combat actions
@@ -67,6 +83,32 @@ class InputHandler {
         window.addEventListener('blur', () => {
             this.keys = {};
             this.previousKeys = {};
+            this.mouse.leftDown = false;
+            this.mouse.rightDown = false;
+        });
+
+        // Mouse click listeners
+        window.addEventListener('mousedown', (e) => {
+            if (e.button === 0) this.mouse.leftDown = true;  // Left click
+            if (e.button === 2) this.mouse.rightDown = true; // Right click
+        });
+
+        window.addEventListener('mouseup', (e) => {
+            if (e.button === 0) this.mouse.leftDown = false;
+            if (e.button === 2) this.mouse.rightDown = false;
+        });
+
+        // Prevent right-click context menu on canvas
+        window.addEventListener('contextmenu', (e) => {
+            if (e.target.tagName === 'CANVAS') {
+                e.preventDefault();
+            }
+        });
+
+        // Track mouse position
+        window.addEventListener('mousemove', (e) => {
+            this.mouse.x = e.clientX;
+            this.mouse.y = e.clientY;
         });
     }
 
@@ -110,6 +152,16 @@ class InputHandler {
             }
         }
 
+        // Update mouse just pressed detection
+        this.mouseJustPressed = {
+            left: this.mouse.leftDown && !this.previousMouseState.left,
+            right: this.mouse.rightDown && !this.previousMouseState.right
+        };
+        this.previousMouseState = {
+            left: this.mouse.leftDown,
+            right: this.mouse.rightDown
+        };
+
         // Update jump buffer
         if (this.isActionJustPressed('jump')) {
             this.jumpBuffer = this.jumpBufferMax;
@@ -130,6 +182,10 @@ class InputHandler {
         if (keys && keys.some(key => this.keys[key])) {
             return true;
         }
+
+        // Check mouse (left click = attack, right click = interact)
+        if (action === 'attack' && this.mouse.leftDown) return true;
+        if (action === 'interact' && this.mouse.rightDown) return true;
 
         // Check touch controls
         if (this.touchControls && this.touchControls.enabled) {
@@ -154,6 +210,10 @@ class InputHandler {
         if (keys && keys.some(key => this.justPressed[key])) {
             return true;
         }
+
+        // Check mouse (left click = attack, right click = interact)
+        if (action === 'attack' && this.mouseJustPressed.left) return true;
+        if (action === 'interact' && this.mouseJustPressed.right) return true;
 
         // Check touch controls
         if (this.touchControls && this.touchControls.enabled) {

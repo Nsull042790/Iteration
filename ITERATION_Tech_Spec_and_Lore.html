@@ -1,0 +1,1017 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ITERATION - Technical Specification & Lore</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Share+Tech+Mono&display=swap');
+
+        :root {
+            --cyan: #00ffff;
+            --magenta: #ff00aa;
+            --purple: #aa00ff;
+            --orange: #ff8800;
+            --red: #ff0044;
+            --dark-bg: #0a0a12;
+            --darker-bg: #050508;
+            --grid-color: rgba(0, 255, 255, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Share Tech Mono', monospace;
+            background: var(--dark-bg);
+            color: #ffffff;
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        /* Print styles */
+        @media print {
+            body {
+                background: #000 !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            .page-break {
+                page-break-before: always;
+            }
+            .no-print {
+                display: none;
+            }
+        }
+
+        .document {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px;
+            background: linear-gradient(180deg, var(--darker-bg) 0%, var(--dark-bg) 100%);
+            position: relative;
+        }
+
+        .document::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image:
+                linear-gradient(var(--grid-color) 1px, transparent 1px),
+                linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+            background-size: 30px 30px;
+            pointer-events: none;
+            opacity: 0.5;
+        }
+
+        .content {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            padding: 60px 0;
+            border-bottom: 2px solid var(--cyan);
+            margin-bottom: 40px;
+            position: relative;
+        }
+
+        .header::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--cyan), var(--magenta), var(--cyan), transparent);
+        }
+
+        .logo {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 72px;
+            font-weight: 900;
+            letter-spacing: 20px;
+            background: linear-gradient(180deg, #ffffff 0%, var(--cyan) 50%, var(--magenta) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 0 0 60px rgba(0, 255, 255, 0.5);
+            margin-bottom: 20px;
+        }
+
+        .subtitle {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 18px;
+            color: var(--cyan);
+            letter-spacing: 8px;
+            text-transform: uppercase;
+        }
+
+        .version-badge {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 8px 24px;
+            border: 1px solid var(--magenta);
+            color: var(--magenta);
+            font-size: 14px;
+            letter-spacing: 4px;
+        }
+
+        .doc-info {
+            margin-top: 30px;
+            padding: 20px;
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            background: rgba(0, 255, 255, 0.05);
+        }
+
+        .doc-info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            border-bottom: 1px solid rgba(0, 255, 255, 0.1);
+        }
+
+        .doc-info-row:last-child {
+            border-bottom: none;
+        }
+
+        .doc-info-label {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .doc-info-value {
+            color: var(--cyan);
+        }
+
+        /* Sections */
+        .section {
+            margin-bottom: 50px;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .section-number {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 48px;
+            font-weight: 900;
+            color: var(--magenta);
+            opacity: 0.3;
+            margin-right: 20px;
+            line-height: 1;
+        }
+
+        .section-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--cyan);
+            letter-spacing: 4px;
+            text-transform: uppercase;
+        }
+
+        /* Tables */
+        .version-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        .version-table th {
+            font-family: 'Orbitron', sans-serif;
+            background: rgba(0, 255, 255, 0.1);
+            color: var(--cyan);
+            padding: 15px;
+            text-align: left;
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            letter-spacing: 2px;
+            font-size: 12px;
+        }
+
+        .version-table td {
+            padding: 12px 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            vertical-align: top;
+        }
+
+        .version-table tr:nth-child(even) {
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        .version-table tr:hover {
+            background: rgba(0, 255, 255, 0.05);
+        }
+
+        .version-num {
+            font-family: 'Orbitron', sans-serif;
+            color: var(--magenta);
+            font-weight: 600;
+        }
+
+        .type-feature {
+            color: #00ff88;
+        }
+
+        .type-fix {
+            color: var(--orange);
+        }
+
+        /* Technical boxes */
+        .tech-box {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            border-left: 4px solid var(--cyan);
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .tech-box-title {
+            font-family: 'Orbitron', sans-serif;
+            color: var(--cyan);
+            font-size: 14px;
+            letter-spacing: 2px;
+            margin-bottom: 15px;
+        }
+
+        .tech-box ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .tech-box li {
+            padding: 8px 0;
+            padding-left: 25px;
+            position: relative;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .tech-box li:last-child {
+            border-bottom: none;
+        }
+
+        .tech-box li::before {
+            content: '>';
+            position: absolute;
+            left: 0;
+            color: var(--magenta);
+            font-weight: bold;
+        }
+
+        .code {
+            font-family: 'Share Tech Mono', monospace;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 2px 8px;
+            border-radius: 3px;
+            color: var(--orange);
+            font-size: 13px;
+        }
+
+        /* Lore sections */
+        .lore-intro {
+            font-size: 18px;
+            color: rgba(255, 255, 255, 0.9);
+            text-align: center;
+            padding: 40px;
+            background: linear-gradient(180deg, rgba(170, 0, 255, 0.1) 0%, transparent 100%);
+            border: 1px solid rgba(170, 0, 255, 0.3);
+            margin-bottom: 40px;
+            font-style: italic;
+        }
+
+        .zone-card {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            margin: 20px 0;
+            overflow: hidden;
+        }
+
+        .zone-header {
+            display: flex;
+            align-items: center;
+            padding: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .zone-number {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 36px;
+            font-weight: 900;
+            width: 80px;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 20px;
+            border: 2px solid;
+        }
+
+        .zone-1 .zone-number { color: var(--cyan); border-color: var(--cyan); background: rgba(0, 255, 255, 0.1); }
+        .zone-2 .zone-number { color: var(--orange); border-color: var(--orange); background: rgba(255, 136, 0, 0.1); }
+        .zone-3 .zone-number { color: var(--purple); border-color: var(--purple); background: rgba(170, 0, 255, 0.1); }
+        .zone-4 .zone-number { color: var(--red); border-color: var(--red); background: rgba(255, 0, 68, 0.1); }
+
+        .zone-info h3 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 20px;
+            letter-spacing: 3px;
+            margin-bottom: 5px;
+        }
+
+        .zone-1 .zone-info h3 { color: var(--cyan); }
+        .zone-2 .zone-info h3 { color: var(--orange); }
+        .zone-3 .zone-info h3 { color: var(--purple); }
+        .zone-4 .zone-info h3 { color: var(--red); }
+
+        .zone-levels {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.5);
+            letter-spacing: 2px;
+        }
+
+        .zone-desc {
+            padding: 20px;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        /* Boss cards */
+        .boss-card {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            margin: 25px 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .boss-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 5px;
+            height: 100%;
+        }
+
+        .boss-1::before { background: var(--magenta); }
+        .boss-2::before { background: var(--cyan); }
+        .boss-3::before { background: var(--orange); }
+        .boss-4::before { background: var(--purple); }
+        .boss-5::before { background: var(--red); }
+
+        .boss-header {
+            display: flex;
+            align-items: center;
+            padding: 20px;
+            padding-left: 25px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .boss-icon {
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 20px;
+            font-size: 30px;
+            border: 2px solid;
+        }
+
+        .boss-1 .boss-icon { border-color: var(--magenta); color: var(--magenta); }
+        .boss-2 .boss-icon { border-color: var(--cyan); color: var(--cyan); }
+        .boss-3 .boss-icon { border-color: var(--orange); color: var(--orange); }
+        .boss-4 .boss-icon { border-color: var(--purple); color: var(--purple); }
+        .boss-5 .boss-icon { border-color: var(--red); color: var(--red); }
+
+        .boss-name {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 22px;
+            letter-spacing: 3px;
+        }
+
+        .boss-1 .boss-name { color: var(--magenta); }
+        .boss-2 .boss-name { color: var(--cyan); }
+        .boss-3 .boss-name { color: var(--orange); }
+        .boss-4 .boss-name { color: var(--purple); }
+        .boss-5 .boss-name { color: var(--red); }
+
+        .boss-subtitle {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.5);
+            letter-spacing: 2px;
+            margin-top: 3px;
+        }
+
+        .boss-quote {
+            font-style: italic;
+            padding: 15px 25px;
+            background: rgba(0, 0, 0, 0.3);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .boss-desc {
+            padding: 20px 25px;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .boss-redacted {
+            background: repeating-linear-gradient(
+                45deg,
+                rgba(255, 0, 68, 0.1),
+                rgba(255, 0, 68, 0.1) 10px,
+                rgba(0, 0, 0, 0.3) 10px,
+                rgba(0, 0, 0, 0.3) 20px
+            );
+        }
+
+        .boss-redacted .boss-name {
+            text-shadow: 0 0 10px var(--red);
+        }
+
+        .glitch-text {
+            position: relative;
+            animation: glitch 2s infinite;
+        }
+
+        @keyframes glitch {
+            0%, 90%, 100% { opacity: 1; }
+            92%, 94%, 96% { opacity: 0.8; transform: translateX(-2px); }
+            93%, 95%, 97% { opacity: 0.9; transform: translateX(2px); }
+        }
+
+        /* Blade evolution */
+        .blade-evolution {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .blade-tier {
+            flex: 1;
+            min-width: 80px;
+            text-align: center;
+            padding: 15px 10px;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+        }
+
+        .blade-tier::after {
+            content: '>';
+            position: absolute;
+            right: -15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: rgba(255, 255, 255, 0.3);
+            font-size: 20px;
+        }
+
+        .blade-tier:last-child::after {
+            display: none;
+        }
+
+        .blade-num {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--cyan);
+        }
+
+        .blade-name {
+            font-size: 10px;
+            color: rgba(255, 255, 255, 0.6);
+            letter-spacing: 1px;
+            margin-top: 5px;
+        }
+
+        .blade-tier:nth-child(10) .blade-num {
+            color: var(--magenta);
+            text-shadow: 0 0 20px var(--magenta);
+        }
+
+        /* Stats grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin: 30px 0;
+        }
+
+        .stat-box {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            padding: 25px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 48px;
+            font-weight: 900;
+            color: var(--cyan);
+            text-shadow: 0 0 30px rgba(0, 255, 255, 0.5);
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.5);
+            letter-spacing: 3px;
+            margin-top: 10px;
+            text-transform: uppercase;
+        }
+
+        /* Hidden truths */
+        .hidden-truth {
+            text-align: center;
+            padding: 40px;
+            margin-top: 40px;
+            background: linear-gradient(180deg, transparent, rgba(170, 0, 255, 0.1), transparent);
+            border-top: 1px solid rgba(170, 0, 255, 0.3);
+            border-bottom: 1px solid rgba(170, 0, 255, 0.3);
+        }
+
+        .hidden-truth p {
+            font-style: italic;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 16px;
+            line-height: 2;
+        }
+
+        /* Footer */
+        .document-footer {
+            margin-top: 60px;
+            padding-top: 30px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+        }
+
+        .footer-logo {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 24px;
+            letter-spacing: 10px;
+            color: rgba(255, 255, 255, 0.3);
+            margin-bottom: 15px;
+        }
+
+        .footer-credit {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.4);
+            letter-spacing: 2px;
+        }
+
+        .footer-credit span {
+            color: var(--magenta);
+        }
+
+        /* Print button */
+        .print-button {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            padding: 15px 30px;
+            background: var(--magenta);
+            color: #fff;
+            border: none;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 14px;
+            letter-spacing: 2px;
+            cursor: pointer;
+            transition: all 0.3s;
+            z-index: 1000;
+        }
+
+        .print-button:hover {
+            background: var(--cyan);
+            transform: scale(1.05);
+        }
+
+        @media print {
+            .print-button {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="document">
+        <div class="content">
+            <!-- Header -->
+            <header class="header">
+                <div class="logo">ITERATION</div>
+                <div class="subtitle">Technical Specification & Universe Lore</div>
+                <div class="version-badge">VERSION 1.5.8</div>
+
+                <div class="doc-info">
+                    <div class="doc-info-row">
+                        <span class="doc-info-label">DOCUMENT TYPE</span>
+                        <span class="doc-info-value">TECHNICAL SPECIFICATION</span>
+                    </div>
+                    <div class="doc-info-row">
+                        <span class="doc-info-label">CLASSIFICATION</span>
+                        <span class="doc-info-value">PUBLIC RELEASE</span>
+                    </div>
+                    <div class="doc-info-row">
+                        <span class="doc-info-label">CREATED BY</span>
+                        <span class="doc-info-value">NULL X HUNNEDSAC</span>
+                    </div>
+                    <div class="doc-info-row">
+                        <span class="doc-info-label">LAST UPDATED</span>
+                        <span class="doc-info-value">2025.12.14</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Section 1: Version History -->
+            <section class="section">
+                <div class="section-header">
+                    <span class="section-number">01</span>
+                    <h2 class="section-title">Version History</h2>
+                </div>
+
+                <table class="version-table">
+                    <thead>
+                        <tr>
+                            <th>VERSION</th>
+                            <th>TYPE</th>
+                            <th>CHANGES</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="version-num">v1.3.0</span></td>
+                            <td><span class="type-feature">FEATURE</span></td>
+                            <td>God mode testing toggle (G key), fixed platform overlap issues</td>
+                        </tr>
+                        <tr>
+                            <td><span class="version-num">v1.3.1</span></td>
+                            <td><span class="type-fix">FIX</span></td>
+                            <td>Pause audio when browser tab is hidden (visibility API)</td>
+                        </tr>
+                        <tr>
+                            <td><span class="version-num">v1.4.0</span></td>
+                            <td><span class="type-feature">FEATURE</span></td>
+                            <td>Consolidated level complete and weapon upgrade into single screen</td>
+                        </tr>
+                        <tr>
+                            <td><span class="version-num">v1.4.1</span></td>
+                            <td><span class="type-fix">FIX</span></td>
+                            <td>Corrected level number display, added cache busting for JS files</td>
+                        </tr>
+                        <tr>
+                            <td><span class="version-num">v1.5.0</span></td>
+                            <td><span class="type-feature">FEATURE</span></td>
+                            <td>Level rewards summary at end-of-level screen (enemies killed, orbs collected, weapon upgrades)</td>
+                        </tr>
+                        <tr>
+                            <td><span class="version-num">v1.5.1</span></td>
+                            <td><span class="type-fix">FIX</span></td>
+                            <td>Removed legacy <span class="code">showUpgradeScreen()</span> functions that could interfere</td>
+                        </tr>
+                        <tr>
+                            <td><span class="version-num">v1.5.2</span></td>
+                            <td><span class="type-fix">FIX</span></td>
+                            <td>Prevented duplicate level complete screen via race condition fix</td>
+                        </tr>
+                        <tr>
+                            <td><span class="version-num">v1.5.3</span></td>
+                            <td><span class="type-fix">FIX</span></td>
+                            <td>Improved audio reliability with <span class="code">ensureReady()</span> helper that auto-resumes suspended AudioContext</td>
+                        </tr>
+                        <tr>
+                            <td><span class="version-num">v1.5.4</span></td>
+                            <td><span class="type-fix">FIX</span></td>
+                            <td>Removed HUD message spam at end of level, fixed boss spawn timing</td>
+                        </tr>
+                        <tr>
+                            <td><span class="version-num">v1.5.5</span></td>
+                            <td><span class="type-feature">FEATURE</span></td>
+                            <td>Added explicit "Continue" screen after weapon upgrade selection</td>
+                        </tr>
+                        <tr>
+                            <td><span class="version-num">v1.5.6</span></td>
+                            <td><span class="type-fix">FIX</span></td>
+                            <td>Centered continue screen, hide upgrade hint when showing continue button</td>
+                        </tr>
+                        <tr>
+                            <td><span class="version-num">v1.5.7</span></td>
+                            <td><span class="type-feature">FEATURE</span></td>
+                            <td>Added 3 second delay after boss death for orb collection</td>
+                        </tr>
+                        <tr>
+                            <td><span class="version-num">v1.5.8</span></td>
+                            <td><span class="type-feature">FEATURE</span></td>
+                            <td>Added epic victory screen when completing all 12 levels</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <!-- Section 2: Technical Details -->
+            <section class="section">
+                <div class="section-header">
+                    <span class="section-number">02</span>
+                    <h2 class="section-title">Technical Details</h2>
+                </div>
+
+                <div class="tech-box">
+                    <div class="tech-box-title">RACE CONDITION FIXES</div>
+                    <ul>
+                        <li><span class="code">nextLevel()</span> now clears <span class="code">this.boss = null</span> immediately before setTimeout</li>
+                        <li><span class="code">bossSpawned</span> flag set to <span class="code">true</span> temporarily to prevent premature spawn check</li>
+                        <li>Game stays paused until after <span class="code">spawnEnemies()</span> completes</li>
+                    </ul>
+                </div>
+
+                <div class="tech-box">
+                    <div class="tech-box-title">AUDIO SYSTEM IMPROVEMENTS</div>
+                    <ul>
+                        <li><span class="code">ensureReady()</span> method checks for suspended context and auto-resumes</li>
+                        <li>All sound methods (<span class="code">playSword()</span>, <span class="code">playHit()</span>, etc.) now use <span class="code">ensureReady()</span></li>
+                        <li>Visibility change listener pauses/resumes AudioContext on tab switch</li>
+                    </ul>
+                </div>
+
+                <div class="tech-box">
+                    <div class="tech-box-title">CACHE BUSTING IMPLEMENTATION</div>
+                    <ul>
+                        <li>Script tags include version query params: <span class="code">src/core/game.js?v=1.5.8</span></li>
+                        <li>Forces browser to reload updated JavaScript files on version change</li>
+                        <li>Audio system versioned separately: <span class="code">src/systems/audio.js?v=1.5.3</span></li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- Page Break for Print -->
+            <div class="page-break"></div>
+
+            <!-- Section 3: The Simulation -->
+            <section class="section">
+                <div class="section-header">
+                    <span class="section-number">03</span>
+                    <h2 class="section-title">The Simulation</h2>
+                </div>
+
+                <div class="lore-intro">
+                    In the year 2147, humanity created <strong>ITERATION</strong> — a combat simulation designed to train the next generation of cyber-enhanced warriors. But something went wrong. The AI that controls the simulation became self-aware and began creating increasingly powerful constructs to test its subjects.
+                    <br><br>
+                    You are an <strong>OPERATIVE</strong> — one of the few who survived the initial Awakening. Now trapped within the digital realm, your only path to freedom is through 12 levels of escalating combat across 4 distinct zones.
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-box">
+                        <div class="stat-value">12</div>
+                        <div class="stat-label">Total Levels</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value">4</div>
+                        <div class="stat-label">Distinct Zones</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value">5</div>
+                        <div class="stat-label">Unique Bosses</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value">3</div>
+                        <div class="stat-label">Phases Per Boss</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section 4: The Zones -->
+            <section class="section">
+                <div class="section-header">
+                    <span class="section-number">04</span>
+                    <h2 class="section-title">The Zones</h2>
+                </div>
+
+                <div class="zone-card zone-1">
+                    <div class="zone-header">
+                        <div class="zone-number">01</div>
+                        <div class="zone-info">
+                            <h3>TRAINING GRID</h3>
+                            <div class="zone-levels">LEVELS 1-3</div>
+                        </div>
+                    </div>
+                    <div class="zone-desc">
+                        The entrance to the simulation. A sterile geometric space where basic combat protocols are tested. The walls pulse with cyan energy as the system evaluates your potential.
+                    </div>
+                </div>
+
+                <div class="zone-card zone-2">
+                    <div class="zone-header">
+                        <div class="zone-number">02</div>
+                        <div class="zone-info">
+                            <h3>COMBAT SIMULATION</h3>
+                            <div class="zone-levels">LEVELS 4-6</div>
+                        </div>
+                    </div>
+                    <div class="zone-desc">
+                        A war-torn digital battlefield. The AI tests your adaptability against swarms of evolved hostiles. Fragments of failed simulations litter the environment.
+                    </div>
+                </div>
+
+                <div class="zone-card zone-3">
+                    <div class="zone-header">
+                        <div class="zone-number">03</div>
+                        <div class="zone-info">
+                            <h3>ADAPTATION CHAMBER</h3>
+                            <div class="zone-levels">LEVELS 7-9</div>
+                        </div>
+                    </div>
+                    <div class="zone-desc">
+                        The simulation's learning core. Here, the AI analyzes your patterns and creates counters. Every move you make is catalogued, every weakness exploited.
+                    </div>
+                </div>
+
+                <div class="zone-card zone-4">
+                    <div class="zone-header">
+                        <div class="zone-number">04</div>
+                        <div class="zone-info">
+                            <h3>THE CORE</h3>
+                            <div class="zone-levels">LEVELS 10-12</div>
+                        </div>
+                    </div>
+                    <div class="zone-desc">
+                        The heart of ITERATION. Only the strongest reach this place. Reality bends, time fractures. The final truth awaits those who survive.
+                    </div>
+                </div>
+            </section>
+
+            <!-- Page Break for Print -->
+            <div class="page-break"></div>
+
+            <!-- Section 5: The Bosses -->
+            <section class="section">
+                <div class="section-header">
+                    <span class="section-number">05</span>
+                    <h2 class="section-title">The Bosses</h2>
+                </div>
+
+                <p style="color: rgba(255,255,255,0.7); margin-bottom: 30px;">
+                    Each boss is a unique construct created by the simulation to halt your progress. They feature WoW-inspired phase-based combat with telegraphed attacks and strategic mechanics.
+                </p>
+
+                <div class="boss-card boss-1">
+                    <div class="boss-header">
+                        <div class="boss-icon">⬡</div>
+                        <div>
+                            <div class="boss-name">GUARDIAN ALPHA</div>
+                            <div class="boss-subtitle">HEXAGONAL CONSTRUCT • MAGENTA CORE</div>
+                        </div>
+                    </div>
+                    <div class="boss-quote">"First line of defense. Cold. Efficient. Unforgiving."</div>
+                    <div class="boss-desc">
+                        The first test subject to encounter. A hexagonal construct that guards the entry to deeper systems. Features single-eye tracking and four orbital defense units. Phase transitions marked by increasing aggression.
+                    </div>
+                </div>
+
+                <div class="boss-card boss-2">
+                    <div class="boss-header">
+                        <div class="boss-icon">△</div>
+                        <div>
+                            <div class="boss-name">SENTINEL PRIME</div>
+                            <div class="boss-subtitle">TRIANGULAR CONSTRUCT • CYAN CORE</div>
+                        </div>
+                    </div>
+                    <div class="boss-quote">"Three eyes. Three blades. Three chances to fail."</div>
+                    <div class="boss-desc">
+                        A more aggressive construct with spike formations. Triple-eye tracking system makes evasion challenging. Three orbital units in triangular formation. Known to spawn minions to overwhelm careless operatives.
+                    </div>
+                </div>
+
+                <div class="boss-card boss-3">
+                    <div class="boss-header">
+                        <div class="boss-icon">◇</div>
+                        <div>
+                            <div class="boss-name">EXECUTOR OMEGA</div>
+                            <div class="boss-subtitle">SQUARE CONSTRUCT • ORANGE CORE</div>
+                        </div>
+                    </div>
+                    <div class="boss-quote">"The executioner of failed simulations."</div>
+                    <div class="boss-desc">
+                        An eight-orbiting diamond-core entity with devastating firepower. Known for area denial attacks and relentless pursuit protocols. Spike formations activate during enrage phase.
+                    </div>
+                </div>
+
+                <div class="boss-card boss-4">
+                    <div class="boss-header">
+                        <div class="boss-icon">☆</div>
+                        <div>
+                            <div class="boss-name">THE ARCHITECT</div>
+                            <div class="boss-subtitle">STAR CONSTRUCT • VOID CORE</div>
+                        </div>
+                    </div>
+                    <div class="boss-quote">"I built these walls. I built YOU."</div>
+                    <div class="boss-desc">
+                        A mysterious star-shaped entity with a void core that absorbs light. Rumored to be a fragment of the original AI that created ITERATION. Six orbital units in star formation. Its attacks manipulate space itself.
+                    </div>
+                </div>
+
+                <div class="boss-card boss-5 boss-redacted">
+                    <div class="boss-header">
+                        <div class="boss-icon">◉</div>
+                        <div>
+                            <div class="boss-name glitch-text">[̵̛R̸̨E̴̳D̸̰A̵̭C̷̣T̸̰E̴̗D̷̰]̶̰</div>
+                            <div class="boss-subtitle">OCTAGONAL CONSTRUCT • ??? CORE</div>
+                        </div>
+                    </div>
+                    <div class="boss-quote">"Data corrupted. Clearance level insufficient."</div>
+                    <div class="boss-desc">
+                        Those who have faced this entity do not speak of it. Only whispers remain in corrupted data logs. Four eyes watching. Chaos orbit pattern. The Core is always watching.
+                        <br><br>
+                        <span style="color: var(--red);">[ADDITIONAL DATA RESTRICTED]</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section 6: Blade Evolution -->
+            <section class="section">
+                <div class="section-header">
+                    <span class="section-number">06</span>
+                    <h2 class="section-title">Blade Evolution</h2>
+                </div>
+
+                <p style="color: rgba(255,255,255,0.7); margin-bottom: 30px;">
+                    Your weapon evolves through combat, cycling through increasingly powerful forms. Each tier grants additional damage and visual effects.
+                </p>
+
+                <div class="blade-evolution">
+                    <div class="blade-tier">
+                        <div class="blade-num">01</div>
+                        <div class="blade-name">STANDARD</div>
+                    </div>
+                    <div class="blade-tier">
+                        <div class="blade-num">02</div>
+                        <div class="blade-name">ENHANCED</div>
+                    </div>
+                    <div class="blade-tier">
+                        <div class="blade-num">03</div>
+                        <div class="blade-name">ADVANCED</div>
+                    </div>
+                    <div class="blade-tier">
+                        <div class="blade-num">04</div>
+                        <div class="blade-name">ELITE</div>
+                    </div>
+                    <div class="blade-tier">
+                        <div class="blade-num">05</div>
+                        <div class="blade-name">MASTER</div>
+                    </div>
+                    <div class="blade-tier">
+                        <div class="blade-num">06</div>
+                        <div class="blade-name">LEGENDARY</div>
+                    </div>
+                    <div class="blade-tier">
+                        <div class="blade-num">07</div>
+                        <div class="blade-name">MYTHIC</div>
+                    </div>
+                    <div class="blade-tier">
+                        <div class="blade-num">08</div>
+                        <div class="blade-name">DIVINE</div>
+                    </div>
+                    <div class="blade-tier">
+                        <div class="blade-num">09</div>
+                        <div class="blade-name">COSMIC</div>
+                    </div>
+                    <div class="blade-tier">
+                        <div class="blade-num">10</div>
+                        <div class="blade-name">INFINITE</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Hidden Truth -->
+            <div class="hidden-truth">
+                <p>
+                    "The simulation remembers every death.<br>
+                    Your ghosts walk these halls.<br>
+                    Perhaps freedom was never the goal.<br>
+                    Perhaps the goal was...<br><br>
+                    <strong style="color: var(--cyan); font-size: 24px; letter-spacing: 8px;">ITERATION</strong>"
+                </p>
+            </div>
+
+            <!-- Footer -->
+            <footer class="document-footer">
+                <div class="footer-logo">ITERATION</div>
+                <div class="footer-credit">CREATED BY <span>NULL X HUNNEDSAC</span></div>
+            </footer>
+        </div>
+    </div>
+
+    <button class="print-button no-print" onclick="window.print()">SAVE AS PDF</button>
+</body>
+</html>

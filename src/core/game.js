@@ -228,40 +228,63 @@ class Game {
         this.interactables = [];
 
         const roomWidth = this.currentRoom ? this.currentRoom.width : 1600;
+        const placedPositions = []; // Track placed interactables to prevent overlap
+        const minSpacing = 80; // Minimum spacing between interactables
+
+        // Helper to find non-overlapping X position
+        const findValidX = (minX, maxX, y) => {
+            let attempts = 0;
+            let x;
+            do {
+                x = Utils.random(minX, maxX);
+                const overlaps = placedPositions.some(pos =>
+                    Math.abs(pos.x - x) < minSpacing && Math.abs(pos.y - y) < 50
+                );
+                if (!overlaps) {
+                    placedPositions.push({ x, y });
+                    return x;
+                }
+                attempts++;
+            } while (attempts < 15);
+            // If no valid position found, return anyway (rare edge case)
+            placedPositions.push({ x, y });
+            return x;
+        };
 
         // Spawn a few chests
         const chestCount = Utils.randomInt(1, 3);
         for (let i = 0; i < chestCount; i++) {
-            const x = Utils.random(200, roomWidth - 200);
-            const y = 520; // Ground level
-            const chest = new Interactable(x, y, 'chest');
+            const x = findValidX(200, roomWidth - 200, 520);
+            const chest = new Interactable(x, 520, 'chest');
             this.interactables.push(chest);
         }
 
         // Spawn a terminal with lore
         if (Math.random() > 0.5) {
-            const terminal = new Interactable(Utils.random(400, roomWidth - 400), 508, 'terminal');
+            const x = findValidX(400, roomWidth - 400, 508);
+            const terminal = new Interactable(x, 508, 'terminal');
             this.interactables.push(terminal);
         }
 
         // Spawn a health station occasionally
         if (Math.random() > 0.7) {
-            const healthStation = new Interactable(Utils.random(300, roomWidth - 300), 500, 'health_station');
+            const x = findValidX(300, roomWidth - 300, 500);
+            const healthStation = new Interactable(x, 500, 'health_station');
             this.interactables.push(healthStation);
         }
 
         // Spawn a cycle node
         if (Math.random() > 0.6) {
-            const cycleNode = new Interactable(Utils.random(500, roomWidth - 500), 520, 'cycle_node');
+            const x = findValidX(500, roomWidth - 500, 520);
+            const cycleNode = new Interactable(x, 520, 'cycle_node');
             this.interactables.push(cycleNode);
         }
 
         // Spawn health potions (2-4 per level)
         const potionCount = Utils.randomInt(2, 4);
         for (let i = 0; i < potionCount; i++) {
-            const x = Utils.random(150, roomWidth - 150);
-            const y = 530; // Ground level
-            const potion = new Interactable(x, y, 'health_potion', { healAmount: 25 });
+            const x = findValidX(150, roomWidth - 150, 530);
+            const potion = new Interactable(x, 530, 'health_potion', { healAmount: 25 });
             this.interactables.push(potion);
         }
     }

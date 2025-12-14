@@ -1566,6 +1566,12 @@ body {
    Upgrade Selection Modal
    ============================================ */
 
+#upgrade-modal {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
 .upgrade-content {
     border-color: #00ff88;
     box-shadow:
@@ -1573,6 +1579,8 @@ body {
         inset 0 0 60px rgba(0, 255, 136, 0.05);
     max-width: 900px;
     width: 90%;
+    margin: 0 auto;
+    text-align: center;
 }
 
 .upgrade-title {

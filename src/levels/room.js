@@ -542,7 +542,7 @@ function generateRandomRoom(level = 1) {
 
     // Helper to check if a new platform overlaps existing ones
     const checkOverlap = (x, y, width, height) => {
-        const padding = 30; // Minimum gap between platforms
+        const padding = 50; // Minimum gap between platforms (increased for better spacing)
         for (const plat of placedPlatforms) {
             if (x < plat.x + plat.width + padding &&
                 x + width + padding > plat.x &&

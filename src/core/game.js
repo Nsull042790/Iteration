@@ -648,12 +648,16 @@ class Game {
      * Progress to next level
      */
     nextLevel() {
-        // Reset level complete flag and unpause
+        // Reset level state BEFORE unpausing to prevent race conditions
         this.levelComplete = false;
-        this.isPaused = false;
+        this.boss = null;  // Clear boss reference immediately to prevent double completion
+        this.bossSpawned = false;
 
         // Reset level rewards tracking for new level
         this.levelRewards = this.createEmptyLevelRewards();
+
+        // Now unpause
+        this.isPaused = false;
 
         this.renderer.flash('#ffffff', 0.5);
 

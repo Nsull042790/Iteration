@@ -350,12 +350,16 @@ body {
     padding: 12px 16px;
     display: flex;
     align-items: center;
+    justify-content: center;
     border-bottom: 1px solid #00f0ff;
+    position: relative;
 }
 
 .terminal-dots {
     display: flex;
     gap: 8px;
+    position: absolute;
+    left: 16px;
 }
 
 .dot {
@@ -387,7 +391,6 @@ body {
 }
 
 .terminal-title {
-    flex: 1;
     text-align: center;
     color: #ff0044;
     font-size: 13px;
@@ -405,7 +408,7 @@ body {
 }
 
 .terminal-body {
-    padding: 30px 40px;
+    padding: 30px 40px 40px 40px; /* Extra bottom padding to clear the border */
 }
 
 /* Typing Animation */
@@ -1557,6 +1560,7 @@ body {
 .gameover-hint {
     text-align: center;
     margin-top: 20px;
+    margin-bottom: 10px;
     color: rgba(255, 255, 255, 0.3);
     font-size: 12px;
     letter-spacing: 2px;
@@ -1717,6 +1721,8 @@ body {
 
 .upgrade-hint {
     text-align: center;
+    margin-top: 10px;
+    margin-bottom: 10px;
     color: rgba(255, 255, 255, 0.3);
     font-size: 12px;
     letter-spacing: 2px;
@@ -1891,6 +1897,8 @@ body {
 
 .character-hint {
     text-align: center;
+    margin-top: 15px;
+    margin-bottom: 10px;
     color: rgba(255, 255, 255, 0.3);
     font-size: 12px;
     letter-spacing: 2px;

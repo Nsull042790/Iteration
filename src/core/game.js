@@ -544,14 +544,7 @@ class Game {
         // Apply the weapon upgrade
         const result = this.weaponSystem.upgradeWeapon(option.slotIndex);
 
-        // Hide upgrade modal
-        const modal = document.getElementById('upgrade-modal');
-        modal.classList.add('hidden');
-
         if (result.success) {
-            // Show message
-            this.hud.addMessage(`WEAPON EVOLVED: ${result.newTier.name}`, 'evolution');
-
             // Flash effect
             this.renderer.flash(result.newTier.color, 0.5);
             this.camera.addShake(5, 15);
@@ -564,10 +557,55 @@ class Game {
             }
         }
 
-        // Go directly to next level (stats already shown in combined screen)
-        setTimeout(() => {
+        // Show continue screen with weapon upgrade info
+        this.showContinueScreen(result.success ? result.newTier.name : null);
+    }
+
+    /**
+     * Show continue screen before next level
+     */
+    showContinueScreen(upgradedWeapon) {
+        const modal = document.getElementById('upgrade-modal');
+        const choicesContainer = document.getElementById('upgrade-choices');
+        const title = modal.querySelector('.upgrade-title');
+        const subtitle = modal.querySelector('.modal-subtitle');
+
+        if (title) title.textContent = 'READY';
+        if (subtitle) subtitle.textContent = '// PREPARE FOR NEXT LEVEL';
+
+        choicesContainer.innerHTML = `
+            <div style="text-align: center; padding: 30px;">
+                ${upgradedWeapon ? `<div style="font-size: 18px; color: #00ff88; margin-bottom: 20px;">WEAPON UPGRADED: ${upgradedWeapon}</div>` : ''}
+                <div style="font-size: 24px; color: #00f0ff; margin-bottom: 15px;">LEVEL ${this.currentLevel}</div>
+                <div style="font-size: 14px; color: rgba(255,255,255,0.6); margin-bottom: 25px;">${this.currentZone}</div>
+                <button id="continue-level-btn" class="start-btn" style="padding: 15px 40px;">
+                    <span class="btn-text">CONTINUE</span>
+                </button>
+                <div style="margin-top: 15px; font-size: 11px; color: rgba(255,255,255,0.3);">Press SPACE to continue</div>
+            </div>
+        `;
+
+        modal.classList.remove('hidden');
+
+        const handleContinue = () => {
+            modal.classList.add('hidden');
+            window.removeEventListener('keydown', handleContinueKey);
+            if (title) title.textContent = 'EVOLUTION DETECTED';
+            if (subtitle) subtitle.textContent = '// SELECT UPGRADE PROTOCOL';
             this.nextLevel();
-        }, 500);
+        };
+
+        const handleContinueKey = (e) => {
+            if (e.code === 'Space' || e.code === 'Enter') {
+                e.preventDefault();
+                handleContinue();
+            }
+        };
+
+        document.getElementById('continue-level-btn').addEventListener('click', handleContinue);
+        window.addEventListener('keydown', handleContinueKey);
+
+        this.audio.playUIClick();
     }
 
     /**

@@ -535,14 +535,34 @@ function generateRandomRoom(level = 1) {
     const tierHeight = 120;
     const baseY = room.height - (level === 1 ? 100 : 80);
 
-    // Pre-calculate platform positions (no overlap checking needed)
-    const platforms = [];
+    // Track placed platforms for overlap checking
+    const placedPlatforms = [];
     const zoneCount = 6;
     const zoneWidth = room.width / zoneCount;
 
+    // Helper to check if a new platform overlaps existing ones
+    const checkOverlap = (x, y, width, height) => {
+        const padding = 30; // Minimum gap between platforms
+        for (const plat of placedPlatforms) {
+            if (x < plat.x + plat.width + padding &&
+                x + width + padding > plat.x &&
+                y < plat.y + plat.height + padding &&
+                y + height + padding > plat.y) {
+                return true;
+            }
+        }
+        return false;
+    };
+
+    // Helper to add platform with tracking
+    const addPlatform = (x, y, width, height, options) => {
+        room.createPlatform(x, y, width, height, options);
+        placedPlatforms.push({ x, y, width, height });
+    };
+
     // === SPAWN PLATFORM ===
     const spawnY = baseY;
-    room.createPlatform(60, spawnY, 150, 24, { style: 'grid', oneWay: false });
+    addPlatform(60, spawnY, 150, 24, { style: 'grid', oneWay: false });
 
     // === GENERATE PLATFORMS PER TIER ===
     for (let tier = 0; tier < maxTiers; tier++) {
@@ -553,14 +573,21 @@ function generateRandomRoom(level = 1) {
             // Spread platforms evenly across zones
             const zone = Math.floor((i + 0.5) * zoneCount / platformsInTier);
             const width = Utils.randomInt(platformWidth.min, platformWidth.max);
-            const x = zone * zoneWidth + Utils.random(20, zoneWidth - width - 20);
-            const y = tierY + Utils.random(-20, 20);
 
-            // Skip if too close to spawn platform
+            // Try to find non-overlapping position
+            let x, y, attempts = 0;
+            do {
+                x = zone * zoneWidth + Utils.random(20, zoneWidth - width - 20);
+                y = tierY + Utils.random(-20, 20);
+                attempts++;
+            } while (checkOverlap(x, y, width, 22) && attempts < 10);
+
+            // Skip if too close to spawn platform or couldn't find valid position
             if (tier === 0 && x < 250) continue;
+            if (attempts >= 10) continue;
 
             const style = styles[Utils.randomInt(0, styles.length - 1)];
-            room.createPlatform(x, y, width, 22, {
+            addPlatform(x, y, width, 22, {
                 style: style,
                 oneWay: tier > 0,
                 accentColor: style !== 'solid' && style !== 'grid' ?
@@ -572,12 +599,20 @@ function generateRandomRoom(level = 1) {
     // === STEPPING STONES (connect tiers) ===
     const stepCount = level === 1 ? 3 : level === 2 ? 4 : 5;
     for (let i = 0; i < stepCount; i++) {
-        const x = Utils.random(200, room.width - 250);
         const tier = Utils.randomInt(0, maxTiers - 2);
-        const y = baseY - (tier * tierHeight) - jumpHeight;
         const width = Utils.randomInt(80, 120);
 
-        room.createPlatform(x, y, width, 20, {
+        // Try to find non-overlapping position
+        let x, y, attempts = 0;
+        do {
+            x = Utils.random(200, room.width - 250);
+            y = baseY - (tier * tierHeight) - jumpHeight;
+            attempts++;
+        } while (checkOverlap(x, y, width, 20) && attempts < 10);
+
+        if (attempts >= 10) continue;
+
+        addPlatform(x, y, width, 20, {
             style: 'solid',
             oneWay: true
         });
@@ -589,10 +624,18 @@ function generateRandomRoom(level = 1) {
         for (let i = 0; i < movingCount; i++) {
             const tier = Utils.randomInt(1, Math.min(maxTiers - 1, 3));
             const y = baseY - (tier * tierHeight);
-            const startX = Utils.random(200, room.width / 2);
             const moveDistance = Utils.random(150, 250);
 
-            room.createPlatform(startX, y, 100, 20, {
+            // Try to find non-overlapping position
+            let startX, attempts = 0;
+            do {
+                startX = Utils.random(200, room.width / 2);
+                attempts++;
+            } while (checkOverlap(startX, y, 100, 20) && attempts < 10);
+
+            if (attempts >= 10) continue;
+
+            addPlatform(startX, y, 100, 20, {
                 style: 'neon',
                 moving: true,
                 moveEndX: startX + moveDistance,
@@ -606,33 +649,44 @@ function generateRandomRoom(level = 1) {
 
     // === VERTICAL ELEVATOR (level 3+) ===
     if (level >= 3) {
-        const x = Utils.random(room.width / 3, room.width * 2 / 3);
         const startY = baseY - tierHeight;
         const endY = baseY - (tierHeight * 3);
 
-        room.createPlatform(x, startY, 80, 20, {
-            style: 'energy',
-            moving: true,
-            moveEndX: x,
-            moveEndY: endY,
-            moveSpeed: 1.2,
-            oneWay: true
-        });
+        // Try to find non-overlapping position
+        let x, attempts = 0;
+        do {
+            x = Utils.random(room.width / 3, room.width * 2 / 3);
+            attempts++;
+        } while (checkOverlap(x, startY, 80, 20) && attempts < 10);
+
+        if (attempts < 10) {
+            addPlatform(x, startY, 80, 20, {
+                style: 'energy',
+                moving: true,
+                moveEndX: x,
+                moveEndY: endY,
+                moveSpeed: 1.2,
+                oneWay: true
+            });
+        }
     }
 
     // === SAFE LANDING ZONES ===
     // Larger platforms at key spots
     const safeZoneCount = level === 1 ? 3 : 2;
     for (let i = 0; i < safeZoneCount; i++) {
-        const x = room.width * (i + 1) / (safeZoneCount + 1) - 80;
+        const safeX = room.width * (i + 1) / (safeZoneCount + 1) - 80;
         const tier = Utils.randomInt(1, Math.min(2, maxTiers - 1));
-        const y = baseY - (tier * tierHeight);
+        const safeY = baseY - (tier * tierHeight);
 
-        room.createPlatform(x, y, 160, 26, {
-            style: 'circuit',
-            oneWay: true,
-            accentColor: '#00f0ff'
-        });
+        // Skip if overlapping
+        if (!checkOverlap(safeX, safeY, 160, 26)) {
+            addPlatform(safeX, safeY, 160, 26, {
+                style: 'circuit',
+                oneWay: true,
+                accentColor: '#00f0ff'
+            });
+        }
     }
 
     // Set spawn point

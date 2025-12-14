@@ -96,6 +96,9 @@ class Game {
         this.killCount = 0;
         this.totalKills = 0;
 
+        // God mode for testing
+        this.godMode = false;
+
         // Initialize
         this.init();
     }
@@ -774,9 +777,12 @@ class Game {
         const titleBtn = document.getElementById('title-start-btn');
         const codexBtn = document.getElementById('codex-btn');
         const leaderboardBtn = document.getElementById('leaderboard-btn');
-        const upgradesBtn = document.getElementById('upgrades-btn');
+        const godmodeBtn = document.getElementById('godmode-btn');
 
         titleScreen.classList.remove('hidden');
+
+        // Update god mode button appearance
+        this.updateGodModeButton(godmodeBtn);
 
         // Handle button click
         const handleTitleClick = () => {
@@ -798,8 +804,8 @@ class Game {
         // Leaderboard button
         leaderboardBtn.onclick = () => this.showLeaderboardModal();
 
-        // Upgrades button
-        upgradesBtn.onclick = () => this.showMetaUpgradesModal();
+        // God mode button
+        godmodeBtn.onclick = () => this.toggleGodMode(godmodeBtn);
 
         // Handle key press
         const handleTitleKey = (e) => {
@@ -967,6 +973,38 @@ class Game {
             }
         };
         window.addEventListener('keydown', handleEsc);
+    }
+
+    /**
+     * Toggle god mode for testing
+     */
+    toggleGodMode(btn) {
+        this.godMode = !this.godMode;
+        this.updateGodModeButton(btn);
+        this.audio.playUIClick();
+    }
+
+    /**
+     * Update god mode button appearance
+     */
+    updateGodModeButton(btn) {
+        if (!btn) return;
+        const textEl = btn.querySelector('.btn-text');
+        const iconEl = btn.querySelector('.btn-icon');
+
+        if (this.godMode) {
+            textEl.textContent = 'GOD MODE ON';
+            iconEl.textContent = '⚡';
+            btn.style.background = 'rgba(255, 215, 0, 0.2)';
+            btn.style.borderColor = '#ffd700';
+            btn.style.color = '#ffd700';
+        } else {
+            textEl.textContent = 'GOD MODE';
+            iconEl.textContent = '👁';
+            btn.style.background = '';
+            btn.style.borderColor = '';
+            btn.style.color = '';
+        }
     }
 
     /**
@@ -1303,20 +1341,22 @@ class Game {
                 );
             }
 
-            // Calculate movement cost
-            const moveDistance = Math.abs(this.player.x - prevX);
-            if (moveDistance > 0.1) {
-                this.cycles.spendMove(moveDistance);
-            }
+            // Calculate movement cost (skip in god mode)
+            if (!this.godMode) {
+                const moveDistance = Math.abs(this.player.x - prevX);
+                if (moveDistance > 0.1) {
+                    this.cycles.spendMove(moveDistance);
+                }
 
-            // Jump cost
-            if (this.input.isActionJustPressed('jump') && this.player.coyoteTime > 0) {
-                this.cycles.spendJump();
-            }
+                // Jump cost
+                if (this.input.isActionJustPressed('jump') && this.player.coyoteTime > 0) {
+                    this.cycles.spendJump();
+                }
 
-            // Attack cost
-            if (this.input.isActionJustPressed('attack')) {
-                this.cycles.spendAttack();
+                // Attack cost
+                if (this.input.isActionJustPressed('attack')) {
+                    this.cycles.spendAttack();
+                }
             }
 
             // Keep player in bounds
@@ -1575,7 +1615,10 @@ class Game {
         extraCritChance += (this.player.metaBonuses?.critBonus || 0);
 
         const { damage: finalDamage, isCrit } = this.upgradeSystem.calculateDamage(rawDamage, extraCritChance);
-        const damage = Math.floor(finalDamage);
+
+        // God mode - massive damage
+        const godModeMultiplier = this.godMode ? 100 : 1;
+        const damage = Math.floor(finalDamage * godModeMultiplier);
 
         const tier = this.bladeEvolution.getCurrentTier();
 
@@ -1940,6 +1983,11 @@ class Game {
      * Calculate actual damage taken after reductions
      */
     calculateDamageTaken(baseDamage) {
+        // God mode - no damage
+        if (this.godMode) {
+            return 0;
+        }
+
         // Check invincibility from temp buff
         if (this.tempBuffs.invincible) {
             return 0;

@@ -85,6 +85,9 @@ class Game {
         this.bossSpawned = false;
         this.levelComplete = false;
 
+        // Level rewards tracking (for end-of-level summary)
+        this.levelRewards = this.createEmptyLevelRewards();
+
         // Zone progression
         this.zones = ['TRAINING GRID', 'COMBAT SIMULATION', 'ADAPTATION CHAMBER', 'THE CORE'];
         this.currentZoneIndex = 0;
@@ -362,28 +365,57 @@ class Game {
 
         // Get current blade info
         const bladeTier = this.bladeEvolution.getCurrentTier();
+        const rewards = this.levelRewards || this.createEmptyLevelRewards();
+
+        // Build level rewards summary
+        let rewardLines = [];
+        if (rewards.killsThisLevel > 0) {
+            rewardLines.push(`<span style="color: #ff00aa;">+${rewards.killsThisLevel} KILLS</span>`);
+        }
+        if (rewards.cyclesEarned > 0) {
+            rewardLines.push(`<span style="color: #ffff00;">+${rewards.cyclesEarned} CYCLES</span>`);
+        }
+        if (rewards.xpGained > 0) {
+            rewardLines.push(`<span style="color: #00f0ff;">+${rewards.xpGained} BLADE XP</span>`);
+        }
+        rewards.bladeEvolutions.forEach(tier => {
+            rewardLines.push(`<span style="color: #00ff88;">BLADE EVOLVED: ${tier}</span>`);
+        });
+        rewards.abilitiesUnlocked.forEach(ability => {
+            rewardLines.push(`<span style="color: #ff00aa;">NEW ABILITY: ${ability}</span>`);
+        });
+
+        const rewardsHtml = rewardLines.length > 0
+            ? `<div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(0,240,255,0.2); padding: 10px 15px; margin-bottom: 15px; text-align: center;">
+                <div style="font-size: 10px; color: rgba(255,255,255,0.5); letter-spacing: 2px; margin-bottom: 8px;">LEVEL REWARDS</div>
+                <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 10px 20px; font-size: 13px;">
+                    ${rewardLines.join('')}
+                </div>
+               </div>`
+            : '';
 
         // Build stats section
         const statsHtml = `
-            <div class="level-stats-header" style="text-align: center; margin-bottom: 20px;">
-                <div style="display: flex; justify-content: center; gap: 40px; margin-bottom: 15px;">
+            <div class="level-stats-header" style="text-align: center; margin-bottom: 15px;">
+                <div style="display: flex; justify-content: center; gap: 30px; margin-bottom: 10px;">
                     <div class="summary-stat">
-                        <div style="font-size: 10px; color: rgba(255,255,255,0.5); letter-spacing: 2px;">LEVEL CLEARED</div>
-                        <div style="font-size: 24px; color: #00f0ff; font-weight: bold;">${completedLevel}</div>
+                        <div style="font-size: 10px; color: rgba(255,255,255,0.5); letter-spacing: 2px;">LEVEL</div>
+                        <div style="font-size: 22px; color: #00f0ff; font-weight: bold;">${completedLevel}</div>
                     </div>
                     <div class="summary-stat">
-                        <div style="font-size: 10px; color: rgba(255,255,255,0.5); letter-spacing: 2px;">KILLS</div>
-                        <div style="font-size: 24px; color: #ff00aa; font-weight: bold;">${this.totalKills}</div>
+                        <div style="font-size: 10px; color: rgba(255,255,255,0.5); letter-spacing: 2px;">TOTAL KILLS</div>
+                        <div style="font-size: 22px; color: #ff00aa; font-weight: bold;">${this.totalKills}</div>
                     </div>
                     <div class="summary-stat">
                         <div style="font-size: 10px; color: rgba(255,255,255,0.5); letter-spacing: 2px;">CYCLES</div>
-                        <div style="font-size: 24px; color: #ffff00; font-weight: bold;">${this.cycles.getCycles()}</div>
+                        <div style="font-size: 22px; color: #ffff00; font-weight: bold;">${this.cycles.getCycles()}</div>
                     </div>
                     <div class="summary-stat">
                         <div style="font-size: 10px; color: rgba(255,255,255,0.5); letter-spacing: 2px;">BLADE</div>
-                        <div style="font-size: 14px; color: ${bladeTier.color}; font-weight: bold;">${bladeTier.name}</div>
+                        <div style="font-size: 13px; color: ${bladeTier.color}; font-weight: bold;">${bladeTier.name}</div>
                     </div>
                 </div>
+                ${rewardsHtml}
             </div>
         `;
 
@@ -816,6 +848,9 @@ class Game {
         this.levelComplete = false;
         this.isPaused = false;
 
+        // Reset level rewards tracking for new level
+        this.levelRewards = this.createEmptyLevelRewards();
+
         this.renderer.flash('#ffffff', 0.5);
 
         setTimeout(() => {
@@ -842,6 +877,48 @@ class Game {
 
             this.hud.addMessage(`LEVEL ${this.currentLevel} - ${this.currentZone}`, 'system');
         }, 500);
+    }
+
+    /**
+     * Create empty level rewards tracking object
+     */
+    createEmptyLevelRewards() {
+        return {
+            cyclesEarned: 0,
+            xpGained: 0,
+            killsThisLevel: 0,
+            itemsCollected: [],
+            bladeEvolutions: [],
+            abilitiesUnlocked: []
+        };
+    }
+
+    /**
+     * Track a reward for end-of-level summary
+     */
+    trackReward(type, data) {
+        if (!this.levelRewards) return;
+
+        switch (type) {
+            case 'cycles':
+                this.levelRewards.cyclesEarned += data.amount;
+                break;
+            case 'xp':
+                this.levelRewards.xpGained += data.amount;
+                break;
+            case 'kill':
+                this.levelRewards.killsThisLevel++;
+                break;
+            case 'item':
+                this.levelRewards.itemsCollected.push(data.name);
+                break;
+            case 'evolution':
+                this.levelRewards.bladeEvolutions.push(data.tier);
+                break;
+            case 'ability':
+                this.levelRewards.abilitiesUnlocked.push(data.name);
+                break;
+        }
     }
 
     /**
@@ -1556,9 +1633,12 @@ class Game {
             this.cycles.gain(this.boss.cycleReward);
             this.totalKills++;
 
+            // Track boss rewards
+            this.trackReward('cycles', { amount: this.boss.cycleReward });
+            this.trackReward('kill', {});
+
             // Full heal on boss kill
             this.player.health = this.player.maxHealth;
-            this.hud.addMessage(`${this.boss.name} DESTROYED! +${this.boss.cycleReward} CYCLES +FULL HEAL`, 'success');
 
             // Gain blade XP from boss kill
             let xpMultiplier = this.upgradeSystem.modifiers.xpMultiplier;
@@ -1566,7 +1646,9 @@ class Game {
                 xpMultiplier *= (1 + this.player.characterSpecial.xpBonus);
             }
             xpMultiplier *= this.tempBuffs.xpMultiplier;
-            this.addBladeXP(Math.floor(50 * xpMultiplier));
+            const bossXp = Math.floor(50 * xpMultiplier);
+            this.addBladeXP(bossXp);
+            this.trackReward('xp', { amount: bossXp });
 
             // Roll for boss drops (guaranteed)
             this.dropSystem.rollDrops(this.boss.x, this.boss.y, 'boss');
@@ -1784,10 +1866,13 @@ class Game {
                     this.killCount++;
                     this.totalKills++;
 
+                    // Track rewards for level summary
+                    this.trackReward('cycles', { amount: cycleGain });
+                    this.trackReward('kill', {});
+
                     // Heal player on kill
                     const healAmount = 10;
                     this.player.health = Math.min(this.player.health + healAmount, this.player.maxHealth);
-                    this.hud.addMessage(`+${cycleGain} CYCLES +${healAmount} HP`, 'success');
 
                     // Gain blade XP from kill (with upgrade multiplier + character + meta bonus)
                     let xpMultiplier = this.upgradeSystem.modifiers.xpMultiplier;
@@ -1798,6 +1883,7 @@ class Game {
                     xpMultiplier *= (1 + (this.player.metaBonuses?.xpBonus || 0));
                     const xpGain = Math.floor(10 * xpMultiplier);
                     this.addBladeXP(xpGain);
+                    this.trackReward('xp', { amount: xpGain });
 
                     // Roll for drops
                     this.dropSystem.rollDrops(enemy.x, enemy.y, 'normal');
@@ -2470,17 +2556,15 @@ class Game {
         if (evolved) {
             // Blade evolved! Show effects
             const newTier = this.bladeEvolution.getCurrentTier();
-            this.hud.addMessage(`BLADE EVOLVED: ${newTier.name}`, 'evolution');
+
+            // Track evolution for level summary
+            this.trackReward('evolution', { tier: newTier.name });
+            if (newTier.ability) {
+                this.trackReward('ability', { name: newTier.abilityDesc });
+            }
 
             // Play level up sound
             this.audio.playLevelUp();
-
-            // Show ability unlock message
-            if (newTier.ability) {
-                setTimeout(() => {
-                    this.hud.addMessage(`NEW ABILITY: ${newTier.abilityDesc}`, 'success');
-                }, 500);
-            }
 
             this.renderer.flash(newTier.color, 0.6);
             this.camera.addShake(8, 30);

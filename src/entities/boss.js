@@ -606,15 +606,17 @@ class Boss extends Entity {
     }
 
     /**
-     * Ground AOE - create danger zones on ground
+     * Ground AOE - create danger zones at staggered heights
      */
     executeGroundAOE(player) {
         if (this.attackTimer === 10) {
-            // Create multiple danger zones
+            // Create multiple danger zones at staggered heights (high/low)
             const count = 3 + this.phase;
+            const heights = [500, 350, 200, 500, 350];  // Alternate ground, mid, high
             for (let i = 0; i < count; i++) {
                 const zoneX = Utils.random(100, 1700);
-                this.createDangerZone(zoneX, 500, 120, 100, 90, 'circle');  // Extended warning (was 50)
+                const zoneY = heights[i % heights.length];  // Cycle through heights
+                this.createDangerZone(zoneX, zoneY, 120, 100, 90, 'circle');
             }
         }
 

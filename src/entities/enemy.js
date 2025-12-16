@@ -46,6 +46,10 @@ class Enemy extends Entity {
         // Slow effect from cold imbue
         this.slowDuration = 0;
         this.slowMultiplier = 1.0;
+
+        // Random hop/dodge behavior
+        this.hopCooldown = Utils.randomInt(60, 180);
+        this.hopTimer = 0;
     }
 
     /**
@@ -137,6 +141,9 @@ class Enemy extends Entity {
             this.aiState = 'patrol';
         }
 
+        // Random hop behavior (makes enemies less predictable)
+        this.updateHopBehavior();
+
         // Execute behavior
         switch (this.aiState) {
             case 'patrol':
@@ -148,6 +155,22 @@ class Enemy extends Entity {
             case 'attack':
                 this.attack(player);
                 break;
+        }
+    }
+
+    /**
+     * Random hop/dodge behavior to make enemies less linear
+     */
+    updateHopBehavior() {
+        this.hopTimer++;
+
+        if (this.hopTimer >= this.hopCooldown && this.isGrounded) {
+            // Random chance to hop
+            if (Math.random() < 0.7) {  // 70% chance when timer ready
+                this.velocityY = -8 - Math.random() * 4;  // Variable hop height
+            }
+            this.hopTimer = 0;
+            this.hopCooldown = Utils.randomInt(60, 180);  // Reset cooldown
         }
     }
 

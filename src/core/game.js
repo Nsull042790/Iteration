@@ -255,12 +255,22 @@ class Game {
             return x;
         };
 
-        // Spawn a few chests
-        const chestCount = Utils.randomInt(1, 3);
+        // Spawn ground level chests
+        const chestCount = Utils.randomInt(1, 2);
         for (let i = 0; i < chestCount; i++) {
             const x = findValidX(200, roomWidth - 200, 520);
             const chest = new Interactable(x, 520, 'chest');
             this.interactables.push(chest);
+        }
+
+        // Spawn elevated chests on platforms (better drops to incentivize platforming)
+        const elevatedChestCount = Utils.randomInt(1, 2);
+        const elevatedHeights = [350, 250, 150];  // Platform heights
+        for (let i = 0; i < elevatedChestCount; i++) {
+            const y = elevatedHeights[i % elevatedHeights.length];
+            const x = findValidX(300, roomWidth - 300, y);
+            const elevatedChest = new Interactable(x, y, 'elevated_chest');
+            this.interactables.push(elevatedChest);
         }
 
         // Spawn a terminal with lore
@@ -1825,6 +1835,9 @@ class Game {
             this.trackReward('cycles', { amount: this.boss.cycleReward });
             this.trackReward('kill', {});
 
+            // Big special meter gain from boss
+            this.player.addSpecialMeter(25);
+
             // Full heal on boss kill
             this.player.health = this.player.maxHealth;
 
@@ -1952,8 +1965,11 @@ class Game {
         // Meta progression damage bonus
         const metaDamageBoost = 1 + (this.player.metaBonuses?.damageBonus || 0);
 
+        // Charged attack multiplier
+        const chargeMultiplier = this.player.getChargeDamageMultiplier ? this.player.getChargeDamageMultiplier() : 1.0;
+
         // Calculate damage with potential crit
-        let rawDamage = baseDamage * weaponMultiplier * bladeMultiplier * upgradeMultiplier * tempDamageBoost * permDamageBoost * speedBonus * metaDamageBoost;
+        let rawDamage = baseDamage * weaponMultiplier * bladeMultiplier * upgradeMultiplier * tempDamageBoost * permDamageBoost * speedBonus * metaDamageBoost * chargeMultiplier;
 
         // Character special: Phantom's crit chance
         let extraCritChance = this.player.characterSpecial?.critChance || 0;
@@ -2057,6 +2073,9 @@ class Game {
                     // Track rewards for level summary
                     this.trackReward('cycles', { amount: cycleGain });
                     this.trackReward('kill', {});
+
+                    // Add special meter on kill
+                    this.player.addSpecialMeter(10);
 
                     // Heal player on kill
                     const healAmount = 10;

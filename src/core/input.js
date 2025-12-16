@@ -49,6 +49,7 @@ class InputHandler {
             attack: ['ArrowRight', 'ArrowUp'],
             special: ['ArrowDown'],
             interact: ['ArrowLeft', 'KeyE'],
+            dash: ['ShiftLeft', 'ShiftRight'],
             pause: ['Escape', 'KeyP']
         };
 

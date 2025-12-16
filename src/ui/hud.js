@@ -84,6 +84,9 @@ class HUD {
         // Render health bar (top left)
         this.renderHealth(ctx, gameState.player);
 
+        // Render special meter (under health)
+        this.renderSpecialMeter(ctx, gameState.player);
+
         // Render blade indicator (top left, under health)
         this.renderBladeIndicator(ctx, gameState.player, gameState.bladeEvolution);
 
@@ -208,6 +211,55 @@ class HUD {
         ctx.textAlign = 'left';
         ctx.shadowBlur = 0;
         ctx.fillText('INTEGRITY', x, y + barHeight + 12);
+
+        ctx.restore();
+    }
+
+    /**
+     * Render special ability meter
+     */
+    renderSpecialMeter(ctx, player) {
+        if (!player) return;
+
+        const x = this.padding;
+        const y = this.padding + 32;
+        const barWidth = 100;
+        const barHeight = 6;
+
+        const specialPercent = player.specialMeter / player.specialMeterMax;
+        const isReady = specialPercent >= 1;
+        const meterColor = isReady ? '#ffdd00' : '#aa00ff';
+
+        ctx.save();
+
+        // Background
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+        ctx.fillRect(x, y, barWidth, barHeight);
+
+        // Special fill
+        ctx.fillStyle = meterColor;
+        ctx.shadowColor = meterColor;
+        ctx.shadowBlur = isReady ? 12 : 4;
+        ctx.fillRect(x, y, barWidth * specialPercent, barHeight);
+
+        // Pulse when ready
+        if (isReady) {
+            ctx.globalAlpha = 0.5 + Math.sin(Date.now() / 100) * 0.3;
+            ctx.fillRect(x, y, barWidth, barHeight);
+        }
+
+        // Border
+        ctx.globalAlpha = 1;
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(x, y, barWidth, barHeight);
+
+        // Label
+        ctx.font = '8px "Courier New", monospace';
+        ctx.fillStyle = isReady ? '#ffdd00' : 'rgba(255, 255, 255, 0.5)';
+        ctx.textAlign = 'left';
+        ctx.shadowBlur = 0;
+        ctx.fillText(isReady ? 'SPECIAL READY [↓]' : 'SPECIAL', x, y + barHeight + 8);
 
         ctx.restore();
     }

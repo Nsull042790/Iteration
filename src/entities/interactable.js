@@ -33,6 +33,14 @@ class Interactable {
                 this.contents = this.generateChestContents();
                 break;
 
+            case 'elevated_chest':
+                this.width = 48;
+                this.height = 36;
+                this.interactPrompt = 'OPEN [RARE]';
+                this.contents = this.generateElevatedChestContents();
+                this.isElevated = true;
+                break;
+
             case 'terminal':
                 this.width = 32;
                 this.height = 48;
@@ -77,6 +85,24 @@ class Interactable {
             return { type: 'health', amount: Utils.randomInt(20, 40) };
         } else {
             return { type: 'blade_xp', amount: Utils.randomInt(10, 25) };
+        }
+    }
+
+    generateElevatedChestContents() {
+        // Elevated chests have better drops to reward platforming
+        const roll = Math.random();
+        if (roll < 0.25) {
+            // Guaranteed rare item drop
+            return { type: 'rare_item', amount: 1 };
+        } else if (roll < 0.5) {
+            // Higher cycles
+            return { type: 'cycles', amount: Utils.randomInt(100, 200) };
+        } else if (roll < 0.75) {
+            // More blade XP
+            return { type: 'blade_xp', amount: Utils.randomInt(30, 50) };
+        } else {
+            // Full heal + special meter
+            return { type: 'full_restore', amount: 1 };
         }
     }
 
@@ -129,6 +155,7 @@ class Interactable {
 
         switch (this.type) {
             case 'chest':
+            case 'elevated_chest':
                 return this.openChest(player, game);
 
             case 'terminal':
@@ -167,6 +194,20 @@ class Interactable {
                     game.bladeEvolution.addXP(contents.amount);
                 }
                 message = `+${contents.amount} BLADE DATA`;
+                break;
+
+            case 'rare_item':
+                // Roll for a rare drop from the drop system
+                if (game.dropSystem) {
+                    game.dropSystem.rollDrops(this.x, this.y, 'boss');  // Boss-tier drops
+                }
+                message = 'RARE ITEM FOUND!';
+                break;
+
+            case 'full_restore':
+                player.health = player.maxHealth;
+                player.addSpecialMeter(50);
+                message = 'FULL RESTORE + SPECIAL BOOST!';
                 break;
         }
 
@@ -246,6 +287,9 @@ class Interactable {
             case 'chest':
                 this.renderChest(ctx, screenPos);
                 break;
+            case 'elevated_chest':
+                this.renderElevatedChest(ctx, screenPos);
+                break;
             case 'terminal':
                 this.renderTerminal(ctx, screenPos);
                 break;
@@ -310,6 +354,81 @@ class Interactable {
 
             // Empty inside
             ctx.fillStyle = '#1a1a2f';
+            ctx.fillRect(screenPos.x + 4, screenPos.y + 18, this.width - 8, this.height - 22);
+        }
+    }
+
+    renderElevatedChest(ctx, screenPos) {
+        const pulse = Math.sin(this.pulsePhase) * 0.2 + 0.8;
+        const goldColor = '#FFD700';
+        const darkGold = '#B8860B';
+
+        if (!this.used) {
+            // Closed chest - golden glow
+            ctx.fillStyle = '#3a3020';
+            ctx.shadowColor = goldColor;
+            ctx.shadowBlur = this.playerNearby ? 25 : 15;
+
+            // Body
+            ctx.fillRect(screenPos.x, screenPos.y + 10, this.width, this.height - 10);
+
+            // Gold trim on body
+            ctx.strokeStyle = darkGold;
+            ctx.lineWidth = 2;
+            ctx.strokeRect(screenPos.x + 2, screenPos.y + 12, this.width - 4, this.height - 14);
+
+            // Lid
+            ctx.fillStyle = '#4a4030';
+            ctx.fillRect(screenPos.x - 2, screenPos.y + 5, this.width + 4, 12);
+
+            // Gold trim on lid
+            ctx.strokeStyle = goldColor;
+            ctx.lineWidth = 1;
+            ctx.strokeRect(screenPos.x - 2, screenPos.y + 5, this.width + 4, 12);
+
+            // Glowing gem (gold)
+            ctx.fillStyle = goldColor;
+            ctx.globalAlpha = pulse;
+            ctx.beginPath();
+            ctx.arc(screenPos.x + this.width / 2, screenPos.y + 11, 5, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Sparkle particles around chest
+            ctx.fillStyle = '#FFFFFF';
+            ctx.globalAlpha = pulse * 0.7;
+            for (let i = 0; i < 4; i++) {
+                const angle = this.pulsePhase * 1.5 + (i * Math.PI / 2);
+                const dist = 28 + Math.sin(this.pulsePhase + i) * 5;
+                const px = screenPos.x + this.width / 2 + Math.cos(angle) * dist;
+                const py = screenPos.y + this.height / 2 + Math.sin(angle) * dist * 0.6;
+                ctx.beginPath();
+                ctx.arc(px, py, 2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // "RARE" indicator
+            ctx.globalAlpha = pulse;
+            ctx.font = 'bold 8px "Courier New", monospace';
+            ctx.fillStyle = goldColor;
+            ctx.textAlign = 'center';
+            ctx.fillText('★', screenPos.x + this.width / 2, screenPos.y - 2);
+        } else {
+            // Open chest
+            const openAngle = this.openProgress * 0.8;
+
+            ctx.fillStyle = '#3a3020';
+            ctx.fillRect(screenPos.x, screenPos.y + 15, this.width, this.height - 15);
+
+            // Open lid
+            ctx.save();
+            ctx.translate(screenPos.x, screenPos.y + 10);
+            ctx.rotate(-openAngle);
+            ctx.fillStyle = '#4a4030';
+            ctx.fillRect(0, 0, this.width + 4, 12);
+            ctx.restore();
+
+            // Empty inside with gold gleam
+            ctx.fillStyle = '#2a2010';
             ctx.fillRect(screenPos.x + 4, screenPos.y + 18, this.width - 8, this.height - 22);
         }
     }

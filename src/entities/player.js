@@ -48,12 +48,36 @@ class Player extends Entity {
         this.bladeParticles = [];
         this.bladeSwingTrail = [];
         this.bladePulsePhase = 0;
+
+        // Dash ability
+        this.isDashing = false;
+        this.dashTimer = 0;
+        this.dashDuration = 8;  // Frames of dash
+        this.dashCooldown = 0;
+        this.dashCooldownMax = 45;  // Frames between dashes
+        this.dashSpeed = 18;  // Dash velocity
+        this.dashDirection = 1;  // 1 = right, -1 = left
+
+        // Charged attack
+        this.isCharging = false;
+        this.chargeTimer = 0;
+        this.chargeMax = 60;  // Frames to full charge
+        this.chargeLevel = 0;  // 0-3 charge levels
+
+        // Special ability (limit break)
+        this.specialMeter = 0;
+        this.specialMeterMax = 100;
+        this.isUsingSpecial = false;
+        this.specialTimer = 0;
     }
 
     /**
      * Handle player input and update state
      */
     handleInput(input) {
+        // Don't process normal input during dash
+        if (this.isDashing) return;
+
         // Horizontal movement
         const horizontal = input.getHorizontal();
 
@@ -69,10 +93,55 @@ class Player extends Entity {
         // Attacking
         this.handleAttack(input);
 
+        // Dashing
+        this.handleDash(input);
+
+        // Special ability
+        this.handleSpecial(input);
+
         // Update facing direction based on movement
         if (Math.abs(this.velocityX) > 0.5) {
             this.facingRight = this.velocityX > 0;
         }
+    }
+
+    /**
+     * Handle dash input
+     */
+    handleDash(input) {
+        if (this.dashCooldown > 0) {
+            this.dashCooldown--;
+            return;
+        }
+
+        if (input.isActionJustPressed('dash') && !this.isDashing) {
+            this.isDashing = true;
+            this.dashTimer = 0;
+            this.dashDirection = this.facingRight ? 1 : -1;
+            this.dashCooldown = this.dashCooldownMax;
+            // Give slight vertical boost if in air for better aerial mobility
+            if (!this.isGrounded && this.velocityY > 0) {
+                this.velocityY *= 0.5;
+            }
+        }
+    }
+
+    /**
+     * Handle special ability input (limit break)
+     */
+    handleSpecial(input) {
+        if (input.isActionJustPressed('special') && this.specialMeter >= this.specialMeterMax && !this.isUsingSpecial) {
+            this.activateSpecial();
+        }
+    }
+
+    /**
+     * Activate special ability based on character
+     */
+    activateSpecial() {
+        this.isUsingSpecial = true;
+        this.specialTimer = 120;  // 2 seconds of special effect
+        this.specialMeter = 0;
     }
 
     /**
@@ -111,7 +180,7 @@ class Player extends Entity {
     }
 
     /**
-     * Handle attack input
+     * Handle attack input with charged attack support
      */
     handleAttack(input) {
         if (this.attackCooldown > 0) {
@@ -119,10 +188,43 @@ class Player extends Entity {
             return;
         }
 
-        if (input.isActionJustPressed('attack') && !this.isAttacking) {
+        // Start charging when attack is pressed
+        if (input.isActionJustPressed('attack') && !this.isAttacking && !this.isCharging) {
+            this.isCharging = true;
+            this.chargeTimer = 0;
+            this.chargeLevel = 0;
+        }
+
+        // Continue charging while held
+        if (this.isCharging && input.isActionHeld('attack')) {
+            this.chargeTimer++;
+            // Update charge level (0-3)
+            if (this.chargeTimer >= this.chargeMax) {
+                this.chargeLevel = 3;  // Max charge
+            } else if (this.chargeTimer >= this.chargeMax * 0.66) {
+                this.chargeLevel = 2;
+            } else if (this.chargeTimer >= this.chargeMax * 0.33) {
+                this.chargeLevel = 1;
+            } else {
+                this.chargeLevel = 0;
+            }
+        }
+
+        // Release charged attack
+        if (this.isCharging && !input.isActionHeld('attack')) {
+            this.isCharging = false;
             this.isAttacking = true;
             this.attackFrame = 0;
-            this.attackCooldown = 20; // Frames until next attack
+            // Cooldown scales with charge level (higher charge = longer cooldown)
+            this.attackCooldown = 15 + (this.chargeLevel * 5);
+        }
+
+        // Quick tap attack (released before any charge built up)
+        if (input.isActionJustPressed('attack') && !this.isAttacking && !this.isCharging) {
+            this.isAttacking = true;
+            this.attackFrame = 0;
+            this.chargeLevel = 0;
+            this.attackCooldown = 20;
         }
     }
 
@@ -134,6 +236,12 @@ class Player extends Entity {
 
         // Handle input
         this.handleInput(input);
+
+        // Update dash
+        this.updateDash();
+
+        // Update special ability
+        this.updateSpecial();
 
         // Apply friction and update position
         this.applyFriction();
@@ -173,6 +281,7 @@ class Player extends Entity {
             if (this.attackFrame >= this.attackDuration) {
                 this.isAttacking = false;
                 this.attackFrame = 0;
+                this.chargeLevel = 0;  // Reset charge after attack completes
             }
         } else {
             // Idle blade position
@@ -202,8 +311,12 @@ class Player extends Entity {
     updateAnimationState() {
         const prevState = this.state;
 
-        if (this.isAttacking) {
+        if (this.isDashing) {
+            this.state = 'dash';
+        } else if (this.isAttacking) {
             this.state = 'attack';
+        } else if (this.isCharging) {
+            this.state = 'charge';
         } else if (!this.isGrounded) {
             this.state = this.velocityY < 0 ? 'jump' : 'fall';
         } else if (Math.abs(this.velocityX) > 0.5) {
@@ -241,6 +354,55 @@ class Player extends Entity {
                 this.trailPositions.pop();
             }
         }
+    }
+
+    /**
+     * Update dash state
+     */
+    updateDash() {
+        if (this.isDashing) {
+            this.dashTimer++;
+            // Apply dash velocity
+            this.velocityX = this.dashDirection * this.dashSpeed;
+            // Slight invincibility during dash
+            this.invincibilityFrames = Math.max(this.invincibilityFrames, 2);
+
+            // End dash
+            if (this.dashTimer >= this.dashDuration) {
+                this.isDashing = false;
+                this.dashTimer = 0;
+                // Reduce velocity after dash
+                this.velocityX *= 0.5;
+            }
+        }
+    }
+
+    /**
+     * Update special ability state
+     */
+    updateSpecial() {
+        if (this.isUsingSpecial) {
+            this.specialTimer--;
+            if (this.specialTimer <= 0) {
+                this.isUsingSpecial = false;
+            }
+        }
+    }
+
+    /**
+     * Add to special meter (called when killing enemies, etc)
+     */
+    addSpecialMeter(amount) {
+        this.specialMeter = Math.min(this.specialMeter + amount, this.specialMeterMax);
+    }
+
+    /**
+     * Get damage multiplier from charge level
+     * Level 0: 1.0x, Level 1: 1.5x, Level 2: 2.0x, Level 3: 3.0x
+     */
+    getChargeDamageMultiplier() {
+        const multipliers = [1.0, 1.5, 2.0, 3.0];
+        return multipliers[this.chargeLevel] || 1.0;
     }
 
     /**
@@ -292,6 +454,11 @@ class Player extends Entity {
 
         // Draw blade swing trail (behind player)
         this.renderBladeSwingTrail(ctx, camera);
+
+        // Draw charge effect (behind player)
+        if (this.isCharging) {
+            this.renderChargeEffect(ctx, screenPos);
+        }
 
         // Draw player body (humanoid silhouette)
         this.renderBody(ctx, screenPos);
@@ -835,6 +1002,74 @@ class Player extends Entity {
             ctx.fill();
 
             ctx.restore();
+        }
+
+        ctx.restore();
+    }
+
+    /**
+     * Render charge effect around player
+     */
+    renderChargeEffect(ctx, screenPos) {
+        const centerX = screenPos.x + this.width / 2;
+        const centerY = screenPos.y + this.height / 2;
+        const chargeProgress = this.chargeTimer / this.chargeMax;
+        const pulse = Math.sin(this.bladePulsePhase * 3) * 0.3 + 0.7;
+
+        ctx.save();
+
+        // Charge colors based on level
+        const chargeColors = ['#4488ff', '#44ff88', '#ffff44', '#ff4444'];
+        const color = chargeColors[this.chargeLevel];
+
+        // Growing aura
+        const baseRadius = 25;
+        const maxRadius = 50;
+        const radius = baseRadius + (maxRadius - baseRadius) * chargeProgress;
+
+        // Outer glow
+        ctx.shadowColor = color;
+        ctx.shadowBlur = 20 + (this.chargeLevel * 10);
+
+        // Pulsing ring
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2 + this.chargeLevel;
+        ctx.globalAlpha = 0.5 * pulse;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius * pulse, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // Inner charging particles
+        ctx.fillStyle = color;
+        const particleCount = 4 + this.chargeLevel * 2;
+        for (let i = 0; i < particleCount; i++) {
+            const angle = (this.bladePulsePhase * 2) + (i * Math.PI * 2 / particleCount);
+            const dist = radius * 0.6 * chargeProgress;
+            const px = centerX + Math.cos(angle) * dist;
+            const py = centerY + Math.sin(angle) * dist;
+
+            ctx.globalAlpha = 0.6 + pulse * 0.4;
+            ctx.beginPath();
+            ctx.arc(px, py, 3 + this.chargeLevel, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // Charge level indicator
+        if (this.chargeLevel > 0) {
+            ctx.font = 'bold 12px "Courier New", monospace';
+            ctx.fillStyle = color;
+            ctx.textAlign = 'center';
+            ctx.globalAlpha = pulse;
+            ctx.fillText('×' + (this.getChargeDamageMultiplier()).toFixed(1), centerX, screenPos.y - 15);
+        }
+
+        // Max charge flash
+        if (this.chargeLevel === 3) {
+            ctx.globalAlpha = 0.2 * pulse;
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius * 1.2, 0, Math.PI * 2);
+            ctx.fill();
         }
 
         ctx.restore();

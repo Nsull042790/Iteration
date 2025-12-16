@@ -67,7 +67,7 @@ class CharacterSystem {
                     damage: 140,
                     speed: 65,
                     attackSpeed: 70,
-                    jumpHeight: 75  // Lower jump due to weight
+                    jumpHeight: 85  // Lower jump due to weight (adjusted from 75)
                 },
                 color: '#ff4400',
                 secondaryColor: '#aa2200',
@@ -141,9 +141,9 @@ class CharacterSystem {
                 style: 'aggressive',
                 special: {
                     name: 'BLOODLUST',
-                    description: '+3% lifesteal, +10% damage taken',
-                    lifesteal: 0.03,         // Reduced from 5%
-                    damageAmplify: 0.10      // NEW: takes 10% more damage
+                    description: '+5% lifesteal, +10% damage taken',
+                    lifesteal: 0.05,         // Buffed from 3% to 5%
+                    damageAmplify: 0.10      // Takes 10% more damage
                 }
             },
             {

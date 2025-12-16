@@ -183,9 +183,9 @@ class InputHandler {
             return true;
         }
 
-        // Check mouse (left click = attack, right click = interact)
-        if (action === 'attack' && this.mouse.leftDown) return true;
-        if (action === 'interact' && this.mouse.rightDown) return true;
+        // Check mouse (right click = attack, left click = interact)
+        if (action === 'attack' && this.mouse.rightDown) return true;
+        if (action === 'interact' && this.mouse.leftDown) return true;
 
         // Check touch controls
         if (this.touchControls && this.touchControls.enabled) {
@@ -211,9 +211,9 @@ class InputHandler {
             return true;
         }
 
-        // Check mouse (left click = attack, right click = interact)
-        if (action === 'attack' && this.mouseJustPressed.left) return true;
-        if (action === 'interact' && this.mouseJustPressed.right) return true;
+        // Check mouse (right click = attack, left click = interact)
+        if (action === 'attack' && this.mouseJustPressed.right) return true;
+        if (action === 'interact' && this.mouseJustPressed.left) return true;
 
         // Check touch controls
         if (this.touchControls && this.touchControls.enabled) {

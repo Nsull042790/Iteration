@@ -122,6 +122,10 @@ class Game {
                     this.togglePause();
                 }
             }
+            // M key to go to main menu when paused
+            if (e.code === 'KeyM' && this.state === 'playing' && this.isPaused) {
+                this.returnToMainMenu();
+            }
         });
 
         // Pause audio when tab is hidden
@@ -2945,6 +2949,10 @@ class Game {
         ctx.fillText('Press ESC or P to resume', centerX, centerY + 30);
         ctx.fillText('Press H for help', centerX, centerY + 55);
 
+        // Main menu option
+        ctx.fillStyle = GAME_CONFIG.COLORS.MAGENTA;
+        ctx.fillText('Press M for Main Menu', centerX, centerY + 85);
+
         ctx.restore();
     }
 
@@ -3096,11 +3104,12 @@ class Game {
     }
 
     /**
-     * Return to main menu from game over
+     * Return to main menu from game over or pause
      */
     returnToMainMenu() {
         // Reset game state
         this.state = 'title';
+        this.isPaused = false;
 
         // Reset all game systems
         this.currentLevel = 1;

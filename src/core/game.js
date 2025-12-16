@@ -3148,8 +3148,21 @@ class Game {
         // Clear enemies and drops
         this.enemies = [];
         this.boss = null;
+        this.bossSpawned = false;
         this.drops = [];
         this.particles = [];
+
+        // Generate fresh room for level 1
+        this.currentRoom = generateRandomRoom(1, 0);
+        this.camera.setBounds(0, 0, this.currentRoom.width, this.currentRoom.height);
+
+        // Reset player position for new room
+        this.player.x = this.currentRoom.spawnPoint.x;
+        this.player.y = this.currentRoom.spawnPoint.y;
+
+        // Spawn fresh enemies and interactables
+        this.spawnEnemies();
+        this.spawnInteractables();
 
         // Show title screen
         this.showTitleScreen();

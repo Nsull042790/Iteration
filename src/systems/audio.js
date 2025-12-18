@@ -910,13 +910,33 @@ class AudioSystem {
     // ========================================
 
     /**
-     * Start gameplay music
+     * Start gameplay music - plays the main MP3 track
      */
     startGameplayMusic() {
         if (!this.initialized || this.musicMuted) return;
 
         this.stopMusic();
 
+        // Try to play the loaded MP3 track
+        if (this.audioBuffers['main']) {
+            this.playTrack('main', {
+                loop: true,
+                startTime: 0,
+                fadeIn: 2,
+                volume: 1
+            });
+            console.log('Playing main music track');
+        } else {
+            // Fallback to procedural music if MP3 not loaded
+            console.log('MP3 not loaded, using procedural music');
+            this.startProceduralGameplayMusic();
+        }
+    }
+
+    /**
+     * Procedural gameplay music fallback
+     */
+    startProceduralGameplayMusic() {
         // Create a simple ambient drone
         const now = this.context.currentTime;
 
@@ -986,13 +1006,40 @@ class AudioSystem {
     }
 
     /**
-     * Start boss music
+     * Start boss music - keeps main track playing but could use intense section
      */
     startBossMusic() {
         if (!this.initialized || this.musicMuted) return;
 
+        // If main track is already playing, let it continue
+        // Boss fights keep the same music for continuity
+        if (this.currentMusic === 'main' && this.currentMusicSource) {
+            console.log('Boss fight - keeping main music playing');
+            return;
+        }
+
+        // Otherwise start the main track from an intense section
         this.stopMusic();
 
+        if (this.audioBuffers['main']) {
+            // Start from the intense section of the track
+            this.playTrack('main', {
+                loop: true,
+                startTime: this.tracks.samples.intense.start,
+                fadeIn: 1,
+                volume: 1
+            });
+            console.log('Playing boss music (intense section)');
+        } else {
+            // Fallback to procedural boss music
+            this.startProceduralBossMusic();
+        }
+    }
+
+    /**
+     * Procedural boss music fallback
+     */
+    startProceduralBossMusic() {
         // More intense drone
         const drone = this.context.createOscillator();
         drone.type = 'sawtooth';
@@ -1040,13 +1087,32 @@ class AudioSystem {
     }
 
     /**
-     * Start title music
+     * Start title music - plays main track from dark intro section
      */
     startTitleMusic() {
         if (!this.initialized || this.musicMuted) return;
 
         this.stopMusic();
 
+        // Try to play the loaded MP3 track from the dark intro
+        if (this.audioBuffers['main']) {
+            this.playTrack('main', {
+                loop: true,
+                startTime: this.tracks.samples.darkIntro.start,
+                fadeIn: 3,
+                volume: 0.7
+            });
+            console.log('Playing title music (dark intro)');
+        } else {
+            // Fallback to procedural title music
+            this.startProceduralTitleMusic();
+        }
+    }
+
+    /**
+     * Procedural title music fallback
+     */
+    startProceduralTitleMusic() {
         // Mysterious pad
         const pad1 = this.context.createOscillator();
         pad1.type = 'sine';

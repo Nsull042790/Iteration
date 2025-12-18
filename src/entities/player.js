@@ -33,7 +33,7 @@ class Player extends Entity {
 
         // Visual effects
         this.trailPositions = []; // For afterimage effect
-        this.maxTrailLength = 5;
+        this.maxTrailLength = 8; // Longer trail for better visibility
 
         // Blade (starts basic, evolves)
         this.bladeType = 'BASIC';
@@ -758,6 +758,7 @@ class Player extends Entity {
         const handY = screenPos.y + 20;
         const v = this.bladeVisuals || { shape: 'stick', length: 38, width: 3, glowIntensity: 12, coreWidth: 1 };
         const pulse = Math.sin(this.bladePulsePhase) * 0.15 + 0.85;
+        const attackPulse = this.isAttacking ? 1 + Math.sin(this.attackFrame * 0.5) * 0.3 : 1;
 
         ctx.save();
 
@@ -765,9 +766,21 @@ class Player extends Entity {
         ctx.translate(centerX + (this.facingRight ? 10 : -10), handY);
         ctx.rotate(Utils.degToRad(this.bladeAngle));
 
-        // Blade glow
+        // ENHANCED: Outer aura glow (extra layer)
+        if (this.isAttacking || v.shape !== 'stick') {
+            ctx.shadowColor = this.bladeGlow;
+            ctx.shadowBlur = v.glowIntensity * 2.5 * pulse * attackPulse;
+            ctx.globalAlpha = 0.3;
+            ctx.fillStyle = this.bladeGlow;
+            ctx.beginPath();
+            ctx.ellipse(v.length * 0.4, 0, v.length * 0.5, v.width * 3, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.globalAlpha = 1;
+        }
+
+        // Main blade glow
         ctx.shadowColor = this.bladeGlow;
-        ctx.shadowBlur = (this.isAttacking ? v.glowIntensity * 1.5 : v.glowIntensity) * pulse;
+        ctx.shadowBlur = (this.isAttacking ? v.glowIntensity * 2 : v.glowIntensity * 1.3) * pulse;
 
         // Render based on blade shape/tier
         switch (v.shape) {
@@ -1381,21 +1394,65 @@ class Player extends Entity {
     }
 
     /**
-     * Render afterimage trail
+     * Render afterimage trail - ENHANCED VERSION
      */
     renderTrail(ctx, camera) {
+        if (this.trailPositions.length === 0) return;
+
+        // Get character color for trail
+        const trailColor = this.characterColor || GAME_CONFIG.COLORS.CYAN;
+        const glowColor = this.characterSecondaryColor || this.characterColor || GAME_CONFIG.COLORS.CYAN;
+
         for (let i = 0; i < this.trailPositions.length; i++) {
             const pos = this.trailPositions[i];
             const screenPos = camera.worldToScreen(pos.x, pos.y);
-            const alpha = (1 - (i / this.trailPositions.length)) * 0.3;
+            const progress = i / this.trailPositions.length;
+            const alpha = (1 - progress) * 0.5;
 
             ctx.save();
             ctx.globalAlpha = alpha;
 
-            // Simplified silhouette for trail
             const centerX = screenPos.x + this.width / 2;
-            ctx.fillStyle = GAME_CONFIG.COLORS.CYAN_DIM;
-            ctx.fillRect(centerX - 6, screenPos.y + 8, 12, 38);
+            const centerY = screenPos.y + this.height / 2;
+
+            // Glow effect
+            ctx.shadowColor = glowColor;
+            ctx.shadowBlur = 15 * (1 - progress);
+
+            // Trail body silhouette with gradient
+            const gradient = ctx.createLinearGradient(centerX - 8, 0, centerX + 8, 0);
+            gradient.addColorStop(0, 'transparent');
+            gradient.addColorStop(0.3, trailColor);
+            gradient.addColorStop(0.7, trailColor);
+            gradient.addColorStop(1, 'transparent');
+
+            ctx.fillStyle = gradient;
+
+            // Head
+            ctx.beginPath();
+            ctx.arc(centerX, screenPos.y + 10, 7 * (1 - progress * 0.3), 0, Math.PI * 2);
+            ctx.fill();
+
+            // Body
+            ctx.fillRect(centerX - 5, screenPos.y + 16, 10, 14);
+
+            // Legs
+            ctx.fillRect(centerX - 5, screenPos.y + 30, 4, 12);
+            ctx.fillRect(centerX + 1, screenPos.y + 30, 4, 12);
+
+            // Trailing particles
+            if (i === 0 && Math.random() < 0.3) {
+                ctx.fillStyle = glowColor;
+                ctx.globalAlpha = alpha * 0.8;
+                ctx.beginPath();
+                ctx.arc(
+                    centerX + (Math.random() - 0.5) * 20,
+                    centerY + (Math.random() - 0.5) * 30,
+                    2 + Math.random() * 2,
+                    0, Math.PI * 2
+                );
+                ctx.fill();
+            }
 
             ctx.restore();
         }

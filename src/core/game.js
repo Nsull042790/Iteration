@@ -2824,8 +2824,8 @@ class Game {
             const enemyBounds = enemy.getBounds();
 
             if (Utils.rectsOverlap(attackBounds, enemyBounds)) {
-                // Hit the enemy with blade damage
-                const killed = enemy.takeDamage(damage);
+                // Hit the enemy with blade damage (pass isCrit for dramatic effects)
+                const killed = enemy.takeDamage(damage, isCrit);
                 totalDamageDealt += damage;
                 hitEnemies.push({ enemy, x: enemy.x, y: enemy.y, killed });
 

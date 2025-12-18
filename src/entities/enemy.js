@@ -9,6 +9,10 @@ class Enemy extends Entity {
 
         this.type = type;
 
+        // Visual variant (random appearance)
+        this.variant = Math.floor(Math.random() * 4); // 0-3 different looks
+        this.colorVariant = this.getColorVariant();
+
         // Stats
         this.health = 50;
         this.maxHealth = 50;
@@ -50,6 +54,19 @@ class Enemy extends Entity {
         // Random hop/dodge behavior
         this.hopCooldown = Utils.randomInt(60, 180);
         this.hopTimer = 0;
+    }
+
+    /**
+     * Get color variant for this enemy
+     */
+    getColorVariant() {
+        const variants = [
+            { main: GAME_CONFIG.COLORS.MAGENTA, core: '#ffffff', accent: '#ff71ce' },
+            { main: '#b967ff', core: '#e0b0ff', accent: '#9932cc' },     // Purple
+            { main: '#ff6b6b', core: '#ffaaaa', accent: '#cc0000' },     // Red
+            { main: '#01cdfe', core: '#ffffff', accent: '#0088aa' },     // Cyan
+        ];
+        return variants[this.variant];
     }
 
     /**
@@ -219,20 +236,20 @@ class Enemy extends Entity {
     /**
      * Take damage
      */
-    takeDamage(amount) {
+    takeDamage(amount, isCrit = false) {
         if (this.invincibilityFrames > 0) return false;
 
         this.health -= amount;
         this.invincibilityFrames = 20;
-        this.hitFlash = 10;
+        this.hitFlash = isCrit ? 15 : 10;
 
-        // Knockback
+        // Knockback (stronger for crits)
         const knockbackDir = this.target ? Math.sign(this.x - this.target.x) : 1;
-        this.velocityX = knockbackDir * 8;
-        this.velocityY = -3;
+        this.velocityX = knockbackDir * (isCrit ? 12 : 8);
+        this.velocityY = isCrit ? -5 : -3;
 
-        // Spawn hit particles
-        this.spawnHitParticles();
+        // Spawn hit particles (dramatic for crits)
+        this.spawnHitParticles(isCrit);
 
         if (this.health <= 0) {
             this.die();
@@ -369,19 +386,61 @@ class Enemy extends Entity {
     }
 
     /**
-     * Spawn particles on hit
+     * Spawn particles on hit - DRAMATIC VERSION
      */
-    spawnHitParticles() {
-        for (let i = 0; i < 8; i++) {
+    spawnHitParticles(isCrit = false) {
+        const centerX = this.x + this.width / 2;
+        const centerY = this.y + this.height / 2;
+        const particleCount = isCrit ? 20 : 12;
+        const colors = isCrit
+            ? ['#ffffff', '#ffff00', '#ff71ce', '#ffd700']
+            : ['#ff71ce', '#01cdfe', '#b967ff', '#ffffff'];
+
+        // Main burst particles
+        for (let i = 0; i < particleCount; i++) {
+            const angle = (i / particleCount) * Math.PI * 2;
+            const speed = Utils.random(3, isCrit ? 8 : 6);
             this.particles.push({
-                x: this.x + this.width / 2,
-                y: this.y + this.height / 2,
-                vx: Utils.random(-4, 4),
-                vy: Utils.random(-4, 2),
-                life: Utils.randomInt(15, 30),
-                maxLife: 30,
-                size: Utils.random(2, 6)
+                x: centerX,
+                y: centerY,
+                vx: Math.cos(angle) * speed + Utils.random(-1, 1),
+                vy: Math.sin(angle) * speed + Utils.random(-2, 0),
+                life: Utils.randomInt(20, 40),
+                maxLife: 40,
+                size: Utils.random(isCrit ? 4 : 2, isCrit ? 10 : 6),
+                color: colors[Math.floor(Math.random() * colors.length)],
+                type: 'burst'
             });
+        }
+
+        // Impact ring
+        this.particles.push({
+            x: centerX,
+            y: centerY,
+            vx: 0,
+            vy: 0,
+            life: 15,
+            maxLife: 15,
+            size: isCrit ? 30 : 20,
+            color: isCrit ? '#ffd700' : '#ff71ce',
+            type: 'ring'
+        });
+
+        // Sparkles for crits
+        if (isCrit) {
+            for (let i = 0; i < 8; i++) {
+                this.particles.push({
+                    x: centerX + Utils.random(-20, 20),
+                    y: centerY + Utils.random(-20, 20),
+                    vx: Utils.random(-1, 1),
+                    vy: Utils.random(-3, -1),
+                    life: Utils.randomInt(30, 50),
+                    maxLife: 50,
+                    size: Utils.random(2, 4),
+                    color: '#ffffff',
+                    type: 'sparkle'
+                });
+            }
         }
     }
 
@@ -441,46 +500,91 @@ class Enemy extends Entity {
     }
 
     /**
-     * Render drone type enemy
+     * Render drone type enemy - WITH VARIANTS
      */
     renderDrone(ctx, screenPos) {
         const centerX = screenPos.x + this.width / 2;
         const centerY = screenPos.y + this.height / 2;
         const pulse = Math.sin(this.pulsePhase) * 0.2 + 0.8;
+        const colors = this.colorVariant;
 
         // Glow
-        ctx.shadowColor = GAME_CONFIG.COLORS.MAGENTA;
+        ctx.shadowColor = colors.main;
         ctx.shadowBlur = 15 * pulse;
 
-        // Body - geometric shape
-        ctx.fillStyle = GAME_CONFIG.COLORS.MAGENTA;
+        // Body - different shapes based on variant
+        ctx.fillStyle = colors.main;
         ctx.beginPath();
 
-        // Diamond/rhombus shape
-        ctx.moveTo(centerX, screenPos.y + 4);
-        ctx.lineTo(screenPos.x + this.width - 4, centerY);
-        ctx.lineTo(centerX, screenPos.y + this.height - 4);
-        ctx.lineTo(screenPos.x + 4, centerY);
+        switch (this.variant) {
+            case 0: // Diamond (original)
+                ctx.moveTo(centerX, screenPos.y + 4);
+                ctx.lineTo(screenPos.x + this.width - 4, centerY);
+                ctx.lineTo(centerX, screenPos.y + this.height - 4);
+                ctx.lineTo(screenPos.x + 4, centerY);
+                break;
+
+            case 1: // Hexagon
+                for (let i = 0; i < 6; i++) {
+                    const angle = (i / 6) * Math.PI * 2 - Math.PI / 2;
+                    const radius = 16;
+                    const px = centerX + Math.cos(angle) * radius;
+                    const py = centerY + Math.sin(angle) * radius;
+                    if (i === 0) ctx.moveTo(px, py);
+                    else ctx.lineTo(px, py);
+                }
+                break;
+
+            case 2: // Triangle (pointing down)
+                ctx.moveTo(centerX, screenPos.y + this.height - 4);
+                ctx.lineTo(screenPos.x + 4, screenPos.y + 6);
+                ctx.lineTo(screenPos.x + this.width - 4, screenPos.y + 6);
+                break;
+
+            case 3: // Circle with spikes
+                ctx.arc(centerX, centerY, 14, 0, Math.PI * 2);
+                ctx.fill();
+                // Add spikes
+                ctx.beginPath();
+                for (let i = 0; i < 4; i++) {
+                    const angle = (i / 4) * Math.PI * 2 + this.pulsePhase * 0.5;
+                    ctx.moveTo(centerX, centerY);
+                    ctx.lineTo(
+                        centerX + Math.cos(angle) * 22,
+                        centerY + Math.sin(angle) * 22
+                    );
+                }
+                ctx.strokeStyle = colors.main;
+                ctx.lineWidth = 3;
+                ctx.stroke();
+                break;
+
+            default:
+                ctx.moveTo(centerX, screenPos.y + 4);
+                ctx.lineTo(screenPos.x + this.width - 4, centerY);
+                ctx.lineTo(centerX, screenPos.y + this.height - 4);
+                ctx.lineTo(screenPos.x + 4, centerY);
+        }
         ctx.closePath();
         ctx.fill();
 
         // Inner core
-        ctx.fillStyle = '#ffffff';
+        ctx.fillStyle = colors.core;
         ctx.shadowBlur = 20;
         ctx.beginPath();
-        ctx.arc(centerX, centerY, 6, 0, Math.PI * 2);
+        ctx.arc(centerX, centerY, this.variant === 3 ? 5 : 6, 0, Math.PI * 2);
         ctx.fill();
 
         // Eye indicator
         const eyeOffsetX = this.facingRight ? 4 : -4;
-        ctx.fillStyle = GAME_CONFIG.COLORS.MAGENTA_DIM;
+        ctx.fillStyle = colors.accent;
         ctx.shadowBlur = 5;
         ctx.beginPath();
         ctx.arc(centerX + eyeOffsetX, centerY - 2, 3, 0, Math.PI * 2);
         ctx.fill();
 
         // Animated "antenna" lines
-        ctx.strokeStyle = GAME_CONFIG.COLORS.MAGENTA;
+        ctx.strokeStyle = colors.main;
         ctx.lineWidth = 2;
         ctx.shadowBlur = 10;
 
@@ -550,7 +654,7 @@ class Enemy extends Entity {
     }
 
     /**
-     * Render particles
+     * Render particles - ENHANCED VERSION
      */
     renderParticles(ctx, camera) {
         ctx.save();
@@ -558,17 +662,46 @@ class Enemy extends Entity {
         for (const p of this.particles) {
             const screenPos = camera.worldToScreen(p.x, p.y);
             const alpha = p.life / p.maxLife;
-
-            // Use custom color if set, otherwise default magenta
             const color = p.color || GAME_CONFIG.COLORS.MAGENTA;
-            ctx.fillStyle = color;
-            ctx.globalAlpha = alpha;
-            ctx.shadowColor = color;
-            ctx.shadowBlur = 5;
 
-            ctx.beginPath();
-            ctx.arc(screenPos.x, screenPos.y, p.size * alpha, 0, Math.PI * 2);
-            ctx.fill();
+            if (p.type === 'ring') {
+                // Expanding impact ring
+                const ringSize = p.size * (1 + (1 - alpha) * 2);
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 3 * alpha;
+                ctx.globalAlpha = alpha * 0.8;
+                ctx.shadowColor = color;
+                ctx.shadowBlur = 15;
+                ctx.beginPath();
+                ctx.arc(screenPos.x, screenPos.y, ringSize, 0, Math.PI * 2);
+                ctx.stroke();
+            } else if (p.type === 'sparkle') {
+                // Twinkling sparkle (star shape)
+                ctx.fillStyle = color;
+                ctx.globalAlpha = alpha * (0.5 + Math.sin(p.life * 0.5) * 0.5);
+                ctx.shadowColor = color;
+                ctx.shadowBlur = 10;
+                const size = p.size * (0.5 + alpha * 0.5);
+                ctx.beginPath();
+                for (let i = 0; i < 4; i++) {
+                    const angle = (i * Math.PI / 2) + (p.life * 0.1);
+                    const x = screenPos.x + Math.cos(angle) * size;
+                    const y = screenPos.y + Math.sin(angle) * size;
+                    if (i === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                }
+                ctx.closePath();
+                ctx.fill();
+            } else {
+                // Regular burst particle
+                ctx.fillStyle = color;
+                ctx.globalAlpha = alpha;
+                ctx.shadowColor = color;
+                ctx.shadowBlur = 8;
+                ctx.beginPath();
+                ctx.arc(screenPos.x, screenPos.y, p.size * alpha, 0, Math.PI * 2);
+                ctx.fill();
+            }
         }
 
         ctx.restore();

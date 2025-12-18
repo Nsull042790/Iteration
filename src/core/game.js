@@ -3671,8 +3671,8 @@ class Game {
             this.renderImbueIndicator(ctx, this.canvas.width - 220, 80);
         }
 
-        // Render pause overlay (but not during final boss intro or victory)
-        if (this.isPaused && !this.finalBossIntroActive && !this.victoryActive) {
+        // Render pause overlay (but not during final boss intro or victory sequence)
+        if (this.isPaused && !this.finalBossIntroActive && !this.victoryActive && !this.victoryWaiting) {
             this.renderPauseOverlay(ctx);
         }
 

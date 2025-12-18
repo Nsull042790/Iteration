@@ -1092,24 +1092,48 @@ body {
 /* Terminal Footer */
 .terminal-footer {
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
     align-items: center;
-    padding-top: 25px;
-    margin-top: 30px;
-    margin-bottom: 25px;
-    border-top: 1px solid #2a2a3f;
+    padding: 15px 20px;
+    margin-top: 25px;
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0.3) 0%, rgba(0, 0, 0, 0.5) 100%);
+    border-top: 1px solid rgba(0, 240, 255, 0.2);
+    border-bottom: 1px solid rgba(255, 0, 170, 0.2);
+    gap: 8px;
     flex-wrap: wrap;
-    gap: 15px;
 }
 
 .footer-item {
-    color: rgba(255, 255, 255, 0.4);
-    font-size: 12px;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 11px;
     letter-spacing: 1px;
+    padding: 0 12px;
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
+    white-space: nowrap;
+}
+
+.footer-item:last-child {
+    border-right: none;
 }
 
 .footer-item.version {
-    color: rgba(255, 255, 255, 0.2);
+    color: rgba(255, 255, 255, 0.25);
+    font-size: 10px;
+}
+
+.footer-item .cyan {
+    color: #00f0ff;
+    text-shadow: 0 0 8px rgba(0, 240, 255, 0.5);
+}
+
+.footer-item .magenta {
+    color: #ff00aa;
+    text-shadow: 0 0 8px rgba(255, 0, 170, 0.5);
+}
+
+.footer-item .status-ready {
+    color: #00ff88;
+    text-shadow: 0 0 8px rgba(0, 255, 136, 0.5);
 }
 
 /* Glitch Button */

@@ -444,85 +444,189 @@ class Game {
     }
 
     /**
-     * Render final boss intro overlay
+     * Render final boss intro overlay - BORDERLANDS STYLE
      */
     renderFinalBossIntro(ctx) {
         if (!this.finalBossIntroActive) return;
 
-        // Dark overlay with red tint
         ctx.save();
 
-        // Animated darkness
-        const pulse = Math.sin(this.finalBossIntroTimer / 10) * 0.1;
-        ctx.fillStyle = `rgba(20, 0, 0, ${0.7 + pulse})`;
+        const introProgress = Math.min(this.finalBossIntroTimer / 60, 1); // 0-1 over 1 second
+        const titleCardProgress = Math.max(0, Math.min((this.finalBossIntroTimer - 30) / 90, 1));
+
+        // === ZOOM EFFECT ON BOSS ===
+        if (this.boss && this.finalBossIntroPhase >= 1) {
+            // Calculate zoom center on boss
+            const bossScreenPos = this.camera.worldToScreen(
+                this.boss.x + this.boss.width / 2,
+                this.boss.y + this.boss.height / 2
+            );
+
+            // Zoom factor (starts at 1, zooms to 1.5, then back)
+            let zoomFactor = 1;
+            if (this.finalBossIntroTimer < 60) {
+                zoomFactor = 1 + (this.finalBossIntroTimer / 60) * 0.5;
+            } else if (this.finalBossIntroTimer < 150) {
+                zoomFactor = 1.5;
+            } else {
+                zoomFactor = 1.5 - ((this.finalBossIntroTimer - 150) / 60) * 0.5;
+            }
+            zoomFactor = Math.max(1, zoomFactor);
+
+            // Apply zoom transform (stored for use by camera)
+            this.bossIntroZoom = zoomFactor;
+            this.bossIntroFocusX = bossScreenPos.x;
+            this.bossIntroFocusY = bossScreenPos.y;
+        }
+
+        // === DARK VIGNETTE ===
+        const vignetteGradient = ctx.createRadialGradient(
+            this.canvas.width / 2, this.canvas.height / 2, 50,
+            this.canvas.width / 2, this.canvas.height / 2, this.canvas.width * 0.7
+        );
+        vignetteGradient.addColorStop(0, 'rgba(0, 0, 0, 0)');
+        vignetteGradient.addColorStop(0.5, 'rgba(10, 0, 0, 0.3)');
+        vignetteGradient.addColorStop(1, 'rgba(20, 0, 0, 0.8)');
+        ctx.fillStyle = vignetteGradient;
         ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
-        // Glitch lines
-        if (Math.random() > 0.7) {
-            ctx.fillStyle = 'rgba(255, 0, 68, 0.3)';
+        // === GLITCH SCAN LINES ===
+        if (Math.random() > 0.6) {
+            ctx.fillStyle = `rgba(255, 0, 68, ${0.2 + Math.random() * 0.3})`;
             const lineY = Math.random() * this.canvas.height;
-            ctx.fillRect(0, lineY, this.canvas.width, 2 + Math.random() * 5);
+            ctx.fillRect(0, lineY, this.canvas.width, 1 + Math.random() * 4);
         }
 
-        // Phase 1: Title card
-        if (this.finalBossIntroPhase === 1) {
-            const centerX = this.canvas.width / 2;
-            const centerY = this.canvas.height / 2;
+        // === BORDERLANDS TITLE CARD (Upper Right) ===
+        if (this.finalBossIntroPhase === 1 && titleCardProgress > 0) {
+            const cardX = this.canvas.width - 50;
+            const cardY = 80;
 
-            // Background glow
-            const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, 300);
-            gradient.addColorStop(0, 'rgba(255, 0, 68, 0.3)');
-            gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
-            ctx.fillStyle = gradient;
-            ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+            // Slide-in effect
+            const slideOffset = (1 - titleCardProgress) * 400;
 
-            // Animated lines
+            ctx.save();
+            ctx.translate(slideOffset, 0);
+
+            // === HORIZONTAL LINES (Borderlands style) ===
+            const lineWidth = 350;
+
+            // Top decorative line
             ctx.strokeStyle = '#ff0044';
-            ctx.lineWidth = 2;
-            ctx.globalAlpha = 0.5;
+            ctx.lineWidth = 3;
+            ctx.shadowColor = '#ff0044';
+            ctx.shadowBlur = 15;
+            ctx.beginPath();
+            ctx.moveTo(cardX - lineWidth, cardY - 40);
+            ctx.lineTo(cardX + 20, cardY - 40);
+            ctx.stroke();
 
-            // Horizontal scan lines
-            for (let i = 0; i < 5; i++) {
-                const lineY = centerY + (i - 2) * 80;
-                const offset = Math.sin(this.finalBossIntroTimer / 20 + i) * 50;
-                ctx.beginPath();
-                ctx.moveTo(centerX - 400 + offset, lineY);
-                ctx.lineTo(centerX + 400 + offset, lineY);
-                ctx.stroke();
-            }
+            // Bottom decorative line
+            ctx.beginPath();
+            ctx.moveTo(cardX - lineWidth - 50, cardY + 80);
+            ctx.lineTo(cardX + 20, cardY + 80);
+            ctx.stroke();
 
-            ctx.globalAlpha = 1;
-
-            // Boss title with epic styling
-            ctx.textAlign = 'center';
-
-            // "FINAL CONFRONTATION" subtitle
-            ctx.font = '16px "Courier New", monospace';
+            // === BOSS TYPE / CLASS ===
+            ctx.textAlign = 'right';
+            ctx.font = 'bold 14px "Courier New", monospace';
             ctx.fillStyle = '#ff0044';
             ctx.shadowColor = '#ff0044';
-            ctx.shadowBlur = 20;
-            ctx.fillText('◈ FINAL CONFRONTATION ◈', centerX, centerY - 80);
-
-            // Main boss name with pulsing
-            const titlePulse = Math.sin(this.finalBossIntroTimer / 8) * 0.3 + 1;
-            ctx.font = `bold ${48 * titlePulse}px "Courier New", monospace`;
-            ctx.fillStyle = '#ff0044';
-            ctx.shadowBlur = 40;
-            ctx.fillText('CORRUPTED CORE', centerX, centerY);
-
-            // Subtitle
-            ctx.font = '14px "Courier New", monospace';
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
             ctx.shadowBlur = 10;
-            ctx.fillText('THE HEART OF THE SIMULATION', centerX, centerY + 40);
+            ctx.fillText('◈ FINAL BOSS ◈', cardX, cardY - 20);
 
-            // Warning text
-            ctx.font = '12px "Courier New", monospace';
-            ctx.fillStyle = 'rgba(255, 0, 68, 0.8)';
-            const warnPulse = Math.sin(this.finalBossIntroTimer / 15) > 0 ? 1 : 0.3;
-            ctx.globalAlpha = warnPulse;
-            ctx.fillText('▲ MAXIMUM THREAT LEVEL ▲', centerX, centerY + 80);
+            // === MAIN BOSS NAME (BIG & BLOCKY) ===
+            ctx.font = 'bold 52px "Courier New", monospace';
+            ctx.fillStyle = '#ffffff';
+            ctx.shadowColor = '#ff0044';
+            ctx.shadowBlur = 30;
+
+            // Glitch offset effect
+            const glitchX = Math.random() > 0.9 ? (Math.random() - 0.5) * 6 : 0;
+            const glitchY = Math.random() > 0.9 ? (Math.random() - 0.5) * 4 : 0;
+
+            // Red shadow layer (offset)
+            ctx.fillStyle = '#ff0044';
+            ctx.fillText('CORRUPTED', cardX + 3 + glitchX, cardY + 25 + glitchY);
+            ctx.fillText('CORE', cardX + 3 + glitchX, cardY + 75 + glitchY);
+
+            // White main text
+            ctx.fillStyle = '#ffffff';
+            ctx.shadowBlur = 20;
+            ctx.fillText('CORRUPTED', cardX, cardY + 22);
+            ctx.fillText('CORE', cardX, cardY + 72);
+
+            // === SUBTITLE / TITLE ===
+            ctx.font = 'bold 16px "Courier New", monospace';
+            ctx.fillStyle = '#ff00aa';
+            ctx.shadowColor = '#ff00aa';
+            ctx.shadowBlur = 15;
+            ctx.fillText('THE HEART OF THE SIMULATION', cardX, cardY + 100);
+
+            // === THREAT LEVEL BADGE ===
+            const badgeY = cardY + 130;
+            const badgeWidth = 200;
+
+            // Badge background
+            ctx.fillStyle = 'rgba(255, 0, 68, 0.3)';
+            ctx.fillRect(cardX - badgeWidth, badgeY, badgeWidth, 25);
+
+            // Badge border
+            ctx.strokeStyle = '#ff0044';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(cardX - badgeWidth, badgeY, badgeWidth, 25);
+
+            // Badge text
+            const warnPulse = Math.sin(this.finalBossIntroTimer / 8) > 0 ? 1 : 0.6;
+            ctx.font = 'bold 12px "Courier New", monospace';
+            ctx.fillStyle = `rgba(255, 255, 255, ${warnPulse})`;
+            ctx.fillText('▲ THREAT LEVEL: MAXIMUM ▲', cardX - 10, badgeY + 17);
+
+            ctx.restore();
         }
+
+        // === DRAMATIC FLASH on phase transition ===
+        if (this.finalBossIntroTimer > 25 && this.finalBossIntroTimer < 35) {
+            const flashIntensity = 1 - Math.abs(this.finalBossIntroTimer - 30) / 5;
+            ctx.fillStyle = `rgba(255, 0, 68, ${flashIntensity * 0.5})`;
+            ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        }
+
+        // === CORNER BRACKETS (cinematic framing) ===
+        ctx.strokeStyle = '#ff0044';
+        ctx.lineWidth = 3;
+        ctx.shadowColor = '#ff0044';
+        ctx.shadowBlur = 10;
+        const bracketSize = 40;
+        const margin = 30;
+
+        // Top-left
+        ctx.beginPath();
+        ctx.moveTo(margin, margin + bracketSize);
+        ctx.lineTo(margin, margin);
+        ctx.lineTo(margin + bracketSize, margin);
+        ctx.stroke();
+
+        // Top-right
+        ctx.beginPath();
+        ctx.moveTo(this.canvas.width - margin - bracketSize, margin);
+        ctx.lineTo(this.canvas.width - margin, margin);
+        ctx.lineTo(this.canvas.width - margin, margin + bracketSize);
+        ctx.stroke();
+
+        // Bottom-left
+        ctx.beginPath();
+        ctx.moveTo(margin, this.canvas.height - margin - bracketSize);
+        ctx.lineTo(margin, this.canvas.height - margin);
+        ctx.lineTo(margin + bracketSize, this.canvas.height - margin);
+        ctx.stroke();
+
+        // Bottom-right
+        ctx.beginPath();
+        ctx.moveTo(this.canvas.width - margin - bracketSize, this.canvas.height - margin);
+        ctx.lineTo(this.canvas.width - margin, this.canvas.height - margin);
+        ctx.lineTo(this.canvas.width - margin, this.canvas.height - margin - bracketSize);
+        ctx.stroke();
 
         ctx.restore();
     }

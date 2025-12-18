@@ -896,6 +896,81 @@ body {
     font-size: 14px;
 }
 
+/* Support/Donate Section */
+.support-section {
+    margin-top: 25px;
+    text-align: center;
+    z-index: 10;
+    position: relative;
+}
+
+.donate-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 30px;
+    background: linear-gradient(135deg, rgba(255, 113, 206, 0.2) 0%, rgba(1, 205, 254, 0.2) 100%);
+    border: 2px solid transparent;
+    border-image: linear-gradient(135deg, #ff71ce, #01cdfe) 1;
+    color: #ffffff;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 14px;
+    letter-spacing: 3px;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.donate-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s ease;
+}
+
+.donate-btn:hover::before {
+    left: 100%;
+}
+
+.donate-btn:hover {
+    background: linear-gradient(135deg, rgba(255, 113, 206, 0.4) 0%, rgba(1, 205, 254, 0.4) 100%);
+    box-shadow: 0 0 30px rgba(255, 113, 206, 0.4), 0 0 60px rgba(1, 205, 254, 0.2);
+    transform: translateY(-3px);
+}
+
+.donate-icon {
+    font-size: 18px;
+    color: #ff71ce;
+    animation: heartbeat 1.5s ease-in-out infinite;
+}
+
+@keyframes heartbeat {
+    0%, 100% { transform: scale(1); }
+    25% { transform: scale(1.2); }
+    50% { transform: scale(1); }
+    75% { transform: scale(1.1); }
+}
+
+.donate-text {
+    background: linear-gradient(90deg, #ff71ce, #01cdfe);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.support-note {
+    margin-top: 10px;
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.4);
+    letter-spacing: 1px;
+}
+
 /* Codex Tabs */
 .codex-content {
     max-width: 700px;

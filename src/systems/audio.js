@@ -797,6 +797,56 @@ class AudioSystem {
     }
 
     /**
+     * Play explosion/firework sound
+     */
+    playExplosion() {
+        if (!this.ensureReady()) return;
+
+        const now = this.context.currentTime;
+
+        // Big boom
+        const osc = this.context.createOscillator();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(150, now);
+        osc.frequency.exponentialRampToValueAtTime(30, now + 0.3);
+
+        // Noise burst for crackle
+        const bufferSize = this.context.sampleRate * 0.4;
+        const buffer = this.context.createBuffer(1, bufferSize, this.context.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+            data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufferSize, 2);
+        }
+
+        const noise = this.context.createBufferSource();
+        noise.buffer = buffer;
+
+        const filter = this.context.createBiquadFilter();
+        filter.type = 'highpass';
+        filter.frequency.value = 1000;
+
+        const oscGain = this.context.createGain();
+        oscGain.gain.setValueAtTime(0.4, now);
+        oscGain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+
+        const noiseGain = this.context.createGain();
+        noiseGain.gain.setValueAtTime(0.3, now);
+        noiseGain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+
+        osc.connect(oscGain);
+        oscGain.connect(this.sfxGain);
+
+        noise.connect(filter);
+        filter.connect(noiseGain);
+        noiseGain.connect(this.sfxGain);
+
+        osc.start(now);
+        osc.stop(now + 0.3);
+        noise.start(now);
+        noise.stop(now + 0.4);
+    }
+
+    /**
      * Play dash sound
      */
     playDash() {

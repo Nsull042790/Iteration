@@ -1836,7 +1836,7 @@ class Game {
             this.trackReward('kill', {});
 
             // Big special meter gain from boss
-            this.player.addSpecialMeter(25);
+            this.player.addSpecialMeter(50);
 
             // Full heal on boss kill
             this.player.health = this.player.maxHealth;
@@ -1968,8 +1968,11 @@ class Game {
         // Charged attack multiplier
         const chargeMultiplier = this.player.getChargeDamageMultiplier ? this.player.getChargeDamageMultiplier() : 1.0;
 
+        // Special ability (limit break) multiplier - 2x damage when active
+        const specialMultiplier = this.player.isUsingSpecial ? 2.0 : 1.0;
+
         // Calculate damage with potential crit
-        let rawDamage = baseDamage * weaponMultiplier * bladeMultiplier * upgradeMultiplier * tempDamageBoost * permDamageBoost * speedBonus * metaDamageBoost * chargeMultiplier;
+        let rawDamage = baseDamage * weaponMultiplier * bladeMultiplier * upgradeMultiplier * tempDamageBoost * permDamageBoost * speedBonus * metaDamageBoost * chargeMultiplier * specialMultiplier;
 
         // Character special: Phantom's crit chance
         let extraCritChance = this.player.characterSpecial?.critChance || 0;

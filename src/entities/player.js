@@ -69,6 +69,7 @@ class Player extends Entity {
         this.specialMeterMax = 100;
         this.isUsingSpecial = false;
         this.specialTimer = 0;
+        this.specialActivationBurst = 0;  // Activation animation frames
     }
 
     /**
@@ -142,6 +143,7 @@ class Player extends Entity {
         this.isUsingSpecial = true;
         this.specialTimer = 120;  // 2 seconds of special effect
         this.specialMeter = 0;
+        this.specialActivationBurst = 30;  // Frames of activation burst effect
     }
 
     /**
@@ -387,6 +389,10 @@ class Player extends Entity {
                 this.isUsingSpecial = false;
             }
         }
+        // Update activation burst
+        if (this.specialActivationBurst > 0) {
+            this.specialActivationBurst--;
+        }
     }
 
     /**
@@ -458,6 +464,11 @@ class Player extends Entity {
         // Draw charge effect (behind player)
         if (this.isCharging) {
             this.renderChargeEffect(ctx, screenPos);
+        }
+
+        // Draw special ability effect (behind player)
+        if (this.isUsingSpecial || this.specialActivationBurst > 0) {
+            this.renderSpecialEffect(ctx, screenPos);
         }
 
         // Draw player body (humanoid silhouette)
@@ -1070,6 +1081,101 @@ class Player extends Entity {
             ctx.beginPath();
             ctx.arc(centerX, centerY, radius * 1.2, 0, Math.PI * 2);
             ctx.fill();
+        }
+
+        ctx.restore();
+    }
+
+    /**
+     * Render special ability (limit break) effect
+     */
+    renderSpecialEffect(ctx, screenPos) {
+        const centerX = screenPos.x + this.width / 2;
+        const centerY = screenPos.y + this.height / 2;
+        const pulse = Math.sin(this.bladePulsePhase * 4) * 0.3 + 0.7;
+
+        ctx.save();
+
+        // Activation burst effect (expanding ring)
+        if (this.specialActivationBurst > 0) {
+            const burstProgress = 1 - (this.specialActivationBurst / 30);
+            const burstRadius = 30 + burstProgress * 100;
+
+            ctx.strokeStyle = '#ff00ff';
+            ctx.lineWidth = 6 * (1 - burstProgress);
+            ctx.shadowColor = '#ff00ff';
+            ctx.shadowBlur = 30;
+            ctx.globalAlpha = 1 - burstProgress;
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, burstRadius, 0, Math.PI * 2);
+            ctx.stroke();
+
+            // Inner burst
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 3 * (1 - burstProgress);
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, burstRadius * 0.7, 0, Math.PI * 2);
+            ctx.stroke();
+        }
+
+        // Active special aura
+        if (this.isUsingSpecial) {
+            const auraRadius = 35 + pulse * 10;
+            const timeRemaining = this.specialTimer / 120;
+
+            // Outer glow aura
+            ctx.shadowColor = '#ff00ff';
+            ctx.shadowBlur = 25 + pulse * 15;
+
+            // Pulsing aura ring
+            ctx.strokeStyle = '#ff00ff';
+            ctx.lineWidth = 3;
+            ctx.globalAlpha = 0.6 * pulse * timeRemaining;
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, auraRadius, 0, Math.PI * 2);
+            ctx.stroke();
+
+            // Inner energy field
+            const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, auraRadius);
+            gradient.addColorStop(0, 'rgba(255, 0, 255, 0.3)');
+            gradient.addColorStop(0.5, 'rgba(255, 0, 255, 0.15)');
+            gradient.addColorStop(1, 'rgba(255, 0, 255, 0)');
+
+            ctx.fillStyle = gradient;
+            ctx.globalAlpha = 0.5 * pulse * timeRemaining;
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, auraRadius, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Orbiting energy particles
+            ctx.fillStyle = '#ffffff';
+            const particleCount = 6;
+            for (let i = 0; i < particleCount; i++) {
+                const angle = (this.bladePulsePhase * 3) + (i * Math.PI * 2 / particleCount);
+                const dist = auraRadius * 0.8;
+                const px = centerX + Math.cos(angle) * dist;
+                const py = centerY + Math.sin(angle) * dist;
+
+                ctx.globalAlpha = 0.8 * pulse * timeRemaining;
+                ctx.beginPath();
+                ctx.arc(px, py, 4, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // "2x DAMAGE" indicator
+            ctx.font = 'bold 10px "Courier New", monospace';
+            ctx.fillStyle = '#ff00ff';
+            ctx.textAlign = 'center';
+            ctx.globalAlpha = pulse * timeRemaining;
+            ctx.fillText('2× DMG', centerX, screenPos.y - 20);
+
+            // Timer bar
+            const barWidth = 40;
+            const barHeight = 3;
+            ctx.fillStyle = 'rgba(0,0,0,0.5)';
+            ctx.fillRect(centerX - barWidth/2, screenPos.y - 12, barWidth, barHeight);
+            ctx.fillStyle = '#ff00ff';
+            ctx.fillRect(centerX - barWidth/2, screenPos.y - 12, barWidth * timeRemaining, barHeight);
         }
 
         ctx.restore();

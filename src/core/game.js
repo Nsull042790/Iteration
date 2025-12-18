@@ -330,6 +330,9 @@ class Game {
         // Switch to boss music
         this.audio.startBossMusic();
 
+        // Trigger intense kanji rain effect
+        this.renderer.triggerBossKanjiRain(180); // 3 seconds of matrix rain
+
         // Camera shake
         this.camera.addShake(10, 60);
         this.renderer.flash(GAME_CONFIG.COLORS.MAGENTA, 0.5);
@@ -358,6 +361,9 @@ class Game {
 
         // Stop current music
         this.audio.stopMusic();
+
+        // Trigger epic kanji rain for entire intro (longer duration)
+        this.renderer.triggerBossKanjiRain(480); // 8 seconds of intense matrix rain
 
         // Phase 1: Screen goes dark with static
         this.renderer.glitch(3, 120);

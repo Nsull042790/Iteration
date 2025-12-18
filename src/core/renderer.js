@@ -49,6 +49,15 @@ class Renderer {
             kanji: this.generateKanjiRain(30)
         };
 
+        // Boss kanji rain effect (intense matrix-style rain when boss appears)
+        this.bossKanjiRain = {
+            active: false,
+            columns: [],
+            timer: 0,
+            duration: 180, // 3 seconds at 60fps
+            intensity: 1
+        };
+
         // Create offscreen buffer for effects
         this.effectBuffer = document.createElement('canvas');
         this.effectBuffer.width = canvas.width;
@@ -356,6 +365,9 @@ class Renderer {
      * End frame rendering with post-processing effects
      */
     endFrame() {
+        // Render boss kanji rain effect (on top of game, before post-processing)
+        this.renderBossKanjiRain();
+
         // Apply all post-processing effects
         if (this.effects.chromaticAberration) {
             this.renderChromaticAberration();
@@ -676,6 +688,112 @@ class Renderer {
     glitch(intensity = 1, duration = 10) {
         this.glitchIntensity = intensity;
         this.glitchTimer = duration;
+    }
+
+    /**
+     * Trigger boss kanji rain effect (matrix-style intense rain)
+     */
+    triggerBossKanjiRain(duration = 180) {
+        const kanjiChars = "零一二三四五六七八九十百千万億兆京垓秭穣溝澗正載極恒河沙阿僧祇那由他不可思議無量大数";
+        const katakana = "アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン";
+        const allChars = kanjiChars + katakana;
+
+        // Generate intense rain columns (more and faster than background)
+        const columns = [];
+        const numColumns = 60; // More columns for intensity
+
+        for (let i = 0; i < numColumns; i++) {
+            const chars = [];
+            const length = Math.floor(Math.random() * 20) + 10;
+            for (let j = 0; j < length; j++) {
+                chars.push(allChars[Math.floor(Math.random() * allChars.length)]);
+            }
+            columns.push({
+                x: (i / numColumns) * this.canvas.width + Math.random() * 20 - 10,
+                y: Math.random() * -800 - 100,
+                chars: chars,
+                speed: Math.random() * 8 + 4, // Much faster
+                opacity: Math.random() * 0.6 + 0.3, // More visible
+                fontSize: Math.floor(Math.random() * 10) + 16
+            });
+        }
+
+        this.bossKanjiRain = {
+            active: true,
+            columns: columns,
+            timer: 0,
+            duration: duration,
+            intensity: 1
+        };
+    }
+
+    /**
+     * Update and render boss kanji rain
+     */
+    renderBossKanjiRain() {
+        if (!this.bossKanjiRain.active) return;
+
+        const ctx = this.ctx;
+        const rain = this.bossKanjiRain;
+
+        // Update timer and intensity
+        rain.timer++;
+
+        // Fade out in last 60 frames
+        if (rain.timer > rain.duration - 60) {
+            rain.intensity = (rain.duration - rain.timer) / 60;
+        }
+
+        // End effect
+        if (rain.timer >= rain.duration) {
+            rain.active = false;
+            return;
+        }
+
+        ctx.save();
+
+        // Dark overlay for dramatic effect
+        ctx.fillStyle = `rgba(0, 0, 0, ${0.3 * rain.intensity})`;
+        ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+        rain.columns.forEach(column => {
+            // Update position
+            column.y += column.speed;
+            if (column.y > this.canvas.height + 300) {
+                column.y = -column.chars.length * column.fontSize - Math.random() * 200;
+            }
+
+            ctx.font = `bold ${column.fontSize}px "MS Gothic", "Yu Gothic", monospace`;
+
+            column.chars.forEach((char, i) => {
+                const y = column.y + i * column.fontSize;
+                if (y > -column.fontSize && y < this.canvas.height + column.fontSize) {
+                    // First character is brightest (leading edge)
+                    const charAlpha = i === 0
+                        ? column.opacity * rain.intensity
+                        : column.opacity * (1 - i * 0.04) * rain.intensity;
+
+                    // Vaporwave colors - pink leading, cyan trail
+                    if (i === 0) {
+                        ctx.fillStyle = `rgba(255, 113, 206, ${Math.min(charAlpha * 1.5, 1)})`;
+                        ctx.shadowColor = '#ff71ce';
+                        ctx.shadowBlur = 15;
+                    } else if (i < 3) {
+                        ctx.fillStyle = `rgba(185, 103, 255, ${charAlpha})`;
+                        ctx.shadowColor = '#b967ff';
+                        ctx.shadowBlur = 8;
+                    } else {
+                        ctx.fillStyle = `rgba(1, 205, 254, ${Math.max(charAlpha, 0.05)})`;
+                        ctx.shadowColor = 'transparent';
+                        ctx.shadowBlur = 0;
+                    }
+
+                    ctx.fillText(char, column.x, y);
+                }
+            });
+        });
+
+        ctx.restore();
     }
 
     /**

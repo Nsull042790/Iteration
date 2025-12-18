@@ -659,8 +659,14 @@ class Game {
             this.hud.addMessage('◈ SIMULATION COLLAPSE IMMINENT ◈', 'warning');
 
             setTimeout(() => {
-                this.victoryWaiting = false;
-                this.showVictoryScreen(completedLevel);
+                try {
+                    this.victoryWaiting = false;
+                    this.showVictoryScreen(completedLevel);
+                } catch (e) {
+                    console.error('Victory screen error:', e);
+                    // Fallback - at least return to menu
+                    this.returnToMainMenu();
+                }
             }, 3000);
             return;
         }
@@ -964,19 +970,25 @@ class Game {
      * EPIC Mario Party-style celebration!
      */
     showVictoryScreen(finalLevel) {
+        console.log('Starting victory screen for level', finalLevel);
+
         this.state = 'victory';
         this.isPaused = false; // Don't pause during victory - let the celebration run!
 
         // Stop gameplay music
-        this.audio.stopMusic();
+        try {
+            this.audio.stopMusic();
+        } catch (e) {
+            console.warn('Could not stop music:', e);
+        }
 
         // Calculate final stats
-        const totalTime = Math.floor((Date.now() - this.runStartTime) / 1000);
+        const totalTime = Math.floor((Date.now() - (this.runStartTime || Date.now())) / 1000);
         const minutes = Math.floor(totalTime / 60);
         const seconds = totalTime % 60;
-        const finalCycles = this.cycles.getCycles();
-        const bladeTier = this.bladeEvolution.getCurrentTier();
-        const char = this.characterSystem.getSelected();
+        const finalCycles = this.cycles?.getCycles() || 0;
+        const bladeTier = this.bladeEvolution?.getCurrentTier() || { name: 'BASIC', color: '#00f0ff' };
+        const char = this.characterSystem?.getSelected() || { name: 'UNKNOWN' };
 
         // Submit to leaderboard
         this.leaderboard.submitScore(char.name, finalLevel, this.totalKills, finalCycles);
@@ -1036,30 +1048,35 @@ class Game {
      * Start a victory sequence phase - CELEBRATION EDITION
      */
     startVictoryPhase(phase) {
+        console.log('Victory phase:', phase);
         this.victoryPhase = phase;
         this.victoryTimer = 0;
 
-        switch(phase) {
-            case 0: // EXPLOSION - Core destroyed
-                this.camera.addShake(40, 60);
-                this.audio.playExplosion();
-                this.renderer.flash('#ffffff', 1.0);
-                setTimeout(() => this.renderer.flash('#ffd700', 0.8), 100);
-                setTimeout(() => this.renderer.flash('#ff71ce', 0.6), 200);
-                // Launch initial fireworks
-                this.launchFirework();
-                this.launchFirework();
-                break;
-            case 1: // YOU ARE THE CHAMPION
-                this.audio.playLevelUp();
-                this.renderer.flash('#ffd700', 0.5);
-                this.camera.addShake(10, 30);
-                break;
-            case 2: // Stats celebration
-                this.audio.playLevelUp();
-                break;
-            case 3: // Final - press to continue
-                break;
+        try {
+            switch(phase) {
+                case 0: // EXPLOSION - Core destroyed
+                    this.camera?.addShake(40, 60);
+                    this.audio?.playExplosion?.();
+                    this.renderer?.flash('#ffffff', 1.0);
+                    setTimeout(() => this.renderer?.flash('#ffd700', 0.8), 100);
+                    setTimeout(() => this.renderer?.flash('#ff71ce', 0.6), 200);
+                    // Launch initial fireworks
+                    this.launchFirework();
+                    this.launchFirework();
+                    break;
+                case 1: // YOU ARE THE CHAMPION
+                    this.audio?.playLevelUp?.();
+                    this.renderer?.flash('#ffd700', 0.5);
+                    this.camera?.addShake(10, 30);
+                    break;
+                case 2: // Stats celebration
+                    this.audio?.playLevelUp?.();
+                    break;
+                case 3: // Final - press to continue
+                    break;
+            }
+        } catch (e) {
+            console.error('Victory phase error:', e);
         }
     }
 
@@ -1111,7 +1128,7 @@ class Game {
                 fw.y += fw.vy;
                 if (fw.y <= fw.targetY) {
                     fw.exploded = true;
-                    this.audio.playExplosion();
+                    this.audio?.playExplosion?.();
                     // Create explosion particles
                     for (let i = 0; i < 40; i++) {
                         const angle = (i / 40) * Math.PI * 2;

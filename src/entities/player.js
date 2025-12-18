@@ -70,6 +70,19 @@ class Player extends Entity {
         this.isUsingSpecial = false;
         this.specialTimer = 0;
         this.specialActivationBurst = 0;  // Activation animation frames
+
+        // Character visuals (set by characterSystem.applyToPlayer)
+        this.characterColor = null;
+        this.characterSecondaryColor = null;
+        this.characterEyeColor = null;
+        this.characterAccentColor = null;
+        this.characterStyle = 'default';
+        this.characterId = null;
+        this.characterSpecial = null;
+
+        // Suit visuals (set by cosmeticsSystem.applySuitToPlayer)
+        this.suitBodyColor = null;
+        this.suitCoreColor = null;
     }
 
     /**

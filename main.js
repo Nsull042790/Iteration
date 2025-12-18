@@ -107,8 +107,11 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('ITERATION - Game started');
     console.log('Controls: WASD to move, Space to jump, Arrow keys for combat');
 
-    // Expose game to console for debugging
+    // Expose game globally (needed for cosmetics system access from player)
+    window.game = game;
+
+    // Additional debug info if debug mode
     if (GAME_CONFIG.DEBUG) {
-        window.game = game;
+        console.log('DEBUG mode enabled');
     }
 });

@@ -265,6 +265,7 @@ class CharacterSystem {
      */
     applyToPlayer(player) {
         const char = this.getSelected();
+        console.log('Applying character to player:', char.name, 'Color:', char.color, 'Style:', char.style);
 
         // Apply stat multipliers (base stats * percentage / 100)
         player.maxHealth = Math.floor(100 * char.stats.health / 100);

@@ -955,11 +955,11 @@ class Game {
 
     /**
      * Show victory screen - player beat the game!
-     * Epic cinematic ending sequence
+     * EPIC Mario Party-style celebration!
      */
     showVictoryScreen(finalLevel) {
         this.state = 'victory';
-        this.isPaused = true;
+        this.isPaused = false; // Don't pause during victory - let the celebration run!
 
         // Stop gameplay music
         this.audio.stopMusic();
@@ -982,141 +982,198 @@ class Game {
             finalCycles,
             time: `${minutes}:${seconds.toString().padStart(2, '0')}`,
             bladeTier,
-            characterName: char.name
+            characterName: char.name,
+            character: char
         };
 
-        // Initialize victory sequence
+        // Initialize EPIC victory sequence
         this.victoryPhase = 0;
         this.victoryTimer = 0;
         this.victoryActive = true;
-        this.victoryMatrixRain = [];
-        this.victoryTextIndex = 0;
-        this.victorySkipEnabled = false;
 
-        // Initialize matrix rain drops
-        const cols = Math.floor(this.canvas.width / 20);
-        for (let i = 0; i < cols; i++) {
-            this.victoryMatrixRain.push({
-                x: i * 20,
-                y: Math.random() * -500,
-                speed: 3 + Math.random() * 5,
-                chars: this.generateMatrixColumn()
+        // Confetti particles
+        this.victoryConfetti = [];
+        for (let i = 0; i < 150; i++) {
+            this.victoryConfetti.push({
+                x: Math.random() * this.canvas.width,
+                y: -Math.random() * 500 - 50,
+                vx: (Math.random() - 0.5) * 4,
+                vy: Math.random() * 3 + 2,
+                rotation: Math.random() * 360,
+                rotationSpeed: (Math.random() - 0.5) * 10,
+                size: Math.random() * 10 + 5,
+                color: ['#ff71ce', '#01cdfe', '#b967ff', '#05ffa1', '#ffd700', '#ff6b6b', '#ffffff'][Math.floor(Math.random() * 7)]
             });
         }
 
-        // Victory epilogue text
-        this.victoryEpilogue = [
-            "CORRUPTED_CORE.exe terminated",
-            "Simulation integrity: COLLAPSED",
-            "Data extraction: COMPLETE",
-            "",
-            "You have broken free from the infinite loop.",
-            "The AI construct that held you prisoner...",
-            "...has been destroyed.",
-            "",
-            "But in the digital void, nothing truly ends.",
-            "Your victories echo through the network.",
-            "Your ghost data persists.",
-            "",
-            "Until the next iteration begins..."
-        ];
+        // Fireworks
+        this.victoryFireworks = [];
 
-        // Start the sequence
+        // Stars/sparkles
+        this.victorySparkles = [];
+        for (let i = 0; i < 30; i++) {
+            this.victorySparkles.push({
+                x: Math.random() * this.canvas.width,
+                y: Math.random() * this.canvas.height,
+                size: Math.random() * 4 + 2,
+                alpha: 0,
+                alphaSpeed: Math.random() * 0.05 + 0.02,
+                maxAlpha: Math.random() * 0.5 + 0.5
+            });
+        }
+
+        // Start celebration!
         this.startVictoryPhase(0);
     }
 
     /**
-     * Generate matrix-style character column
-     */
-    generateMatrixColumn() {
-        const chars = [];
-        const matrixChars = "01アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン";
-        for (let i = 0; i < 25; i++) {
-            chars.push(matrixChars[Math.floor(Math.random() * matrixChars.length)]);
-        }
-        return chars;
-    }
-
-    /**
-     * Start a victory sequence phase
+     * Start a victory sequence phase - CELEBRATION EDITION
      */
     startVictoryPhase(phase) {
         this.victoryPhase = phase;
         this.victoryTimer = 0;
 
         switch(phase) {
-            case 0: // SYSTEM DESTABILIZING
-                this.camera.addShake(30, 120);
+            case 0: // EXPLOSION - Core destroyed
+                this.camera.addShake(40, 60);
                 this.audio.playExplosion();
+                this.renderer.flash('#ffffff', 1.0);
+                setTimeout(() => this.renderer.flash('#ffd700', 0.8), 100);
+                setTimeout(() => this.renderer.flash('#ff71ce', 0.6), 200);
+                // Launch initial fireworks
+                this.launchFirework();
+                this.launchFirework();
                 break;
-            case 1: // Matrix rain + CORE DESTROYED
+            case 1: // YOU ARE THE CHAMPION
                 this.audio.playLevelUp();
-                this.renderer.flash('#ff0000', 1.0);
-                setTimeout(() => this.renderer.flash('#ffffff', 0.8), 200);
-                this.camera.addShake(50, 90);
+                this.renderer.flash('#ffd700', 0.5);
+                this.camera.addShake(10, 30);
                 break;
-            case 2: // Story epilogue
-                this.victoryTextIndex = 0;
-                break;
-            case 3: // Stats reveal
+            case 2: // Stats celebration
                 this.audio.playLevelUp();
-                this.renderer.flash('#ffd700', 0.6);
                 break;
-            case 4: // Final screen - enable skip
-                this.victorySkipEnabled = true;
+            case 3: // Final - press to continue
                 break;
         }
     }
 
     /**
-     * Update victory sequence
+     * Launch a firework
+     */
+    launchFirework() {
+        const x = Math.random() * this.canvas.width * 0.6 + this.canvas.width * 0.2;
+        const targetY = Math.random() * this.canvas.height * 0.4 + 50;
+
+        this.victoryFireworks.push({
+            x: x,
+            y: this.canvas.height + 10,
+            targetY: targetY,
+            vy: -12,
+            exploded: false,
+            particles: [],
+            color: ['#ff71ce', '#01cdfe', '#ffd700', '#05ffa1', '#ff6b6b', '#b967ff'][Math.floor(Math.random() * 6)]
+        });
+    }
+
+    /**
+     * Update victory sequence - CELEBRATION EDITION
      */
     updateVictorySequence() {
         if (!this.victoryActive) return;
 
         this.victoryTimer++;
 
-        // Update matrix rain
-        this.victoryMatrixRain.forEach(drop => {
-            drop.y += drop.speed;
-            if (drop.y > this.canvas.height + 200) {
-                drop.y = -300;
-                drop.chars = this.generateMatrixColumn();
+        // Update confetti
+        this.victoryConfetti.forEach(c => {
+            c.x += c.vx;
+            c.y += c.vy;
+            c.rotation += c.rotationSpeed;
+            c.vy += 0.05; // gravity
+            c.vx *= 0.99; // air resistance
+
+            // Reset if off screen
+            if (c.y > this.canvas.height + 50) {
+                c.y = -20;
+                c.x = Math.random() * this.canvas.width;
+                c.vy = Math.random() * 3 + 2;
+            }
+        });
+
+        // Update fireworks
+        this.victoryFireworks.forEach(fw => {
+            if (!fw.exploded) {
+                fw.y += fw.vy;
+                if (fw.y <= fw.targetY) {
+                    fw.exploded = true;
+                    this.audio.playExplosion();
+                    // Create explosion particles
+                    for (let i = 0; i < 40; i++) {
+                        const angle = (i / 40) * Math.PI * 2;
+                        const speed = Math.random() * 5 + 3;
+                        fw.particles.push({
+                            x: fw.x,
+                            y: fw.y,
+                            vx: Math.cos(angle) * speed,
+                            vy: Math.sin(angle) * speed,
+                            life: 60 + Math.random() * 30,
+                            maxLife: 90
+                        });
+                    }
+                }
+            } else {
+                fw.particles.forEach(p => {
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.vy += 0.1; // gravity
+                    p.life--;
+                });
+                fw.particles = fw.particles.filter(p => p.life > 0);
+            }
+        });
+
+        // Remove dead fireworks
+        this.victoryFireworks = this.victoryFireworks.filter(fw => !fw.exploded || fw.particles.length > 0);
+
+        // Launch new fireworks periodically
+        if (this.victoryTimer % 45 === 0 && this.victoryPhase >= 1) {
+            this.launchFirework();
+        }
+
+        // Update sparkles
+        this.victorySparkles.forEach(s => {
+            s.alpha += s.alphaSpeed;
+            if (s.alpha >= s.maxAlpha) {
+                s.alphaSpeed = -Math.abs(s.alphaSpeed);
+            } else if (s.alpha <= 0) {
+                s.alphaSpeed = Math.abs(s.alphaSpeed);
+                s.x = Math.random() * this.canvas.width;
+                s.y = Math.random() * this.canvas.height;
             }
         });
 
         // Phase transitions
         switch(this.victoryPhase) {
-            case 0: // DESTABILIZING -> CORE DESTROYED
-                if (this.victoryTimer > 180) { // 3 seconds
+            case 0: // Explosion -> Champion reveal
+                if (this.victoryTimer > 90) {
                     this.startVictoryPhase(1);
                 }
                 break;
-            case 1: // CORE DESTROYED -> Epilogue
-                if (this.victoryTimer > 240) { // 4 seconds
+            case 1: // Champion -> Stats
+                if (this.victoryTimer > 180) {
                     this.startVictoryPhase(2);
                 }
                 break;
-            case 2: // Epilogue -> Stats
-                // Text appears over time
-                if (this.victoryTimer % 45 === 0 && this.victoryTextIndex < this.victoryEpilogue.length) {
-                    this.victoryTextIndex++;
-                }
-                if (this.victoryTimer > 45 * (this.victoryEpilogue.length + 4)) {
+            case 2: // Stats -> Final
+                if (this.victoryTimer > 240) {
                     this.startVictoryPhase(3);
-                }
-                break;
-            case 3: // Stats -> Final
-                if (this.victoryTimer > 300) { // 5 seconds
-                    this.startVictoryPhase(4);
                 }
                 break;
         }
 
-        // Check for skip (after phase 1)
-        if (this.victoryPhase >= 1 && (this.input.isKeyPressed('Space') || this.input.isKeyPressed('Enter'))) {
-            if (this.victoryPhase < 4) {
-                this.startVictoryPhase(4);
+        // Skip/continue
+        if (this.victoryTimer > 60 && (this.input.isKeyPressed('Space') || this.input.isKeyPressed('Enter'))) {
+            if (this.victoryPhase < 3) {
+                this.startVictoryPhase(3);
             } else {
                 this.endVictorySequence();
             }
@@ -1124,7 +1181,7 @@ class Game {
     }
 
     /**
-     * Render victory sequence
+     * Render victory sequence - EPIC CELEBRATION
      */
     renderVictorySequence(ctx) {
         if (!this.victoryActive) return;
@@ -1132,337 +1189,289 @@ class Game {
         const w = this.canvas.width;
         const h = this.canvas.height;
 
-        // Dark background with vignette
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.95)';
+        // Epic gradient background
+        const bgGradient = ctx.createRadialGradient(w/2, h/2, 0, w/2, h/2, w);
+        bgGradient.addColorStop(0, '#1a0a2e');
+        bgGradient.addColorStop(0.5, '#0d0015');
+        bgGradient.addColorStop(1, '#000000');
+        ctx.fillStyle = bgGradient;
         ctx.fillRect(0, 0, w, h);
 
-        // Matrix rain (always visible after phase 0)
-        if (this.victoryPhase >= 1) {
-            this.renderMatrixRain(ctx);
-        }
+        // Render sparkles (behind everything)
+        this.renderVictorySparkles(ctx);
+
+        // Render fireworks
+        this.renderVictoryFireworks(ctx);
 
         // Phase-specific content
         switch(this.victoryPhase) {
             case 0:
-                this.renderDestabilizingPhase(ctx);
+                this.renderExplosionPhase(ctx);
                 break;
             case 1:
-                this.renderCoreDestroyedPhase(ctx);
-                break;
             case 2:
-                this.renderEpiloguePhase(ctx);
-                break;
             case 3:
-            case 4:
-                this.renderStatsPhase(ctx);
+                this.renderChampionPhase(ctx);
                 break;
         }
 
-        // Skip hint
-        if (this.victoryPhase >= 1 && this.victoryPhase < 4) {
-            ctx.font = '14px "Share Tech Mono", monospace';
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+        // Render confetti (on top)
+        this.renderVictoryConfetti(ctx);
+
+        // Continue prompt (phase 3)
+        if (this.victoryPhase === 3) {
+            const pulse = Math.sin(this.victoryTimer * 0.1) * 0.3 + 0.7;
+            ctx.globalAlpha = pulse;
+            ctx.font = 'bold 20px "Share Tech Mono", monospace';
+            ctx.fillStyle = '#ffd700';
             ctx.textAlign = 'center';
-            ctx.fillText('[ PRESS SPACE TO SKIP ]', w / 2, h - 30);
+            ctx.fillText('[ PRESS SPACE TO CONTINUE ]', w / 2, h - 50);
+            ctx.globalAlpha = 1;
         }
     }
 
     /**
-     * Render matrix rain effect
+     * Render explosion phase
      */
-    renderMatrixRain(ctx) {
-        ctx.font = '16px "Share Tech Mono", monospace';
-
-        this.victoryMatrixRain.forEach(drop => {
-            drop.chars.forEach((char, i) => {
-                const y = drop.y - i * 20;
-                if (y > 0 && y < this.canvas.height) {
-                    const alpha = i === 0 ? 1 : Math.max(0, 1 - i * 0.08);
-                    const green = i === 0 ? 255 : Math.max(100, 255 - i * 15);
-                    ctx.fillStyle = `rgba(0, ${green}, ${Math.floor(green * 0.4)}, ${alpha * 0.7})`;
-                    ctx.fillText(char, drop.x, y);
-                }
-            });
-        });
-    }
-
-    /**
-     * Render "SYSTEM DESTABILIZING" phase
-     */
-    renderDestabilizingPhase(ctx) {
+    renderExplosionPhase(ctx) {
         const w = this.canvas.width;
         const h = this.canvas.height;
-        const progress = this.victoryTimer / 180;
+        const progress = this.victoryTimer / 90;
 
-        // Glitch lines
-        for (let i = 0; i < 20; i++) {
-            if (Math.random() < 0.3) {
-                const y = Math.random() * h;
-                const glitchW = Math.random() * 300 + 100;
-                ctx.fillStyle = `rgba(255, 0, 0, ${Math.random() * 0.5})`;
-                ctx.fillRect(Math.random() * w, y, glitchW, 2);
-            }
-        }
-
-        // Warning text
+        // Expanding ring
         ctx.save();
-        const shake = Math.sin(this.victoryTimer * 0.5) * 5;
-        ctx.translate(shake, shake * 0.5);
+        ctx.strokeStyle = '#ffd700';
+        ctx.lineWidth = 5;
+        ctx.globalAlpha = 1 - progress;
+        ctx.beginPath();
+        ctx.arc(w/2, h/2, progress * 400, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
 
-        ctx.font = 'bold 24px "Share Tech Mono", monospace';
-        ctx.textAlign = 'center';
-
-        // Flickering warning
-        if (this.victoryTimer % 10 < 7) {
+        // "CORE DESTROYED" text
+        if (this.victoryTimer > 30) {
+            const textProgress = Math.min((this.victoryTimer - 30) / 30, 1);
+            ctx.save();
+            ctx.globalAlpha = textProgress;
+            ctx.font = 'bold 64px "Share Tech Mono", monospace';
+            ctx.textAlign = 'center';
             ctx.fillStyle = '#ff0000';
-            ctx.fillText('⚠ WARNING ⚠', w / 2, h / 2 - 80);
-        }
-
-        ctx.font = 'bold 48px "Share Tech Mono", monospace';
-        const destabText = 'SYSTEM DESTABILIZING';
-
-        // Glitch effect on text
-        for (let i = 0; i < 3; i++) {
-            const offsetX = (Math.random() - 0.5) * 10 * progress;
-            const offsetY = (Math.random() - 0.5) * 5;
-            ctx.fillStyle = ['#ff0000', '#00ff00', '#0000ff'][i];
-            ctx.globalAlpha = 0.3;
-            ctx.fillText(destabText, w / 2 + offsetX, h / 2 + offsetY);
-        }
-        ctx.globalAlpha = 1;
-        ctx.fillStyle = '#ffffff';
-        ctx.fillText(destabText, w / 2, h / 2);
-
-        // Progress bar
-        const barW = 400;
-        const barH = 20;
-        const barX = (w - barW) / 2;
-        const barY = h / 2 + 50;
-
-        ctx.strokeStyle = '#ff0000';
-        ctx.lineWidth = 2;
-        ctx.strokeRect(barX, barY, barW, barH);
-
-        ctx.fillStyle = `rgba(255, 0, 0, ${0.5 + Math.sin(this.victoryTimer * 0.2) * 0.3})`;
-        ctx.fillRect(barX + 2, barY + 2, (barW - 4) * progress, barH - 4);
-
-        ctx.font = '16px "Share Tech Mono", monospace';
-        ctx.fillStyle = '#ff6666';
-        ctx.fillText(`CORE INTEGRITY: ${Math.floor((1 - progress) * 100)}%`, w / 2, barY + 50);
-
-        ctx.restore();
-    }
-
-    /**
-     * Render "CORRUPTED CORE DESTROYED" phase
-     */
-    renderCoreDestroyedPhase(ctx) {
-        const w = this.canvas.width;
-        const h = this.canvas.height;
-        const progress = Math.min(this.victoryTimer / 60, 1);
-
-        // Explosion particles
-        if (this.victoryTimer < 60) {
-            for (let i = 0; i < 30; i++) {
-                const angle = (i / 30) * Math.PI * 2;
-                const dist = this.victoryTimer * 8;
-                const x = w / 2 + Math.cos(angle) * dist;
-                const y = h / 2 + Math.sin(angle) * dist;
-                const size = 10 - (this.victoryTimer / 60) * 8;
-                if (size > 0) {
-                    ctx.fillStyle = ['#ff0000', '#ff6600', '#ffff00', '#ffffff'][i % 4];
-                    ctx.beginPath();
-                    ctx.arc(x, y, size, 0, Math.PI * 2);
-                    ctx.fill();
-                }
-            }
-        }
-
-        // Main text with dramatic entrance
-        ctx.save();
-
-        const scale = progress < 0.3 ? progress / 0.3 * 1.5 : 1.5 - (progress - 0.3) * 0.7;
-        ctx.translate(w / 2, h / 2);
-        ctx.scale(scale, scale);
-        ctx.translate(-w / 2, -h / 2);
-
-        // Glow effect
-        ctx.shadowColor = '#ff0000';
-        ctx.shadowBlur = 30 + Math.sin(this.victoryTimer * 0.1) * 10;
-
-        ctx.font = 'bold 56px "Share Tech Mono", monospace';
-        ctx.textAlign = 'center';
-        ctx.fillStyle = '#ffffff';
-        ctx.fillText('CORRUPTED CORE', w / 2, h / 2 - 20);
-
-        ctx.shadowColor = '#00ff00';
-        ctx.fillStyle = '#00ff00';
-        ctx.fillText('DESTROYED', w / 2, h / 2 + 50);
-
-        ctx.restore();
-
-        // Corner decorations
-        this.drawVictoryCornerBrackets(ctx, w, h, '#00ff00', progress);
-    }
-
-    /**
-     * Render epilogue text phase
-     */
-    renderEpiloguePhase(ctx) {
-        const w = this.canvas.width;
-        const h = this.canvas.height;
-
-        // Semi-transparent overlay to dim matrix rain
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-        ctx.fillRect(0, 0, w, h);
-
-        ctx.font = '18px "Share Tech Mono", monospace';
-        ctx.textAlign = 'center';
-
-        const startY = h / 2 - (this.victoryEpilogue.length * 15);
-
-        for (let i = 0; i < this.victoryTextIndex && i < this.victoryEpilogue.length; i++) {
-            const line = this.victoryEpilogue[i];
-            const y = startY + i * 35;
-
-            // Fade in effect for newest line
-            const alpha = i === this.victoryTextIndex - 1 ?
-                Math.min((this.victoryTimer % 45) / 15, 1) : 1;
-
-            if (line.includes('CORRUPTED') || line.includes('COLLAPSED') || line.includes('COMPLETE')) {
-                ctx.fillStyle = `rgba(255, 0, 100, ${alpha})`;
-            } else if (line.includes('destroyed') || line.includes('broken free')) {
-                ctx.fillStyle = `rgba(0, 255, 100, ${alpha})`;
-            } else if (line.includes('iteration')) {
-                ctx.fillStyle = `rgba(0, 240, 255, ${alpha})`;
-            } else {
-                ctx.fillStyle = `rgba(200, 200, 200, ${alpha})`;
-            }
-
-            ctx.fillText(line, w / 2, y);
+            ctx.shadowColor = '#ff0000';
+            ctx.shadowBlur = 30;
+            ctx.fillText('CORE DESTROYED', w/2, h/2);
+            ctx.restore();
         }
     }
 
     /**
-     * Render final stats phase
+     * Render champion celebration phase
      */
-    renderStatsPhase(ctx) {
+    renderChampionPhase(ctx) {
         const w = this.canvas.width;
         const h = this.canvas.height;
         const stats = this.victoryStats;
-        const progress = Math.min(this.victoryTimer / 60, 1);
 
-        // Dim overlay
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
-        ctx.fillRect(0, 0, w, h);
-
-        // Title with golden glow
+        // Glowing rays from center
         ctx.save();
-        ctx.shadowColor = '#ffd700';
-        ctx.shadowBlur = 20 + Math.sin(this.victoryTimer * 0.05) * 10;
-
-        ctx.font = 'bold 52px "Share Tech Mono", monospace';
-        ctx.textAlign = 'center';
-        ctx.fillStyle = '#ffd700';
-        ctx.fillText('◆ ITERATION COMPLETE ◆', w / 2, 100);
+        const rayCount = 12;
+        const rayRotation = this.victoryTimer * 0.005;
+        ctx.translate(w/2, h * 0.35);
+        ctx.rotate(rayRotation);
+        for (let i = 0; i < rayCount; i++) {
+            const angle = (i / rayCount) * Math.PI * 2;
+            ctx.rotate(Math.PI * 2 / rayCount);
+            const gradient = ctx.createLinearGradient(0, 0, 300, 0);
+            gradient.addColorStop(0, 'rgba(255, 215, 0, 0.3)');
+            gradient.addColorStop(1, 'rgba(255, 215, 0, 0)');
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(300, -20);
+            ctx.lineTo(300, 20);
+            ctx.closePath();
+            ctx.fill();
+        }
         ctx.restore();
 
-        ctx.font = '18px "Share Tech Mono", monospace';
-        ctx.fillStyle = '#00f0ff';
-        ctx.fillText('THE CYCLE HAS BEEN BROKEN', w / 2, 140);
+        // Crown/trophy emoji
+        ctx.font = '80px serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('👑', w/2, 100);
+
+        // "SIMULATION CHAMPION" title
+        ctx.save();
+        ctx.shadowColor = '#ffd700';
+        ctx.shadowBlur = 30 + Math.sin(this.victoryTimer * 0.1) * 10;
+        ctx.font = 'bold 56px "Share Tech Mono", monospace';
+        ctx.textAlign = 'center';
+
+        // Gold gradient text
+        const textGradient = ctx.createLinearGradient(w/2 - 250, 0, w/2 + 250, 0);
+        textGradient.addColorStop(0, '#ffd700');
+        textGradient.addColorStop(0.5, '#fff8dc');
+        textGradient.addColorStop(1, '#ffd700');
+        ctx.fillStyle = textGradient;
+        ctx.fillText('★ SIMULATION CHAMPION ★', w/2, 180);
+        ctx.restore();
 
         // Character name
-        ctx.font = '24px "Share Tech Mono", monospace';
-        ctx.fillStyle = '#ff00aa';
-        ctx.fillText(`[ ${stats.characterName} ]`, w / 2, 190);
+        ctx.font = 'bold 32px "Share Tech Mono", monospace';
+        ctx.fillStyle = '#ff71ce';
+        ctx.shadowColor = '#ff71ce';
+        ctx.shadowBlur = 15;
+        ctx.fillText(`[ ${stats.characterName} ]`, w/2, 230);
+        ctx.shadowBlur = 0;
 
         // Stats box
-        const boxW = 500;
-        const boxH = 280;
-        const boxX = (w - boxW) / 2;
-        const boxY = 220;
+        if (this.victoryPhase >= 2) {
+            this.renderVictoryStats(ctx, w, h, stats);
+        }
 
-        // Box background
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
-        ctx.fillRect(boxX, boxY, boxW, boxH);
+        // Subtitle
+        ctx.font = '18px "Share Tech Mono", monospace';
+        ctx.fillStyle = '#01cdfe';
+        ctx.fillText('THE CYCLE HAS BEEN BROKEN', w/2, 270);
+    }
 
-        // Box border with gradient
+    /**
+     * Render victory stats with celebration style
+     */
+    renderVictoryStats(ctx, w, h, stats) {
+        const boxY = 300;
+        const boxH = 220;
+        const statReveal = Math.min((this.victoryTimer - (this.victoryPhase === 2 ? 0 : 180)) / 60, 1);
+
+        // Stats container with glow
+        ctx.save();
+        ctx.shadowColor = '#ffd700';
+        ctx.shadowBlur = 20;
         ctx.strokeStyle = '#ffd700';
         ctx.lineWidth = 3;
-        ctx.strokeRect(boxX, boxY, boxW, boxH);
+        ctx.strokeRect(w/2 - 250, boxY, 500, boxH);
+        ctx.shadowBlur = 0;
 
-        // Inner border
-        ctx.strokeStyle = 'rgba(255, 215, 0, 0.3)';
-        ctx.lineWidth = 1;
-        ctx.strokeRect(boxX + 10, boxY + 10, boxW - 20, boxH - 20);
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        ctx.fillRect(w/2 - 250, boxY, 500, boxH);
+        ctx.restore();
 
-        // Stats grid
+        // Stats with animated reveal
         const statItems = [
-            { label: 'LEVELS CLEARED', value: stats.finalLevel, color: '#00f0ff' },
-            { label: 'TOTAL KILLS', value: stats.totalKills, color: '#ff00aa' },
-            { label: 'CYCLES EARNED', value: stats.finalCycles, color: '#ffff00' },
-            { label: 'TIME', value: stats.time, color: '#00ff88' }
+            { label: '🏆 LEVELS', value: stats.finalLevel, color: '#01cdfe' },
+            { label: '💀 KILLS', value: stats.totalKills, color: '#ff71ce' },
+            { label: '⚡ CYCLES', value: stats.finalCycles, color: '#ffd700' },
+            { label: '⏱ TIME', value: stats.time, color: '#05ffa1' }
         ];
 
-        const gridStartX = boxX + 80;
-        const gridStartY = boxY + 60;
-        const colW = 220;
-        const rowH = 80;
-
+        ctx.textAlign = 'center';
         statItems.forEach((stat, i) => {
-            const col = i % 2;
-            const row = Math.floor(i / 2);
-            const x = gridStartX + col * colW;
-            const y = gridStartY + row * rowH;
+            const itemProgress = Math.max(0, (statReveal - i * 0.2) / 0.3);
+            if (itemProgress > 0) {
+                const x = w/2 - 125 + (i % 2) * 250;
+                const y = boxY + 60 + Math.floor(i / 2) * 90;
 
-            // Reveal animation
-            const statProgress = Math.max(0, (progress - i * 0.15) / 0.3);
-            if (statProgress > 0) {
-                ctx.globalAlpha = Math.min(statProgress, 1);
+                ctx.globalAlpha = Math.min(itemProgress, 1);
 
-                ctx.font = '12px "Share Tech Mono", monospace';
-                ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
-                ctx.textAlign = 'left';
+                ctx.font = '14px "Share Tech Mono", monospace';
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
                 ctx.fillText(stat.label, x, y);
 
                 ctx.font = 'bold 36px "Share Tech Mono", monospace';
                 ctx.fillStyle = stat.color;
-                ctx.fillText(stat.value.toString(), x, y + 35);
+                ctx.shadowColor = stat.color;
+                ctx.shadowBlur = 10;
+                ctx.fillText(stat.value.toString(), x, y + 40);
+                ctx.shadowBlur = 0;
 
                 ctx.globalAlpha = 1;
             }
         });
 
-        // Blade tier
-        if (progress > 0.6) {
-            const bladeAlpha = (progress - 0.6) / 0.4;
-            ctx.globalAlpha = bladeAlpha;
-
-            const bladeY = boxY + boxH - 50;
+        // Final blade
+        if (statReveal > 0.8) {
+            ctx.globalAlpha = (statReveal - 0.8) / 0.2;
             ctx.font = '12px "Share Tech Mono", monospace';
             ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
-            ctx.textAlign = 'center';
-            ctx.fillText('FINAL BLADE', w / 2, bladeY);
-
-            ctx.font = 'bold 24px "Share Tech Mono", monospace';
+            ctx.fillText('FINAL BLADE', w/2, boxY + boxH - 40);
+            ctx.font = 'bold 20px "Share Tech Mono", monospace';
             ctx.fillStyle = stats.bladeTier.color;
-            ctx.fillText(stats.bladeTier.name, w / 2, bladeY + 30);
+            ctx.fillText(stats.bladeTier.name, w/2, boxY + boxH - 15);
             ctx.globalAlpha = 1;
         }
+    }
 
-        // Continue prompt (phase 4 only)
-        if (this.victoryPhase === 4) {
-            const pulse = Math.sin(this.victoryTimer * 0.1) * 0.3 + 0.7;
-            ctx.globalAlpha = pulse;
-            ctx.font = '20px "Share Tech Mono", monospace';
-            ctx.fillStyle = '#ffd700';
-            ctx.textAlign = 'center';
-            ctx.fillText('[ PRESS SPACE TO CONTINUE ]', w / 2, h - 60);
-            ctx.globalAlpha = 1;
-        }
+    /**
+     * Render confetti
+     */
+    renderVictoryConfetti(ctx) {
+        ctx.save();
+        this.victoryConfetti.forEach(c => {
+            ctx.save();
+            ctx.translate(c.x, c.y);
+            ctx.rotate(c.rotation * Math.PI / 180);
+            ctx.fillStyle = c.color;
+            ctx.fillRect(-c.size/2, -c.size/4, c.size, c.size/2);
+            ctx.restore();
+        });
+        ctx.restore();
+    }
 
-        // Draw corner brackets
-        this.drawVictoryCornerBrackets(ctx, w, h, '#ffd700', 1);
+    /**
+     * Render fireworks
+     */
+    renderVictoryFireworks(ctx) {
+        this.victoryFireworks.forEach(fw => {
+            if (!fw.exploded) {
+                // Rising trail
+                ctx.save();
+                ctx.fillStyle = fw.color;
+                ctx.shadowColor = fw.color;
+                ctx.shadowBlur = 10;
+                ctx.beginPath();
+                ctx.arc(fw.x, fw.y, 4, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            } else {
+                // Explosion particles
+                fw.particles.forEach(p => {
+                    const alpha = p.life / p.maxLife;
+                    ctx.save();
+                    ctx.globalAlpha = alpha;
+                    ctx.fillStyle = fw.color;
+                    ctx.shadowColor = fw.color;
+                    ctx.shadowBlur = 5;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.restore();
+                });
+            }
+        });
+    }
+
+    /**
+     * Render sparkles
+     */
+    renderVictorySparkles(ctx) {
+        this.victorySparkles.forEach(s => {
+            ctx.save();
+            ctx.globalAlpha = Math.max(0, s.alpha);
+            ctx.fillStyle = '#ffffff';
+            ctx.shadowColor = '#ffd700';
+            ctx.shadowBlur = 10;
+
+            // Star shape
+            ctx.beginPath();
+            for (let i = 0; i < 5; i++) {
+                const angle = (i * 4 * Math.PI / 5) - Math.PI / 2;
+                const x = s.x + Math.cos(angle) * s.size;
+                const y = s.y + Math.sin(angle) * s.size;
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.closePath();
+            ctx.fill();
+            ctx.restore();
+        });
     }
 
     /**

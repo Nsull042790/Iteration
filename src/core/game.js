@@ -1121,6 +1121,7 @@ class Game {
         const codexBtn = document.getElementById('codex-btn');
         const leaderboardBtn = document.getElementById('leaderboard-btn');
         const godmodeBtn = document.getElementById('godmode-btn');
+        const levelselectBtn = document.getElementById('levelselect-btn');
 
         titleScreen.classList.remove('hidden');
 
@@ -1149,6 +1150,9 @@ class Game {
 
         // God mode button
         godmodeBtn.onclick = () => this.toggleGodMode(godmodeBtn);
+
+        // Level select button
+        levelselectBtn.onclick = () => this.showLevelSelectModal();
 
         // Handle key press
         const handleTitleKey = (e) => {
@@ -1254,6 +1258,154 @@ class Game {
             }
         };
         window.addEventListener('keydown', handleEsc);
+    }
+
+    /**
+     * Show level select modal for testing/debugging
+     */
+    showLevelSelectModal() {
+        const modal = document.getElementById('upgrade-modal');
+        const choicesContainer = document.getElementById('upgrade-choices');
+        const title = modal.querySelector('.upgrade-title');
+        const subtitle = modal.querySelector('.modal-subtitle');
+        const hint = modal.querySelector('.upgrade-hint');
+
+        if (hint) hint.style.display = 'none';
+        if (title) title.textContent = 'LEVEL SELECT';
+        if (subtitle) subtitle.textContent = '// DEBUG MODE - SELECT STARTING LEVEL';
+
+        // Zone names for levels
+        const levelZones = {
+            1: 'DATA STREAM', 2: 'DATA STREAM', 3: 'DATA STREAM (BOSS)',
+            4: 'NEURAL CORE', 5: 'NEURAL CORE', 6: 'NEURAL CORE (BOSS)',
+            7: 'MEMORY BANK', 8: 'MEMORY BANK', 9: 'MEMORY BANK (BOSS)',
+            10: 'FIREWALL', 11: 'FIREWALL', 12: 'CORRUPTED CORE (FINAL)'
+        };
+
+        choicesContainer.innerHTML = `
+            <div style="text-align: center; padding: 10px;">
+                <div style="font-size: 12px; color: rgba(255,255,255,0.5); margin-bottom: 20px;">
+                    Select a level to start from. Boss fights occur at levels 3, 6, 9, and 12.
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; max-width: 500px; margin: 0 auto;">
+                    ${[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(level => {
+                        const isBoss = level % 3 === 0;
+                        const isFinal = level === 12;
+                        const color = isFinal ? '#ff0044' : isBoss ? '#ffff00' : '#00f0ff';
+                        return `
+                            <button class="level-select-btn" data-level="${level}" style="
+                                padding: 15px 10px;
+                                background: rgba(0,0,0,0.5);
+                                border: 2px solid ${color};
+                                color: ${color};
+                                cursor: pointer;
+                                font-family: 'Courier New', monospace;
+                                font-size: 14px;
+                                transition: all 0.2s;
+                            ">
+                                <div style="font-size: 20px; font-weight: bold;">L${level}</div>
+                                <div style="font-size: 9px; margin-top: 5px; opacity: 0.7;">
+                                    ${levelZones[level]}
+                                </div>
+                                ${isBoss ? '<div style="font-size: 8px; margin-top: 3px; color: #ff00aa;">BOSS</div>' : ''}
+                            </button>
+                        `;
+                    }).join('')}
+                </div>
+                <button id="level-select-close" class="start-btn" style="margin-top: 20px; padding: 12px 30px;">
+                    <span class="btn-text">CANCEL</span>
+                </button>
+            </div>
+        `;
+
+        modal.classList.remove('hidden');
+
+        // Handle level selection
+        choicesContainer.querySelectorAll('.level-select-btn').forEach(btn => {
+            btn.onmouseover = () => {
+                btn.style.background = 'rgba(0,240,255,0.2)';
+                btn.style.transform = 'scale(1.05)';
+            };
+            btn.onmouseout = () => {
+                btn.style.background = 'rgba(0,0,0,0.5)';
+                btn.style.transform = 'scale(1)';
+            };
+            btn.onclick = () => {
+                const level = parseInt(btn.dataset.level);
+                modal.classList.add('hidden');
+                if (hint) hint.style.display = '';
+                if (title) title.textContent = 'EVOLUTION DETECTED';
+                if (subtitle) subtitle.textContent = '// SELECT UPGRADE PROTOCOL';
+                this.startFromLevel(level);
+            };
+        });
+
+        // Handle close
+        document.getElementById('level-select-close').onclick = () => {
+            modal.classList.add('hidden');
+            if (hint) hint.style.display = '';
+            if (title) title.textContent = 'EVOLUTION DETECTED';
+            if (subtitle) subtitle.textContent = '// SELECT UPGRADE PROTOCOL';
+        };
+
+        const handleEsc = (e) => {
+            if (e.code === 'Escape' && !modal.classList.contains('hidden')) {
+                modal.classList.add('hidden');
+                if (hint) hint.style.display = '';
+                if (title) title.textContent = 'EVOLUTION DETECTED';
+                if (subtitle) subtitle.textContent = '// SELECT UPGRADE PROTOCOL';
+                window.removeEventListener('keydown', handleEsc);
+            }
+        };
+        window.addEventListener('keydown', handleEsc);
+    }
+
+    /**
+     * Start game from a specific level (for testing)
+     */
+    startFromLevel(level) {
+        // Initialize audio
+        this.audio.init();
+        this.audio.playUIClick();
+
+        // Hide title screen
+        const titleScreen = document.getElementById('title-screen');
+        titleScreen.classList.add('hidden');
+
+        // Set up the level
+        this.currentLevel = level;
+        this.roomNumber = level;
+        this.currentZoneIndex = Math.floor((level - 1) / 3);
+        this.currentZone = this.zones[Math.min(this.currentZoneIndex, this.zones.length - 1)];
+
+        // Give player scaled resources for higher levels
+        const bonusCycles = (level - 1) * 150;
+        this.cycles.gain(bonusCycles);
+
+        // Scale blade evolution for higher levels
+        const bonusXP = (level - 1) * 100;
+        this.bladeEvolution.addXP(bonusXP);
+
+        // Reset room for the level
+        this.bossSpawned = false;
+        this.levelComplete = false;
+        this.enemiesKilledInLevel = 0;
+        this.currentRoom = generateRandomRoom(level, level - 1);
+        this.enemies = [];
+        this.interactables = [];
+
+        // Spawn enemies/boss based on level
+        if (level % 3 === 0) {
+            // Boss level - spawn boss directly
+            this.spawnBoss();
+        } else {
+            // Normal level - spawn enemies
+            this.spawnEnemies();
+            this.spawnInteractables();
+        }
+
+        // Show character select then start
+        this.showCharacterSelect();
     }
 
     /**

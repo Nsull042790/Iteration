@@ -1,6 +1,7 @@
 /**
  * Procedural Audio System using Web Audio API
  * Generates synthesized sounds for game events
+ * Now supports MP3 file loading for music tracks
  */
 class AudioSystem {
     constructor() {
@@ -19,9 +20,25 @@ class AudioSystem {
         this.currentMusic = null;
         this.musicNodes = [];
 
+        // Loaded audio buffers (for MP3 files)
+        this.audioBuffers = {};
+        this.currentMusicSource = null;
+
         // Mute states
         this.muted = false;
         this.musicMuted = false;
+
+        // Track paths
+        this.tracks = {
+            main: 'assets/audio/anamnesis - crystal lake final cut 2.mp3',
+            // Sample timestamps (in seconds)
+            samples: {
+                simulationDrop: { start: 74, duration: 8 },    // 1:14 - drop into simulation
+                darkIntro: { start: 0, duration: 30 },         // Dark opening
+                intense: { start: 120, duration: 30 },         // Intense section
+                climax: { start: 180, duration: 45 }           // Climactic section
+            }
+        };
     }
 
     /**
@@ -48,8 +65,288 @@ class AudioSystem {
 
             this.initialized = true;
             console.log('Audio system initialized');
+
+            // Pre-load the main track
+            this.loadTrack('main', this.tracks.main);
         } catch (e) {
             console.warn('Web Audio API not supported:', e);
+        }
+    }
+
+    /**
+     * Load an audio track (MP3/WAV/OGG)
+     */
+    async loadTrack(name, url) {
+        if (!this.context) return;
+
+        try {
+            const response = await fetch(url);
+            if (!response.ok) {
+                console.warn(`Could not load audio track: ${url}`);
+                return;
+            }
+            const arrayBuffer = await response.arrayBuffer();
+            const audioBuffer = await this.context.decodeAudioData(arrayBuffer);
+            this.audioBuffers[name] = audioBuffer;
+            console.log(`Loaded audio track: ${name} (${audioBuffer.duration.toFixed(1)}s)`);
+        } catch (e) {
+            console.warn(`Failed to load audio track ${name}:`, e);
+        }
+    }
+
+    /**
+     * Play a loaded track with optional dark processing
+     */
+    playTrack(name, options = {}) {
+        if (!this.ensureReady()) return null;
+
+        const buffer = this.audioBuffers[name];
+        if (!buffer) {
+            console.warn(`Audio track not loaded: ${name}`);
+            return null;
+        }
+
+        const {
+            loop = true,
+            startTime = 0,
+            duration = null,
+            fadeIn = 2,
+            darkMode = false,  // Apply dark, distorted processing
+            volume = 1
+        } = options;
+
+        // Stop current music
+        this.stopCurrentMusic();
+
+        // Create source
+        const source = this.context.createBufferSource();
+        source.buffer = buffer;
+        source.loop = loop;
+
+        // Create gain for this track
+        const trackGain = this.context.createGain();
+        trackGain.gain.setValueAtTime(0, this.context.currentTime);
+        trackGain.gain.linearRampToValueAtTime(volume, this.context.currentTime + fadeIn);
+
+        let lastNode = source;
+
+        // Apply dark processing if requested
+        if (darkMode) {
+            // Low-pass filter for muffled, dark sound
+            const lowpass = this.context.createBiquadFilter();
+            lowpass.type = 'lowpass';
+            lowpass.frequency.value = 2000;
+            lowpass.Q.value = 1;
+
+            // Add some distortion
+            const distortion = this.context.createWaveShaper();
+            distortion.curve = this.makeDistortionCurve(20);
+
+            // Compressor for punch
+            const compressor = this.context.createDynamicsCompressor();
+            compressor.threshold.value = -24;
+            compressor.ratio.value = 4;
+
+            lastNode.connect(lowpass);
+            lowpass.connect(distortion);
+            distortion.connect(compressor);
+            lastNode = compressor;
+        }
+
+        lastNode.connect(trackGain);
+        trackGain.connect(this.musicGain);
+
+        // Start playback
+        if (duration) {
+            source.start(0, startTime, duration);
+        } else {
+            source.start(0, startTime);
+        }
+
+        this.currentMusicSource = source;
+        this.currentMusic = name;
+
+        return source;
+    }
+
+    /**
+     * Play the simulation drop sound (1:14 from the track)
+     * Dark, distorted, feels like being thrown into the AI simulation
+     */
+    playSimulationDrop() {
+        if (!this.ensureReady()) return;
+
+        const buffer = this.audioBuffers['main'];
+        if (!buffer) {
+            // Fallback to synthesized drop sound
+            this.playSynthesizedDrop();
+            return;
+        }
+
+        const sample = this.tracks.samples.simulationDrop;
+
+        // Create source for the sample
+        const source = this.context.createBufferSource();
+        source.buffer = buffer;
+
+        // Heavy processing for "dropped into simulation" feel
+        const lowpass = this.context.createBiquadFilter();
+        lowpass.type = 'lowpass';
+        lowpass.frequency.setValueAtTime(500, this.context.currentTime);
+        lowpass.frequency.linearRampToValueAtTime(4000, this.context.currentTime + 2);
+
+        const highpass = this.context.createBiquadFilter();
+        highpass.type = 'highpass';
+        highpass.frequency.value = 30;
+
+        const distortion = this.context.createWaveShaper();
+        distortion.curve = this.makeDistortionCurve(30);
+
+        const compressor = this.context.createDynamicsCompressor();
+        compressor.threshold.value = -20;
+        compressor.ratio.value = 8;
+        compressor.attack.value = 0.003;
+        compressor.release.value = 0.25;
+
+        // Reverb-like effect using delay
+        const delay = this.context.createDelay();
+        delay.delayTime.value = 0.1;
+        const delayGain = this.context.createGain();
+        delayGain.gain.value = 0.3;
+
+        // Volume envelope - starts quiet, builds up
+        const gain = this.context.createGain();
+        gain.gain.setValueAtTime(0, this.context.currentTime);
+        gain.gain.linearRampToValueAtTime(0.8, this.context.currentTime + 0.5);
+        gain.gain.linearRampToValueAtTime(1, this.context.currentTime + 2);
+        gain.gain.linearRampToValueAtTime(0.6, this.context.currentTime + sample.duration - 1);
+        gain.gain.linearRampToValueAtTime(0, this.context.currentTime + sample.duration);
+
+        // Connect chain
+        source.connect(lowpass);
+        lowpass.connect(highpass);
+        highpass.connect(distortion);
+        distortion.connect(compressor);
+        compressor.connect(gain);
+
+        // Add delay for depth
+        compressor.connect(delay);
+        delay.connect(delayGain);
+        delayGain.connect(gain);
+
+        gain.connect(this.sfxGain);
+
+        source.start(0, sample.start, sample.duration);
+
+        // Add sub bass hit for impact
+        this.playSubBassHit();
+    }
+
+    /**
+     * Synthesized drop sound (fallback if MP3 not loaded)
+     */
+    playSynthesizedDrop() {
+        if (!this.ensureReady()) return;
+
+        const now = this.context.currentTime;
+
+        // Deep sub drop
+        const sub = this.context.createOscillator();
+        sub.type = 'sine';
+        sub.frequency.setValueAtTime(100, now);
+        sub.frequency.exponentialRampToValueAtTime(30, now + 2);
+
+        const subGain = this.context.createGain();
+        subGain.gain.setValueAtTime(0, now);
+        subGain.gain.linearRampToValueAtTime(0.5, now + 0.3);
+        subGain.gain.exponentialRampToValueAtTime(0.01, now + 3);
+
+        sub.connect(subGain);
+        subGain.connect(this.sfxGain);
+        sub.start(now);
+        sub.stop(now + 3);
+
+        // Dark noise sweep
+        const bufferSize = this.context.sampleRate * 3;
+        const noiseBuffer = this.context.createBuffer(1, bufferSize, this.context.sampleRate);
+        const data = noiseBuffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+            data[i] = Math.random() * 2 - 1;
+        }
+
+        const noise = this.context.createBufferSource();
+        noise.buffer = noiseBuffer;
+
+        const noiseFilter = this.context.createBiquadFilter();
+        noiseFilter.type = 'bandpass';
+        noiseFilter.frequency.setValueAtTime(100, now);
+        noiseFilter.frequency.exponentialRampToValueAtTime(2000, now + 1.5);
+        noiseFilter.frequency.exponentialRampToValueAtTime(500, now + 3);
+        noiseFilter.Q.value = 5;
+
+        const noiseGain = this.context.createGain();
+        noiseGain.gain.setValueAtTime(0, now);
+        noiseGain.gain.linearRampToValueAtTime(0.3, now + 0.5);
+        noiseGain.gain.exponentialRampToValueAtTime(0.01, now + 3);
+
+        noise.connect(noiseFilter);
+        noiseFilter.connect(noiseGain);
+        noiseGain.connect(this.sfxGain);
+        noise.start(now);
+        noise.stop(now + 3);
+
+        // Distorted digital artifacts
+        for (let i = 0; i < 5; i++) {
+            const glitch = this.context.createOscillator();
+            glitch.type = 'square';
+            glitch.frequency.value = 200 + Math.random() * 500;
+
+            const glitchGain = this.context.createGain();
+            const glitchTime = now + 0.2 + Math.random() * 0.5;
+            glitchGain.gain.setValueAtTime(0, now);
+            glitchGain.gain.setValueAtTime(0.2, glitchTime);
+            glitchGain.gain.setValueAtTime(0, glitchTime + 0.05 + Math.random() * 0.1);
+
+            glitch.connect(glitchGain);
+            glitchGain.connect(this.sfxGain);
+            glitch.start(now);
+            glitch.stop(now + 2);
+        }
+    }
+
+    /**
+     * Play a sub bass hit for impact
+     */
+    playSubBassHit() {
+        if (!this.ensureReady()) return;
+
+        const now = this.context.currentTime;
+
+        const osc = this.context.createOscillator();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(60, now);
+        osc.frequency.exponentialRampToValueAtTime(20, now + 0.5);
+
+        const gain = this.context.createGain();
+        gain.gain.setValueAtTime(0.6, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+
+        osc.connect(gain);
+        gain.connect(this.sfxGain);
+        osc.start(now);
+        osc.stop(now + 0.5);
+    }
+
+    /**
+     * Stop the current music source
+     */
+    stopCurrentMusic() {
+        if (this.currentMusicSource) {
+            try {
+                this.currentMusicSource.stop();
+                this.currentMusicSource.disconnect();
+            } catch (e) {}
+            this.currentMusicSource = null;
         }
     }
 
@@ -794,6 +1091,7 @@ class AudioSystem {
      * Stop all music
      */
     stopMusic() {
+        // Stop procedural music nodes
         this.musicNodes.forEach(node => {
             try {
                 node.stop();
@@ -801,6 +1099,10 @@ class AudioSystem {
             } catch (e) {}
         });
         this.musicNodes = [];
+
+        // Also stop any MP3-based music
+        this.stopCurrentMusic();
+
         this.currentMusic = null;
     }
 

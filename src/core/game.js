@@ -1778,10 +1778,24 @@ class Game {
         this.state = 'playing';
         this.runStartTime = Date.now();
         const char = this.characterSystem.getSelected();
-        this.hud.addMessage(`${char.name} ONLINE - SIMULATION INITIALIZED`, 'system');
 
-        // Start gameplay music
-        this.audio.startGameplayMusic();
+        // Play simulation drop sound - you're being thrown into the AI simulation
+        this.audio.playSimulationDrop();
+
+        // Visual effect - flash and shake to feel like dropping in
+        this.renderer.flash('#00f0ff', 0.8);
+        setTimeout(() => this.renderer.flash('#ff00aa', 0.5), 200);
+        this.camera.addShake(20, 45);
+
+        // Delayed message for immersion
+        setTimeout(() => {
+            this.hud.addMessage(`${char.name} ONLINE - SIMULATION INITIALIZED`, 'system');
+        }, 500);
+
+        // Start gameplay music after the drop sound settles
+        setTimeout(() => {
+            this.audio.startGameplayMusic();
+        }, 2500);
     }
 
     /**

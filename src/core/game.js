@@ -2859,9 +2859,10 @@ class Game {
                         this.spawnTeleportParticles(enemy.x, enemy.y);
                     }
 
-                    // Gain cycles from kill (with upgrade multiplier + meta bonus)
+                    // Gain cycles from kill (with upgrade multiplier + meta bonus + character bonus)
                     const metaCycleBonus = 1 + (this.player.metaBonuses?.cycleBonus || 0);
-                    const cycleGain = Math.floor(50 * this.upgradeSystem.modifiers.cycleGainMultiplier * metaCycleBonus);
+                    const charCycleBonus = 1 + (this.player.characterSpecial?.cycleBonus || 0);
+                    const cycleGain = Math.floor(50 * this.upgradeSystem.modifiers.cycleGainMultiplier * metaCycleBonus * charCycleBonus);
                     this.cycles.gain(cycleGain);
                     this.killCount++;
                     this.totalKills++;
@@ -2873,8 +2874,10 @@ class Game {
                     // Add special meter on kill
                     this.player.addSpecialMeter(10);
 
-                    // Heal player on kill
-                    const healAmount = 10;
+                    // Heal player on kill (base 10 + character kill heal bonus)
+                    const baseHeal = 10;
+                    const killHealBonus = this.player.characterSpecial?.killHeal || 0;
+                    const healAmount = baseHeal + killHealBonus;
                     this.player.health = Math.min(this.player.health + healAmount, this.player.maxHealth);
 
                     // Gain blade XP from kill (with upgrade multiplier + character + meta bonus)

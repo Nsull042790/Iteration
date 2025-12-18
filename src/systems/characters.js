@@ -189,6 +189,52 @@ class CharacterSystem {
                     description: 'Heal 1 HP per second',
                     regenRate: 1.0  // HP per second (buffed from 0.5)
                 }
+            },
+            {
+                id: 'void',
+                name: 'VOID',
+                subtitle: 'Hollow One',
+                description: 'Ancient vessel. Empty but powerful.',
+                inspiration: 'Hollow Knight',
+                stats: {
+                    health: 85,
+                    damage: 100,
+                    speed: 115,
+                    attackSpeed: 110
+                },
+                color: '#ff71ce',      // Vaporwave pink
+                secondaryColor: '#01cdfe', // Vaporwave cyan
+                eyeColor: '#000000',   // Hollow black eyes
+                accentColor: '#b967ff', // Vaporwave purple
+                style: 'hollow',
+                special: {
+                    name: 'SOUL',
+                    description: 'Kills restore 3 HP',
+                    killHeal: 3
+                }
+            },
+            {
+                id: 'neon',
+                name: 'NEON',
+                subtitle: 'Sunset Runner',
+                description: 'Pure aesthetic. Retro future warrior.',
+                inspiration: 'Vaporwave/Synthwave',
+                stats: {
+                    health: 90,
+                    damage: 90,
+                    speed: 120,
+                    attackSpeed: 105
+                },
+                color: '#f222ff',       // Hot pink
+                secondaryColor: '#ffb347', // Sunset orange
+                eyeColor: '#00ffff',    // Cyan eyes
+                accentColor: '#ff6b6b', // Coral
+                style: 'vapor',
+                special: {
+                    name: 'AESTHETIC',
+                    description: '+15% cycle gain',
+                    cycleBonus: 0.15
+                }
             }
         ];
     }
@@ -237,6 +283,7 @@ class CharacterSystem {
         player.characterColor = char.color;
         player.characterSecondaryColor = char.secondaryColor;
         player.characterEyeColor = char.eyeColor;
+        player.characterAccentColor = char.accentColor || char.color;
         player.characterStyle = char.style;
         player.characterId = char.id;
 

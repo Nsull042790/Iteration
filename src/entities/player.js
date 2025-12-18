@@ -503,6 +503,17 @@ class Player extends Entity {
         // Get colors: suit (equipped) > character (selected) > default
         const bodyColor = this.suitBodyColor || this.characterColor || GAME_CONFIG.COLORS.PLAYER;
         const coreColor = this.suitCoreColor || this.characterSecondaryColor || GAME_CONFIG.COLORS.PLAYER_CORE;
+        const accentColor = this.characterAccentColor || bodyColor;
+
+        // Use special render for hollow/vapor styles
+        if (this.characterStyle === 'hollow') {
+            this.renderHollowBody(ctx, screenPos, bodyColor, coreColor, accentColor);
+            return;
+        }
+        if (this.characterStyle === 'vapor') {
+            this.renderVaporBody(ctx, screenPos, bodyColor, coreColor, accentColor);
+            return;
+        }
 
         ctx.save();
 
@@ -547,6 +558,181 @@ class Player extends Entity {
         ctx.rotate(armAngle);
         ctx.fillRect(0, -2, 14, 4);
         ctx.restore();
+
+        ctx.restore();
+    }
+
+    /**
+     * Render Hollow Knight-inspired body (VOID character)
+     * Small cloaked figure with mask-like face
+     */
+    renderHollowBody(ctx, screenPos, bodyColor, coreColor, accentColor) {
+        const centerX = screenPos.x + this.width / 2;
+        const legOffset = this.state === 'run' ? Math.sin(this.animationFrame * 0.8) * 3 : 0;
+        const bobOffset = Math.sin(this.animationFrame * 0.3) * 1.5;
+
+        ctx.save();
+
+        // Ethereal glow effect
+        ctx.shadowColor = coreColor;
+        ctx.shadowBlur = 20;
+
+        // Cloak/body - flowing shape
+        ctx.fillStyle = bodyColor;
+        ctx.beginPath();
+        ctx.moveTo(centerX - 10, screenPos.y + 18);
+        ctx.quadraticCurveTo(centerX - 14, screenPos.y + 35, centerX - 8 + legOffset, screenPos.y + 46);
+        ctx.lineTo(centerX + 8 - legOffset, screenPos.y + 46);
+        ctx.quadraticCurveTo(centerX + 14, screenPos.y + 35, centerX + 10, screenPos.y + 18);
+        ctx.closePath();
+        ctx.fill();
+
+        // Mask/head - iconic horn shape
+        ctx.fillStyle = '#ffffff';
+        ctx.shadowBlur = 25;
+        ctx.shadowColor = accentColor;
+        ctx.beginPath();
+        // Main mask oval
+        ctx.ellipse(centerX, screenPos.y + 12 + bobOffset, 9, 11, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Left horn
+        ctx.beginPath();
+        ctx.moveTo(centerX - 6, screenPos.y + 5 + bobOffset);
+        ctx.quadraticCurveTo(centerX - 12, screenPos.y - 8 + bobOffset, centerX - 8, screenPos.y - 12 + bobOffset);
+        ctx.quadraticCurveTo(centerX - 4, screenPos.y - 6 + bobOffset, centerX - 4, screenPos.y + 5 + bobOffset);
+        ctx.fill();
+
+        // Right horn
+        ctx.beginPath();
+        ctx.moveTo(centerX + 6, screenPos.y + 5 + bobOffset);
+        ctx.quadraticCurveTo(centerX + 12, screenPos.y - 8 + bobOffset, centerX + 8, screenPos.y - 12 + bobOffset);
+        ctx.quadraticCurveTo(centerX + 4, screenPos.y - 6 + bobOffset, centerX + 4, screenPos.y + 5 + bobOffset);
+        ctx.fill();
+
+        // Hollow eyes (black voids)
+        ctx.fillStyle = '#000000';
+        ctx.shadowBlur = 0;
+        ctx.beginPath();
+        ctx.ellipse(centerX - 4, screenPos.y + 10 + bobOffset, 2.5, 4, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.ellipse(centerX + 4, screenPos.y + 10 + bobOffset, 2.5, 4, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Inner void glow in eyes
+        ctx.fillStyle = coreColor;
+        ctx.globalAlpha = 0.3 + Math.sin(this.animationFrame * 0.1) * 0.2;
+        ctx.beginPath();
+        ctx.ellipse(centerX - 4, screenPos.y + 11 + bobOffset, 1.5, 2, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.ellipse(centerX + 4, screenPos.y + 11 + bobOffset, 1.5, 2, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+
+        // Arm holding blade
+        ctx.fillStyle = bodyColor;
+        ctx.shadowColor = coreColor;
+        ctx.shadowBlur = 10;
+        const armAngle = this.isAttacking
+            ? Utils.degToRad(this.bladeAngle - (this.facingRight ? 0 : 180))
+            : Utils.degToRad(this.facingRight ? 30 : 150);
+
+        ctx.save();
+        ctx.translate(centerX + (this.facingRight ? 5 : -5), screenPos.y + 22);
+        ctx.rotate(armAngle);
+        ctx.fillRect(0, -2, 12, 4);
+        ctx.restore();
+
+        ctx.restore();
+    }
+
+    /**
+     * Render Vaporwave aesthetic body (NEON character)
+     * Glowing retro-future warrior with sunset gradient
+     */
+    renderVaporBody(ctx, screenPos, bodyColor, coreColor, accentColor) {
+        const centerX = screenPos.x + this.width / 2;
+        const legOffset = this.state === 'run' ? Math.sin(this.animationFrame * 0.8) * 4 : 0;
+        const pulse = Math.sin(this.animationFrame * 0.15) * 0.3 + 0.7;
+
+        ctx.save();
+
+        // Create sunset gradient for body
+        const gradient = ctx.createLinearGradient(centerX, screenPos.y, centerX, screenPos.y + 46);
+        gradient.addColorStop(0, bodyColor);
+        gradient.addColorStop(0.5, accentColor);
+        gradient.addColorStop(1, coreColor);
+
+        // Intense neon glow
+        ctx.shadowColor = bodyColor;
+        ctx.shadowBlur = 25 * pulse;
+
+        // Head with visor
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(centerX, screenPos.y + 10, 9, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Visor/eyes - horizontal line
+        ctx.fillStyle = this.characterEyeColor || '#00ffff';
+        ctx.shadowColor = this.characterEyeColor || '#00ffff';
+        ctx.shadowBlur = 15;
+        ctx.fillRect(centerX - 7, screenPos.y + 8, 14, 3);
+
+        // Scan line effect on visor
+        const scanLine = (this.animationFrame % 30) / 30;
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+        ctx.fillRect(centerX - 7, screenPos.y + 8 + scanLine * 3, 14, 1);
+
+        // Torso with gradient
+        ctx.fillStyle = gradient;
+        ctx.shadowColor = coreColor;
+        ctx.shadowBlur = 20;
+        ctx.fillRect(centerX - 7, screenPos.y + 16, 14, 16);
+
+        // Grid lines on torso (retro aesthetic)
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+        ctx.lineWidth = 1;
+        for (let i = 0; i < 3; i++) {
+            ctx.beginPath();
+            ctx.moveTo(centerX - 7, screenPos.y + 20 + i * 5);
+            ctx.lineTo(centerX + 7, screenPos.y + 20 + i * 5);
+            ctx.stroke();
+        }
+
+        // Legs
+        ctx.fillStyle = gradient;
+        ctx.shadowBlur = 15;
+        ctx.fillRect(centerX - 6, screenPos.y + 32, 5, 14 + legOffset);
+        ctx.fillRect(centerX + 1, screenPos.y + 32, 5, 14 - legOffset);
+
+        // Arm
+        const armAngle = this.isAttacking
+            ? Utils.degToRad(this.bladeAngle - (this.facingRight ? 0 : 180))
+            : Utils.degToRad(this.facingRight ? 20 : 160);
+
+        ctx.save();
+        ctx.translate(centerX, screenPos.y + 20);
+        ctx.rotate(armAngle);
+        ctx.fillRect(0, -2, 14, 4);
+        ctx.restore();
+
+        // Trailing particles for aesthetic
+        if (Math.random() < 0.3) {
+            ctx.fillStyle = bodyColor;
+            ctx.globalAlpha = 0.5;
+            ctx.beginPath();
+            ctx.arc(
+                centerX + (Math.random() - 0.5) * 20,
+                screenPos.y + 30 + Math.random() * 20,
+                2,
+                0,
+                Math.PI * 2
+            );
+            ctx.fill();
+        }
 
         ctx.restore();
     }

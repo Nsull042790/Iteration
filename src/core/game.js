@@ -16,9 +16,11 @@ class Game {
         this.hud = new HUD(canvas);
 
         // Game state
-        this.state = 'loading'; // loading, title, controls, playing, paused, gameover
+        this.state = 'loading'; // loading, title, controls, playing, paused, gameover, victory
         this.isPaused = false;
         this.showingFAQ = false;
+        this.victoryActive = false;
+        this.victoryWaiting = false; // True during 3-second window after beating final boss
 
         // Timing
         this.lastTime = 0;
@@ -118,7 +120,8 @@ class Game {
         // Setup pause handler
         window.addEventListener('keydown', (e) => {
             if (e.code === 'Escape' || e.code === 'KeyP') {
-                if (this.state === 'playing') {
+                // Don't allow pause during victory sequence or victory wait
+                if (this.state === 'playing' && !this.victoryWaiting && !this.victoryActive) {
                     this.togglePause();
                 }
             }
@@ -645,8 +648,12 @@ class Game {
         // Check for game victory (beat level 12 - CORRUPTED CORE)
         const FINAL_LEVEL = 12;
         if (completedLevel >= FINAL_LEVEL) {
-            // Player beat the game!
+            // Player beat the game! Enter victory wait state (prevents pausing)
+            this.victoryWaiting = true;
+            this.hud.addMessage('◈ SIMULATION COLLAPSE IMMINENT ◈', 'warning');
+
             setTimeout(() => {
+                this.victoryWaiting = false;
                 this.showVictoryScreen(completedLevel);
             }, 3000);
             return;
@@ -948,14 +955,14 @@ class Game {
 
     /**
      * Show victory screen - player beat the game!
+     * Epic cinematic ending sequence
      */
     showVictoryScreen(finalLevel) {
         this.state = 'victory';
         this.isPaused = true;
 
-        // Stop gameplay music, play victory fanfare
+        // Stop gameplay music
         this.audio.stopMusic();
-        this.audio.playLevelUp();
 
         // Calculate final stats
         const totalTime = Math.floor((Date.now() - this.runStartTime) / 1000);
@@ -963,103 +970,613 @@ class Game {
         const seconds = totalTime % 60;
         const finalCycles = this.cycles.getCycles();
         const bladeTier = this.bladeEvolution.getCurrentTier();
+        const char = this.characterSystem.getSelected();
 
         // Submit to leaderboard
-        const char = this.characterSystem.getSelected();
         this.leaderboard.submitScore(char.name, finalLevel, this.totalKills, finalCycles);
 
-        const modal = document.getElementById('upgrade-modal');
-        const choicesContainer = document.getElementById('upgrade-choices');
-        const title = modal.querySelector('.upgrade-title');
-        const subtitle = modal.querySelector('.modal-subtitle');
-        const hint = modal.querySelector('.upgrade-hint');
-
-        if (hint) hint.style.display = 'none';
-
-        // Epic animated title
-        if (title) title.innerHTML = '<span style="animation: pulse 0.5s infinite; color: #ffff00;">◆ ITERATION COMPLETE ◆</span>';
-        if (subtitle) subtitle.textContent = '// THE CYCLE HAS BEEN BROKEN';
-
-        choicesContainer.innerHTML = `
-            <div style="text-align: center; padding: 20px; animation: fadeIn 1s ease-out;">
-                <div style="font-size: 64px; margin-bottom: 20px; animation: pulse 1s infinite;">
-                    👑
-                </div>
-
-                <div style="font-size: 14px; color: #00f0ff; letter-spacing: 3px; margin-bottom: 30px;">
-                    YOU HAVE DEFEATED THE CORRUPTED CORE
-                </div>
-
-                <div style="background: linear-gradient(180deg, rgba(255,215,0,0.1) 0%, rgba(0,0,0,0.3) 100%);
-                            border: 2px solid #ffd700; padding: 25px; margin-bottom: 25px;">
-                    <div style="font-size: 12px; color: rgba(255,255,255,0.5); letter-spacing: 2px; margin-bottom: 15px;">
-                        FINAL STATISTICS
-                    </div>
-                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;">
-                        <div>
-                            <div style="font-size: 11px; color: rgba(255,255,255,0.4);">LEVELS CLEARED</div>
-                            <div style="font-size: 28px; color: #00f0ff; font-weight: bold;">${finalLevel}</div>
-                        </div>
-                        <div>
-                            <div style="font-size: 11px; color: rgba(255,255,255,0.4);">TOTAL KILLS</div>
-                            <div style="font-size: 28px; color: #ff00aa; font-weight: bold;">${this.totalKills}</div>
-                        </div>
-                        <div>
-                            <div style="font-size: 11px; color: rgba(255,255,255,0.4);">CYCLES EARNED</div>
-                            <div style="font-size: 28px; color: #ffff00; font-weight: bold;">${finalCycles}</div>
-                        </div>
-                        <div>
-                            <div style="font-size: 11px; color: rgba(255,255,255,0.4);">TIME</div>
-                            <div style="font-size: 28px; color: #00ff88; font-weight: bold;">${minutes}:${seconds.toString().padStart(2, '0')}</div>
-                        </div>
-                    </div>
-                    <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,215,0,0.3);">
-                        <div style="font-size: 11px; color: rgba(255,255,255,0.4);">FINAL BLADE</div>
-                        <div style="font-size: 18px; color: ${bladeTier.color}; font-weight: bold;">${bladeTier.name}</div>
-                    </div>
-                </div>
-
-                <div style="font-size: 12px; color: rgba(255,255,255,0.5); margin-bottom: 25px; line-height: 1.8; font-style: italic;">
-                    "The simulation ends, but the warrior endures.<br>
-                    Your data has been preserved in the eternal archive."
-                </div>
-
-                <button id="victory-menu-btn" class="start-btn" style="padding: 18px 50px; background: linear-gradient(180deg, #ffd700 0%, #ff8c00 100%); border-color: #ffd700;">
-                    <span class="btn-text" style="color: #000;">RETURN TO TITLE</span>
-                </button>
-
-                <div style="margin-top: 20px; font-size: 11px; color: rgba(255,255,255,0.3);">
-                    Press SPACE to continue
-                </div>
-            </div>
-        `;
-
-        modal.classList.remove('hidden');
-
-        // Multiple celebration effects
-        this.renderer.flash('#ffd700', 0.8);
-        setTimeout(() => this.renderer.flash('#ff00aa', 0.5), 300);
-        setTimeout(() => this.renderer.flash('#00f0ff', 0.4), 600);
-        this.camera.addShake(15, 60);
-
-        const handleReturn = () => {
-            modal.classList.add('hidden');
-            if (hint) hint.style.display = '';
-            window.removeEventListener('keydown', handleReturnKey);
-            if (title) title.textContent = 'EVOLUTION DETECTED';
-            if (subtitle) subtitle.textContent = '// SELECT UPGRADE PROTOCOL';
-            this.returnToMainMenu();
+        // Store stats for rendering
+        this.victoryStats = {
+            finalLevel,
+            totalKills: this.totalKills,
+            finalCycles,
+            time: `${minutes}:${seconds.toString().padStart(2, '0')}`,
+            bladeTier,
+            characterName: char.name
         };
 
-        const handleReturnKey = (e) => {
-            if (e.code === 'Space' || e.code === 'Enter') {
-                e.preventDefault();
-                handleReturn();
+        // Initialize victory sequence
+        this.victoryPhase = 0;
+        this.victoryTimer = 0;
+        this.victoryActive = true;
+        this.victoryMatrixRain = [];
+        this.victoryTextIndex = 0;
+        this.victorySkipEnabled = false;
+
+        // Initialize matrix rain drops
+        const cols = Math.floor(this.canvas.width / 20);
+        for (let i = 0; i < cols; i++) {
+            this.victoryMatrixRain.push({
+                x: i * 20,
+                y: Math.random() * -500,
+                speed: 3 + Math.random() * 5,
+                chars: this.generateMatrixColumn()
+            });
+        }
+
+        // Victory epilogue text
+        this.victoryEpilogue = [
+            "CORRUPTED_CORE.exe terminated",
+            "Simulation integrity: COLLAPSED",
+            "Data extraction: COMPLETE",
+            "",
+            "You have broken free from the infinite loop.",
+            "The AI construct that held you prisoner...",
+            "...has been destroyed.",
+            "",
+            "But in the digital void, nothing truly ends.",
+            "Your victories echo through the network.",
+            "Your ghost data persists.",
+            "",
+            "Until the next iteration begins..."
+        ];
+
+        // Start the sequence
+        this.startVictoryPhase(0);
+    }
+
+    /**
+     * Generate matrix-style character column
+     */
+    generateMatrixColumn() {
+        const chars = [];
+        const matrixChars = "01アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン";
+        for (let i = 0; i < 25; i++) {
+            chars.push(matrixChars[Math.floor(Math.random() * matrixChars.length)]);
+        }
+        return chars;
+    }
+
+    /**
+     * Start a victory sequence phase
+     */
+    startVictoryPhase(phase) {
+        this.victoryPhase = phase;
+        this.victoryTimer = 0;
+
+        switch(phase) {
+            case 0: // SYSTEM DESTABILIZING
+                this.camera.addShake(30, 120);
+                this.audio.playExplosion();
+                break;
+            case 1: // Matrix rain + CORE DESTROYED
+                this.audio.playLevelUp();
+                this.renderer.flash('#ff0000', 1.0);
+                setTimeout(() => this.renderer.flash('#ffffff', 0.8), 200);
+                this.camera.addShake(50, 90);
+                break;
+            case 2: // Story epilogue
+                this.victoryTextIndex = 0;
+                break;
+            case 3: // Stats reveal
+                this.audio.playLevelUp();
+                this.renderer.flash('#ffd700', 0.6);
+                break;
+            case 4: // Final screen - enable skip
+                this.victorySkipEnabled = true;
+                break;
+        }
+    }
+
+    /**
+     * Update victory sequence
+     */
+    updateVictorySequence() {
+        if (!this.victoryActive) return;
+
+        this.victoryTimer++;
+
+        // Update matrix rain
+        this.victoryMatrixRain.forEach(drop => {
+            drop.y += drop.speed;
+            if (drop.y > this.canvas.height + 200) {
+                drop.y = -300;
+                drop.chars = this.generateMatrixColumn();
             }
-        };
+        });
 
-        document.getElementById('victory-menu-btn').addEventListener('click', handleReturn);
-        window.addEventListener('keydown', handleReturnKey);
+        // Phase transitions
+        switch(this.victoryPhase) {
+            case 0: // DESTABILIZING -> CORE DESTROYED
+                if (this.victoryTimer > 180) { // 3 seconds
+                    this.startVictoryPhase(1);
+                }
+                break;
+            case 1: // CORE DESTROYED -> Epilogue
+                if (this.victoryTimer > 240) { // 4 seconds
+                    this.startVictoryPhase(2);
+                }
+                break;
+            case 2: // Epilogue -> Stats
+                // Text appears over time
+                if (this.victoryTimer % 45 === 0 && this.victoryTextIndex < this.victoryEpilogue.length) {
+                    this.victoryTextIndex++;
+                }
+                if (this.victoryTimer > 45 * (this.victoryEpilogue.length + 4)) {
+                    this.startVictoryPhase(3);
+                }
+                break;
+            case 3: // Stats -> Final
+                if (this.victoryTimer > 300) { // 5 seconds
+                    this.startVictoryPhase(4);
+                }
+                break;
+        }
+
+        // Check for skip (after phase 1)
+        if (this.victoryPhase >= 1 && (this.input.isKeyPressed('Space') || this.input.isKeyPressed('Enter'))) {
+            if (this.victoryPhase < 4) {
+                this.startVictoryPhase(4);
+            } else {
+                this.endVictorySequence();
+            }
+        }
+    }
+
+    /**
+     * Render victory sequence
+     */
+    renderVictorySequence(ctx) {
+        if (!this.victoryActive) return;
+
+        const w = this.canvas.width;
+        const h = this.canvas.height;
+
+        // Dark background with vignette
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.95)';
+        ctx.fillRect(0, 0, w, h);
+
+        // Matrix rain (always visible after phase 0)
+        if (this.victoryPhase >= 1) {
+            this.renderMatrixRain(ctx);
+        }
+
+        // Phase-specific content
+        switch(this.victoryPhase) {
+            case 0:
+                this.renderDestabilizingPhase(ctx);
+                break;
+            case 1:
+                this.renderCoreDestroyedPhase(ctx);
+                break;
+            case 2:
+                this.renderEpiloguePhase(ctx);
+                break;
+            case 3:
+            case 4:
+                this.renderStatsPhase(ctx);
+                break;
+        }
+
+        // Skip hint
+        if (this.victoryPhase >= 1 && this.victoryPhase < 4) {
+            ctx.font = '14px "Share Tech Mono", monospace';
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.textAlign = 'center';
+            ctx.fillText('[ PRESS SPACE TO SKIP ]', w / 2, h - 30);
+        }
+    }
+
+    /**
+     * Render matrix rain effect
+     */
+    renderMatrixRain(ctx) {
+        ctx.font = '16px "Share Tech Mono", monospace';
+
+        this.victoryMatrixRain.forEach(drop => {
+            drop.chars.forEach((char, i) => {
+                const y = drop.y - i * 20;
+                if (y > 0 && y < this.canvas.height) {
+                    const alpha = i === 0 ? 1 : Math.max(0, 1 - i * 0.08);
+                    const green = i === 0 ? 255 : Math.max(100, 255 - i * 15);
+                    ctx.fillStyle = `rgba(0, ${green}, ${Math.floor(green * 0.4)}, ${alpha * 0.7})`;
+                    ctx.fillText(char, drop.x, y);
+                }
+            });
+        });
+    }
+
+    /**
+     * Render "SYSTEM DESTABILIZING" phase
+     */
+    renderDestabilizingPhase(ctx) {
+        const w = this.canvas.width;
+        const h = this.canvas.height;
+        const progress = this.victoryTimer / 180;
+
+        // Glitch lines
+        for (let i = 0; i < 20; i++) {
+            if (Math.random() < 0.3) {
+                const y = Math.random() * h;
+                const glitchW = Math.random() * 300 + 100;
+                ctx.fillStyle = `rgba(255, 0, 0, ${Math.random() * 0.5})`;
+                ctx.fillRect(Math.random() * w, y, glitchW, 2);
+            }
+        }
+
+        // Warning text
+        ctx.save();
+        const shake = Math.sin(this.victoryTimer * 0.5) * 5;
+        ctx.translate(shake, shake * 0.5);
+
+        ctx.font = 'bold 24px "Share Tech Mono", monospace';
+        ctx.textAlign = 'center';
+
+        // Flickering warning
+        if (this.victoryTimer % 10 < 7) {
+            ctx.fillStyle = '#ff0000';
+            ctx.fillText('⚠ WARNING ⚠', w / 2, h / 2 - 80);
+        }
+
+        ctx.font = 'bold 48px "Share Tech Mono", monospace';
+        const destabText = 'SYSTEM DESTABILIZING';
+
+        // Glitch effect on text
+        for (let i = 0; i < 3; i++) {
+            const offsetX = (Math.random() - 0.5) * 10 * progress;
+            const offsetY = (Math.random() - 0.5) * 5;
+            ctx.fillStyle = ['#ff0000', '#00ff00', '#0000ff'][i];
+            ctx.globalAlpha = 0.3;
+            ctx.fillText(destabText, w / 2 + offsetX, h / 2 + offsetY);
+        }
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText(destabText, w / 2, h / 2);
+
+        // Progress bar
+        const barW = 400;
+        const barH = 20;
+        const barX = (w - barW) / 2;
+        const barY = h / 2 + 50;
+
+        ctx.strokeStyle = '#ff0000';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(barX, barY, barW, barH);
+
+        ctx.fillStyle = `rgba(255, 0, 0, ${0.5 + Math.sin(this.victoryTimer * 0.2) * 0.3})`;
+        ctx.fillRect(barX + 2, barY + 2, (barW - 4) * progress, barH - 4);
+
+        ctx.font = '16px "Share Tech Mono", monospace';
+        ctx.fillStyle = '#ff6666';
+        ctx.fillText(`CORE INTEGRITY: ${Math.floor((1 - progress) * 100)}%`, w / 2, barY + 50);
+
+        ctx.restore();
+    }
+
+    /**
+     * Render "CORRUPTED CORE DESTROYED" phase
+     */
+    renderCoreDestroyedPhase(ctx) {
+        const w = this.canvas.width;
+        const h = this.canvas.height;
+        const progress = Math.min(this.victoryTimer / 60, 1);
+
+        // Explosion particles
+        if (this.victoryTimer < 60) {
+            for (let i = 0; i < 30; i++) {
+                const angle = (i / 30) * Math.PI * 2;
+                const dist = this.victoryTimer * 8;
+                const x = w / 2 + Math.cos(angle) * dist;
+                const y = h / 2 + Math.sin(angle) * dist;
+                const size = 10 - (this.victoryTimer / 60) * 8;
+                if (size > 0) {
+                    ctx.fillStyle = ['#ff0000', '#ff6600', '#ffff00', '#ffffff'][i % 4];
+                    ctx.beginPath();
+                    ctx.arc(x, y, size, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+        }
+
+        // Main text with dramatic entrance
+        ctx.save();
+
+        const scale = progress < 0.3 ? progress / 0.3 * 1.5 : 1.5 - (progress - 0.3) * 0.7;
+        ctx.translate(w / 2, h / 2);
+        ctx.scale(scale, scale);
+        ctx.translate(-w / 2, -h / 2);
+
+        // Glow effect
+        ctx.shadowColor = '#ff0000';
+        ctx.shadowBlur = 30 + Math.sin(this.victoryTimer * 0.1) * 10;
+
+        ctx.font = 'bold 56px "Share Tech Mono", monospace';
+        ctx.textAlign = 'center';
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText('CORRUPTED CORE', w / 2, h / 2 - 20);
+
+        ctx.shadowColor = '#00ff00';
+        ctx.fillStyle = '#00ff00';
+        ctx.fillText('DESTROYED', w / 2, h / 2 + 50);
+
+        ctx.restore();
+
+        // Corner decorations
+        this.drawVictoryCornerBrackets(ctx, w, h, '#00ff00', progress);
+    }
+
+    /**
+     * Render epilogue text phase
+     */
+    renderEpiloguePhase(ctx) {
+        const w = this.canvas.width;
+        const h = this.canvas.height;
+
+        // Semi-transparent overlay to dim matrix rain
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        ctx.fillRect(0, 0, w, h);
+
+        ctx.font = '18px "Share Tech Mono", monospace';
+        ctx.textAlign = 'center';
+
+        const startY = h / 2 - (this.victoryEpilogue.length * 15);
+
+        for (let i = 0; i < this.victoryTextIndex && i < this.victoryEpilogue.length; i++) {
+            const line = this.victoryEpilogue[i];
+            const y = startY + i * 35;
+
+            // Fade in effect for newest line
+            const alpha = i === this.victoryTextIndex - 1 ?
+                Math.min((this.victoryTimer % 45) / 15, 1) : 1;
+
+            if (line.includes('CORRUPTED') || line.includes('COLLAPSED') || line.includes('COMPLETE')) {
+                ctx.fillStyle = `rgba(255, 0, 100, ${alpha})`;
+            } else if (line.includes('destroyed') || line.includes('broken free')) {
+                ctx.fillStyle = `rgba(0, 255, 100, ${alpha})`;
+            } else if (line.includes('iteration')) {
+                ctx.fillStyle = `rgba(0, 240, 255, ${alpha})`;
+            } else {
+                ctx.fillStyle = `rgba(200, 200, 200, ${alpha})`;
+            }
+
+            ctx.fillText(line, w / 2, y);
+        }
+    }
+
+    /**
+     * Render final stats phase
+     */
+    renderStatsPhase(ctx) {
+        const w = this.canvas.width;
+        const h = this.canvas.height;
+        const stats = this.victoryStats;
+        const progress = Math.min(this.victoryTimer / 60, 1);
+
+        // Dim overlay
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
+        ctx.fillRect(0, 0, w, h);
+
+        // Title with golden glow
+        ctx.save();
+        ctx.shadowColor = '#ffd700';
+        ctx.shadowBlur = 20 + Math.sin(this.victoryTimer * 0.05) * 10;
+
+        ctx.font = 'bold 52px "Share Tech Mono", monospace';
+        ctx.textAlign = 'center';
+        ctx.fillStyle = '#ffd700';
+        ctx.fillText('◆ ITERATION COMPLETE ◆', w / 2, 100);
+        ctx.restore();
+
+        ctx.font = '18px "Share Tech Mono", monospace';
+        ctx.fillStyle = '#00f0ff';
+        ctx.fillText('THE CYCLE HAS BEEN BROKEN', w / 2, 140);
+
+        // Character name
+        ctx.font = '24px "Share Tech Mono", monospace';
+        ctx.fillStyle = '#ff00aa';
+        ctx.fillText(`[ ${stats.characterName} ]`, w / 2, 190);
+
+        // Stats box
+        const boxW = 500;
+        const boxH = 280;
+        const boxX = (w - boxW) / 2;
+        const boxY = 220;
+
+        // Box background
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+        ctx.fillRect(boxX, boxY, boxW, boxH);
+
+        // Box border with gradient
+        ctx.strokeStyle = '#ffd700';
+        ctx.lineWidth = 3;
+        ctx.strokeRect(boxX, boxY, boxW, boxH);
+
+        // Inner border
+        ctx.strokeStyle = 'rgba(255, 215, 0, 0.3)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(boxX + 10, boxY + 10, boxW - 20, boxH - 20);
+
+        // Stats grid
+        const statItems = [
+            { label: 'LEVELS CLEARED', value: stats.finalLevel, color: '#00f0ff' },
+            { label: 'TOTAL KILLS', value: stats.totalKills, color: '#ff00aa' },
+            { label: 'CYCLES EARNED', value: stats.finalCycles, color: '#ffff00' },
+            { label: 'TIME', value: stats.time, color: '#00ff88' }
+        ];
+
+        const gridStartX = boxX + 80;
+        const gridStartY = boxY + 60;
+        const colW = 220;
+        const rowH = 80;
+
+        statItems.forEach((stat, i) => {
+            const col = i % 2;
+            const row = Math.floor(i / 2);
+            const x = gridStartX + col * colW;
+            const y = gridStartY + row * rowH;
+
+            // Reveal animation
+            const statProgress = Math.max(0, (progress - i * 0.15) / 0.3);
+            if (statProgress > 0) {
+                ctx.globalAlpha = Math.min(statProgress, 1);
+
+                ctx.font = '12px "Share Tech Mono", monospace';
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+                ctx.textAlign = 'left';
+                ctx.fillText(stat.label, x, y);
+
+                ctx.font = 'bold 36px "Share Tech Mono", monospace';
+                ctx.fillStyle = stat.color;
+                ctx.fillText(stat.value.toString(), x, y + 35);
+
+                ctx.globalAlpha = 1;
+            }
+        });
+
+        // Blade tier
+        if (progress > 0.6) {
+            const bladeAlpha = (progress - 0.6) / 0.4;
+            ctx.globalAlpha = bladeAlpha;
+
+            const bladeY = boxY + boxH - 50;
+            ctx.font = '12px "Share Tech Mono", monospace';
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+            ctx.textAlign = 'center';
+            ctx.fillText('FINAL BLADE', w / 2, bladeY);
+
+            ctx.font = 'bold 24px "Share Tech Mono", monospace';
+            ctx.fillStyle = stats.bladeTier.color;
+            ctx.fillText(stats.bladeTier.name, w / 2, bladeY + 30);
+            ctx.globalAlpha = 1;
+        }
+
+        // Continue prompt (phase 4 only)
+        if (this.victoryPhase === 4) {
+            const pulse = Math.sin(this.victoryTimer * 0.1) * 0.3 + 0.7;
+            ctx.globalAlpha = pulse;
+            ctx.font = '20px "Share Tech Mono", monospace';
+            ctx.fillStyle = '#ffd700';
+            ctx.textAlign = 'center';
+            ctx.fillText('[ PRESS SPACE TO CONTINUE ]', w / 2, h - 60);
+            ctx.globalAlpha = 1;
+        }
+
+        // Draw corner brackets
+        this.drawVictoryCornerBrackets(ctx, w, h, '#ffd700', 1);
+    }
+
+    /**
+     * Draw corner bracket decorations
+     */
+    drawVictoryCornerBrackets(ctx, w, h, color, progress) {
+        const size = 60 * progress;
+        const offset = 30;
+
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 3;
+        ctx.globalAlpha = 0.8;
+
+        // Top-left
+        ctx.beginPath();
+        ctx.moveTo(offset, offset + size);
+        ctx.lineTo(offset, offset);
+        ctx.lineTo(offset + size, offset);
+        ctx.stroke();
+
+        // Top-right
+        ctx.beginPath();
+        ctx.moveTo(w - offset - size, offset);
+        ctx.lineTo(w - offset, offset);
+        ctx.lineTo(w - offset, offset + size);
+        ctx.stroke();
+
+        // Bottom-left
+        ctx.beginPath();
+        ctx.moveTo(offset, h - offset - size);
+        ctx.lineTo(offset, h - offset);
+        ctx.lineTo(offset + size, h - offset);
+        ctx.stroke();
+
+        // Bottom-right
+        ctx.beginPath();
+        ctx.moveTo(w - offset - size, h - offset);
+        ctx.lineTo(w - offset, h - offset);
+        ctx.lineTo(w - offset, h - offset - size);
+        ctx.stroke();
+
+        ctx.globalAlpha = 1;
+    }
+
+    /**
+     * Render visual effects during victory waiting period
+     * Shows the simulation collapsing before full victory sequence
+     */
+    renderVictoryWaitingEffects(ctx) {
+        const w = this.canvas.width;
+        const h = this.canvas.height;
+
+        // Build up effects over 3 seconds (180 frames)
+        if (!this.victoryWaitStartTime) {
+            this.victoryWaitStartTime = Date.now();
+        }
+        const elapsed = (Date.now() - this.victoryWaitStartTime) / 3000; // 0 to 1
+        const intensity = Math.min(elapsed, 1);
+
+        // Increasing red vignette
+        const gradient = ctx.createRadialGradient(w/2, h/2, 0, w/2, h/2, w * 0.7);
+        gradient.addColorStop(0, 'rgba(0, 0, 0, 0)');
+        gradient.addColorStop(0.7, `rgba(255, 0, 0, ${intensity * 0.1})`);
+        gradient.addColorStop(1, `rgba(255, 0, 0, ${intensity * 0.4})`);
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, w, h);
+
+        // Glitch lines
+        const numGlitches = Math.floor(intensity * 15);
+        for (let i = 0; i < numGlitches; i++) {
+            if (Math.random() < 0.5) {
+                const y = Math.random() * h;
+                const glitchW = Math.random() * (100 + intensity * 200);
+                ctx.fillStyle = `rgba(255, 0, 50, ${Math.random() * 0.3 * intensity})`;
+                ctx.fillRect(Math.random() * w, y, glitchW, 2);
+            }
+        }
+
+        // Warning text building up
+        if (intensity > 0.3) {
+            ctx.save();
+            ctx.font = 'bold 24px "Share Tech Mono", monospace';
+            ctx.textAlign = 'center';
+
+            const pulse = Math.sin(Date.now() / 100) > 0;
+            if (pulse) {
+                ctx.fillStyle = `rgba(255, 0, 0, ${0.5 + intensity * 0.5})`;
+                ctx.fillText('⚠ SIMULATION COLLAPSE IMMINENT ⚠', w / 2, 80);
+            }
+
+            // Countdown text
+            const remaining = Math.max(0, 3 - Math.floor((Date.now() - this.victoryWaitStartTime) / 1000));
+            if (intensity > 0.5) {
+                ctx.font = 'bold 48px "Share Tech Mono", monospace';
+                ctx.fillStyle = `rgba(255, 255, 255, ${intensity})`;
+                ctx.fillText(remaining.toString(), w / 2, h / 2);
+            }
+
+            ctx.restore();
+        }
+
+        // Screen shake effect (applied via camera in update)
+        if (Math.random() < intensity * 0.3) {
+            this.camera.addShake(intensity * 5, 5);
+        }
+    }
+
+    /**
+     * End victory sequence and return to menu
+     */
+    endVictorySequence() {
+        this.victoryActive = false;
+        this.victoryWaitStartTime = null;
+        this.returnToMainMenu();
     }
 
     /**
@@ -1909,6 +2426,12 @@ class Game {
         // Update final boss intro sequence (runs even when paused)
         if (this.finalBossIntroActive) {
             this.updateFinalBossIntro();
+        }
+
+        // Update victory sequence (runs independently)
+        if (this.victoryActive) {
+            this.updateVictorySequence();
+            return; // Don't process other updates during victory
         }
 
         // Handle FAQ toggle with H key (works anytime during gameplay)
@@ -3111,6 +3634,11 @@ class Game {
             this.player.render(ctx, this.camera);
         }
 
+        // Render victory waiting effects (simulation collapse building)
+        if (this.victoryWaiting) {
+            this.renderVictoryWaitingEffects(ctx);
+        }
+
         // Render HUD
         this.hud.render(ctx, {
             player: this.player,
@@ -3140,14 +3668,19 @@ class Game {
             this.renderImbueIndicator(ctx, this.canvas.width - 220, 80);
         }
 
-        // Render pause overlay (but not during final boss intro)
-        if (this.isPaused && !this.finalBossIntroActive) {
+        // Render pause overlay (but not during final boss intro or victory)
+        if (this.isPaused && !this.finalBossIntroActive && !this.victoryActive) {
             this.renderPauseOverlay(ctx);
         }
 
         // Render final boss intro overlay
         if (this.finalBossIntroActive) {
             this.renderFinalBossIntro(ctx);
+        }
+
+        // Render victory sequence (full screen takeover)
+        if (this.victoryActive) {
+            this.renderVictorySequence(ctx);
         }
 
         // Debug info
@@ -3402,6 +3935,9 @@ class Game {
         // Reset game state
         this.state = 'title';
         this.isPaused = false;
+        this.victoryActive = false;
+        this.victoryWaiting = false;
+        this.victoryWaitStartTime = null;
 
         // Reset all game systems
         this.currentLevel = 1;

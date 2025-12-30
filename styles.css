@@ -2182,7 +2182,7 @@ body {
     align-items: flex-end;
     padding: 20px;
     pointer-events: none;
-    z-index: 100;
+    z-index: 9999;
     opacity: 0.9;
 }
 
@@ -2207,6 +2207,8 @@ body {
     box-shadow:
         0 0 20px rgba(0, 240, 255, 0.2),
         inset 0 0 30px rgba(0, 0, 0, 0.5);
+    pointer-events: auto;
+    touch-action: none;
 }
 
 .joystick-base.active {
@@ -2230,6 +2232,7 @@ body {
         0 0 15px rgba(0, 240, 255, 0.5),
         0 4px 8px rgba(0, 0, 0, 0.5);
     transition: transform 0.05s ease-out;
+    pointer-events: none; /* Pass touches to joystick-base */
 }
 
 /* Right side - Action buttons */
@@ -2252,6 +2255,8 @@ body {
     -webkit-user-select: none;
     touch-action: manipulation;
     transition: all 0.1s ease;
+    pointer-events: auto;
+    cursor: pointer;
 }
 
 .touch-btn span {

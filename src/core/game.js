@@ -2326,7 +2326,11 @@ class Game {
         // Check localStorage for preference
         const skipControls = localStorage.getItem('iteration_skip_controls') === 'true';
 
-        if (skipControls) {
+        // On mobile, skip controls modal entirely (it's hidden by CSS anyway)
+        const isMobile = this.input.isTouchEnabled() ||
+            /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+        if (skipControls || isMobile) {
             this.startGame();
             return;
         }

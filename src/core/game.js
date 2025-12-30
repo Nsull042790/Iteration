@@ -2000,7 +2000,7 @@ class Game {
 
         modal.classList.remove('hidden');
 
-        // Handle level selection
+        // Handle level selection (with touch support)
         choicesContainer.querySelectorAll('.level-select-btn').forEach(btn => {
             btn.onmouseover = () => {
                 btn.style.background = 'rgba(0,240,255,0.2)';
@@ -2010,7 +2010,9 @@ class Game {
                 btn.style.background = 'rgba(0,0,0,0.5)';
                 btn.style.transform = 'scale(1)';
             };
-            btn.onclick = () => {
+            const handleLevelSelect = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
                 const level = parseInt(btn.dataset.level);
                 modal.classList.add('hidden');
                 if (hint) hint.style.display = '';
@@ -2018,15 +2020,22 @@ class Game {
                 if (subtitle) subtitle.textContent = '// SELECT UPGRADE PROTOCOL';
                 this.startFromLevel(level);
             };
+            btn.onclick = handleLevelSelect;
+            btn.ontouchend = handleLevelSelect;
         });
 
-        // Handle close
-        document.getElementById('level-select-close').onclick = () => {
+        // Handle close (with touch support)
+        const closeBtn = document.getElementById('level-select-close');
+        const handleClose = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
             modal.classList.add('hidden');
             if (hint) hint.style.display = '';
             if (title) title.textContent = 'EVOLUTION DETECTED';
             if (subtitle) subtitle.textContent = '// SELECT UPGRADE PROTOCOL';
         };
+        closeBtn.onclick = handleClose;
+        closeBtn.ontouchend = handleClose;
 
         const handleEsc = (e) => {
             if (e.code === 'Escape' && !modal.classList.contains('hidden')) {
@@ -2324,17 +2333,23 @@ class Game {
 
         modal.classList.remove('hidden');
 
-        // Handle start button click
-        const handleStart = () => {
+        // Handle start button click (with touch support)
+        const handleStart = (e) => {
+            if (e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
             if (dontShowCheckbox.checked) {
                 localStorage.setItem('iteration_skip_controls', 'true');
             }
             modal.classList.add('hidden');
             startButton.removeEventListener('click', handleStart);
+            startButton.removeEventListener('touchend', handleStart);
             this.startGame();
         };
 
         startButton.addEventListener('click', handleStart);
+        startButton.addEventListener('touchend', handleStart);
 
         // Handle key press
         const handleControlsKey = (e) => {
@@ -2398,13 +2413,20 @@ class Game {
         document.addEventListener('touchstart', resumeAudio, { once: true, passive: true });
         document.addEventListener('touchend', resumeAudio, { once: true, passive: true });
 
-        // Prevent default touch behaviors that might interfere
+        // Prevent default touch behaviors on canvas ONLY if not touching touch controls
+        // This prevents scrolling/zooming but allows touch controls to work
         this.canvas.addEventListener('touchstart', (e) => {
-            e.preventDefault();
+            // Only prevent default if the touch is directly on canvas
+            // Touch controls have their own event handlers
+            if (e.target === this.canvas) {
+                e.preventDefault();
+            }
         }, { passive: false });
 
         this.canvas.addEventListener('touchmove', (e) => {
-            e.preventDefault();
+            if (e.target === this.canvas) {
+                e.preventDefault();
+            }
         }, { passive: false });
 
         // Detect mobile and log

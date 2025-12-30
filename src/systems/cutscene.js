@@ -31,15 +31,40 @@ class CutsceneSystem {
 
     /**
      * Setup touch event for skipping
+     * Only added when cutscene starts, removed when it ends
      */
     setupTouchSkip() {
+        this.touchSkipEnabled = false;
+    }
+
+    /**
+     * Enable touch skip handler (call when cutscene starts)
+     */
+    enableTouchSkip() {
+        if (this.touchSkipEnabled) return;
+
         this.touchHandler = (e) => {
             if (this.active) {
                 e.preventDefault();
+                e.stopPropagation();
                 this.skip();
             }
         };
         this.canvas.addEventListener('touchstart', this.touchHandler, { passive: false });
+        this.touchSkipEnabled = true;
+    }
+
+    /**
+     * Disable touch skip handler (call when cutscene ends)
+     */
+    disableTouchSkip() {
+        if (!this.touchSkipEnabled) return;
+
+        if (this.touchHandler) {
+            this.canvas.removeEventListener('touchstart', this.touchHandler);
+            this.touchHandler = null;
+        }
+        this.touchSkipEnabled = false;
     }
 
     /**
@@ -71,6 +96,7 @@ class CutsceneSystem {
         this.fadeDirection = -1;
         this.textRevealIndex = 0;
         this.particleEffects = [];
+        this.enableTouchSkip();
     }
 
     /**
@@ -304,6 +330,7 @@ class CutsceneSystem {
      */
     endCutscene() {
         this.active = false;
+        this.disableTouchSkip();
         if (this.onComplete) {
             this.onComplete();
         }

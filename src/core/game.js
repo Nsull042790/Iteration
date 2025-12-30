@@ -15,6 +15,9 @@ class Game {
         this.camera = new Camera(GAME_CONFIG.CANVAS_WIDTH, GAME_CONFIG.CANVAS_HEIGHT);
         this.hud = new HUD(canvas);
 
+        // Mobile touch support - resume audio on any touch
+        this.setupMobileSupport();
+
         // Game state
         this.state = 'loading'; // loading, title, controls, playing, paused, gameover, victory
         this.isPaused = false;
@@ -50,6 +53,7 @@ class Game {
         this.leaderboard = new LeaderboardSystem();
         this.ghostSystem = new GhostSystem();
         this.audio = window.audioSystem;
+        this.cutsceneSystem = null; // Created after init
 
         // Laser projectiles from weapons
         this.laserProjectiles = [];
@@ -1603,12 +1607,21 @@ class Game {
     }
 
     /**
-     * End victory sequence and return to menu
+     * End victory sequence and play victory cutscene
      */
     endVictorySequence() {
         this.victoryActive = false;
         this.victoryWaitStartTime = null;
-        this.returnToMainMenu();
+
+        // Play victory cutscene before returning to main menu
+        if (this.cutsceneSystem) {
+            this.state = 'cutscene';
+            this.cutsceneSystem.playVictory(() => {
+                this.returnToMainMenu();
+            }, this.victoryStats);
+        } else {
+            this.returnToMainMenu();
+        }
     }
 
     /**
@@ -1769,6 +1782,11 @@ class Game {
     showTitleScreen() {
         this.state = 'title';
 
+        // Initialize cutscene system if not already done
+        if (!this.cutsceneSystem) {
+            this.cutsceneSystem = new CutsceneSystem(this.canvas, this);
+        }
+
         const titleScreen = document.getElementById('title-screen');
         const titleBtn = document.getElementById('title-start-btn');
         const codexBtn = document.getElementById('codex-btn');
@@ -1781,19 +1799,28 @@ class Game {
         // Update god mode button appearance
         this.updateGodModeButton(godmodeBtn);
 
-        // Handle button click
-        const handleTitleClick = () => {
+        // Handle button click/touch
+        const handleTitleClick = (e) => {
+            e.preventDefault();
             // Initialize audio on first user interaction
             this.audio.init();
+            this.audio.resume(); // Ensure audio context is resumed on mobile
             this.audio.startTitleMusic();
             this.audio.playUIClick();
 
             titleScreen.classList.add('hidden');
             titleBtn.removeEventListener('click', handleTitleClick);
-            this.showCharacterSelect();
+            titleBtn.removeEventListener('touchend', handleTitleClick);
+
+            // Play intro cutscene before character select
+            this.state = 'cutscene';
+            this.cutsceneSystem.playIntro(() => {
+                this.showCharacterSelect();
+            });
         };
 
         titleBtn.addEventListener('click', handleTitleClick);
+        titleBtn.addEventListener('touchend', handleTitleClick);
 
         // Codex button
         codexBtn.onclick = () => this.showCodex();
@@ -2356,6 +2383,38 @@ class Game {
     }
 
     /**
+     * Setup mobile-specific support
+     */
+    setupMobileSupport() {
+        // Resume audio context on any touch (required for mobile)
+        const resumeAudio = () => {
+            if (this.audio) {
+                this.audio.init();
+                this.audio.resume();
+            }
+        };
+
+        // Add touch listeners to document for audio resume
+        document.addEventListener('touchstart', resumeAudio, { once: true, passive: true });
+        document.addEventListener('touchend', resumeAudio, { once: true, passive: true });
+
+        // Prevent default touch behaviors that might interfere
+        this.canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+        }, { passive: false });
+
+        this.canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+        }, { passive: false });
+
+        // Detect mobile and log
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        if (isMobile) {
+            console.log('Mobile device detected - touch controls enabled');
+        }
+    }
+
+    /**
      * Toggle pause state
      */
     togglePause() {
@@ -2408,37 +2467,49 @@ class Game {
      * Main game loop
      */
     loop(currentTime) {
-        // Request next frame
+        // Request next frame first to ensure loop continues even if error occurs
         requestAnimationFrame((time) => this.loop(time));
 
-        // Calculate delta time
-        if (!this.lastTime) this.lastTime = currentTime;
-        this.deltaTime = currentTime - this.lastTime;
-        this.lastTime = currentTime;
+        try {
+            // Calculate delta time
+            if (!this.lastTime) this.lastTime = currentTime;
+            this.deltaTime = currentTime - this.lastTime;
+            this.lastTime = currentTime;
 
-        // Cap delta time to prevent spiral of death
-        if (this.deltaTime > 100) this.deltaTime = 100;
+            // Cap delta time to prevent spiral of death
+            if (this.deltaTime > 100) this.deltaTime = 100;
 
-        // FPS calculation
-        this.fpsCounter++;
-        this.fpsTime += this.deltaTime;
-        if (this.fpsTime >= 1000) {
-            this.fps = this.fpsCounter;
-            this.fpsCounter = 0;
-            this.fpsTime = 0;
+            // FPS calculation
+            this.fpsCounter++;
+            this.fpsTime += this.deltaTime;
+            if (this.fpsTime >= 1000) {
+                this.fps = this.fpsCounter;
+                this.fpsCounter = 0;
+                this.fpsTime = 0;
+            }
+
+            // Fixed timestep accumulator
+            this.accumulator += this.deltaTime;
+
+            // Update at fixed timestep (limit iterations to prevent mobile freeze)
+            let iterations = 0;
+            const maxIterations = 5;
+            while (this.accumulator >= this.fixedTimeStep && iterations < maxIterations) {
+                this.update(this.fixedTimeStep);
+                this.accumulator -= this.fixedTimeStep;
+                iterations++;
+            }
+
+            // If still behind, reset accumulator (prevents mobile freeze)
+            if (this.accumulator > this.fixedTimeStep * maxIterations) {
+                this.accumulator = 0;
+            }
+
+            // Render
+            this.render();
+        } catch (e) {
+            console.error('Game loop error:', e);
         }
-
-        // Fixed timestep accumulator
-        this.accumulator += this.deltaTime;
-
-        // Update at fixed timestep
-        while (this.accumulator >= this.fixedTimeStep) {
-            this.update(this.fixedTimeStep);
-            this.accumulator -= this.fixedTimeStep;
-        }
-
-        // Render
-        this.render();
     }
 
     /**
@@ -2454,6 +2525,19 @@ class Game {
     update(deltaTime) {
         // Update input state
         this.input.update();
+
+        // Update cutscene if playing
+        if (this.cutsceneSystem && this.cutsceneSystem.isPlaying()) {
+            this.cutsceneSystem.update();
+
+            // Skip cutscene with space, enter, or escape
+            if (this.input.isKeyJustPressed('Space') ||
+                this.input.isKeyJustPressed('Enter') ||
+                this.input.isKeyJustPressed('Escape')) {
+                this.cutsceneSystem.skip();
+            }
+            return; // Don't process other updates during cutscene
+        }
 
         // Update final boss intro sequence (runs even when paused)
         if (this.finalBossIntroActive) {
@@ -3716,6 +3800,11 @@ class Game {
         // Render victory sequence (full screen takeover)
         if (this.victoryActive) {
             this.renderVictorySequence(ctx);
+        }
+
+        // Render cutscene (full screen takeover)
+        if (this.cutsceneSystem && this.cutsceneSystem.isPlaying()) {
+            this.cutsceneSystem.render();
         }
 
         // Debug info

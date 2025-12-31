@@ -1199,10 +1199,18 @@ class Game {
                     this.startVictoryPhase(3);
                 }
                 break;
+            case 3: // Final -> Victory Cutscene (auto-transition after timeout)
+                if (this.victoryTimer > 360) {
+                    this.endVictorySequence();
+                }
+                break;
         }
 
-        // Skip/continue
-        if (this.victoryTimer > 60 && (this.input.isKeyPressed('Space') || this.input.isKeyPressed('Enter'))) {
+        // Skip/continue - keyboard or touch
+        const touchSkip = this.input.touchControls &&
+            (this.input.touchControls.isAttackPressed() || this.input.touchControls.isJumpPressed());
+
+        if (this.victoryTimer > 60 && (this.input.isKeyPressed('Space') || this.input.isKeyPressed('Enter') || touchSkip)) {
             if (this.victoryPhase < 3) {
                 this.startVictoryPhase(3);
             } else {
@@ -1256,7 +1264,9 @@ class Game {
             ctx.font = 'bold 20px "Share Tech Mono", monospace';
             ctx.fillStyle = '#ffd700';
             ctx.textAlign = 'center';
-            ctx.fillText('[ PRESS SPACE TO CONTINUE ]', w / 2, h - 50);
+            const isMobile = this.input.touchControls && this.input.touchControls.isEnabled();
+            const promptText = isMobile ? '[ TAP TO CONTINUE ]' : '[ PRESS SPACE TO CONTINUE ]';
+            ctx.fillText(promptText, w / 2, h - 50);
             ctx.globalAlpha = 1;
         }
     }

@@ -57,7 +57,7 @@ class Game {
         this.leaderboard = new LeaderboardSystem();
         this.ghostSystem = new GhostSystem();
         this.audio = window.audioSystem;
-        this.cutsceneSystem = null; // Created after init
+        this.cutsceneSystem = new CutsceneSystem(this.canvas, this); // Initialize cutscene system
 
         // Laser projectiles from weapons
         this.laserProjectiles = [];
@@ -1627,13 +1627,19 @@ class Game {
         this.victoryActive = false;
         this.victoryWaitStartTime = null;
 
+        console.log('endVictorySequence called, cutsceneSystem:', this.cutsceneSystem);
+
         // Play victory cutscene before returning to main menu
         if (this.cutsceneSystem) {
             this.state = 'cutscene';
+            console.log('Starting victory cutscene, state:', this.state);
             this.cutsceneSystem.playVictory(() => {
+                console.log('Victory cutscene complete, returning to main menu');
                 this.returnToMainMenu();
             }, this.victoryStats);
+            console.log('playVictory called, isPlaying:', this.cutsceneSystem.isPlaying());
         } else {
+            console.log('No cutsceneSystem, returning to main menu directly');
             this.returnToMainMenu();
         }
     }

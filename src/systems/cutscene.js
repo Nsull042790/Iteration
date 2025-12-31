@@ -80,7 +80,9 @@ class CutsceneSystem {
      * Start the victory cutscene
      */
     playVictory(onComplete, stats) {
+        console.log('playVictory called with stats:', stats);
         this.scenes = this.getVictoryScenes(stats);
+        console.log('Victory scenes:', this.scenes);
         this.onComplete = onComplete;
         this.startCutscene();
     }
@@ -89,6 +91,7 @@ class CutsceneSystem {
      * Start cutscene playback
      */
     startCutscene() {
+        console.log('startCutscene called, scenes count:', this.scenes.length);
         this.active = true;
         this.currentScene = 0;
         this.sceneTimer = 0;
@@ -97,6 +100,7 @@ class CutsceneSystem {
         this.textRevealIndex = 0;
         this.particleEffects = [];
         this.enableTouchSkip();
+        console.log('Cutscene started, active:', this.active);
     }
 
     /**

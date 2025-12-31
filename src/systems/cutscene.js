@@ -402,6 +402,9 @@ class CutsceneSystem {
         const w = this.canvas.width;
         const h = this.canvas.height;
         const scene = this.scenes[this.currentScene];
+
+        // DEBUG: Show on-screen debug info
+        this.debugRenderCount = (this.debugRenderCount || 0) + 1;
         if (!scene) return;
 
         // Clear and draw background
@@ -460,6 +463,14 @@ class CutsceneSystem {
             default:
                 this.renderDigitalWorld();
         }
+
+        // DEBUG: Show debug info on screen
+        ctx.save();
+        ctx.fillStyle = '#ff0000';
+        ctx.font = '14px monospace';
+        ctx.fillText(`Scene: ${this.currentScene}/${this.scenes.length} Timer: ${this.sceneTimer} Lock: ${this.skipLockout}`, 10, 20);
+        ctx.fillText(`Renders: ${this.debugRenderCount} Active: ${this.active}`, 10, 40);
+        ctx.restore();
     }
 
     /**

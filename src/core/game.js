@@ -978,6 +978,7 @@ class Game {
      * EPIC Mario Party-style celebration!
      */
     showVictoryScreen(finalLevel) {
+        console.log('=== VICTORY SCREEN START ===');
         console.log('Starting victory screen for level', finalLevel);
 
         this.state = 'victory';
@@ -990,16 +991,31 @@ class Game {
             console.warn('Could not stop music:', e);
         }
 
-        // Calculate final stats
-        const totalTime = Math.floor((Date.now() - (this.runStartTime || Date.now())) / 1000);
-        const minutes = Math.floor(totalTime / 60);
-        const seconds = totalTime % 60;
-        const finalCycles = this.cycles?.getCycles() || 0;
-        const bladeTier = this.bladeEvolution?.getCurrentTier() || { name: 'BASIC', color: '#00f0ff' };
-        const char = this.characterSystem?.getSelected() || { name: 'UNKNOWN' };
+        // Calculate final stats with defensive defaults
+        let totalTime = 0;
+        let minutes = 0;
+        let seconds = 0;
+        let finalCycles = 0;
+        let bladeTier = { name: 'BASIC', color: '#00f0ff' };
+        let char = { name: 'UNKNOWN' };
 
-        // Submit to leaderboard
-        this.leaderboard.submitScore(char.name, finalLevel, this.totalKills, finalCycles);
+        try {
+            totalTime = Math.floor((Date.now() - (this.runStartTime || Date.now())) / 1000);
+            minutes = Math.floor(totalTime / 60);
+            seconds = totalTime % 60;
+            finalCycles = this.cycles?.getCycles() || 0;
+            bladeTier = this.bladeEvolution?.getCurrentTier() || bladeTier;
+            char = this.characterSystem?.getSelected() || char;
+        } catch (e) {
+            console.warn('Error calculating stats:', e);
+        }
+
+        // Submit to leaderboard (wrapped in try/catch)
+        try {
+            this.leaderboard.submitScore(char.name, finalLevel, this.totalKills || 0, finalCycles);
+        } catch (e) {
+            console.warn('Leaderboard submission failed:', e);
+        }
 
         // Store stats for rendering
         this.victoryStats = {
@@ -1016,6 +1032,7 @@ class Game {
         this.victoryPhase = 0;
         this.victoryTimer = 0;
         this.victoryActive = true;
+        this.victoryTouchSkipUsed = false; // Prevent multiple touch skips
 
         // Confetti particles
         this.victoryConfetti = [];
@@ -1114,6 +1131,11 @@ class Game {
 
         this.victoryTimer++;
 
+        // Debug log every 60 frames (1 second)
+        if (this.victoryTimer % 60 === 0) {
+            console.log(`Victory: phase=${this.victoryPhase}, timer=${this.victoryTimer}`);
+        }
+
         // Update confetti
         this.victoryConfetti.forEach(c => {
             c.x += c.vx;
@@ -1206,14 +1228,21 @@ class Game {
                 break;
         }
 
-        // Skip/continue - keyboard or touch
-        const touchSkip = this.input.touchControls &&
-            (this.input.touchControls.isAttackPressed() || this.input.touchControls.isJumpPressed());
-
-        if (this.victoryTimer > 60 && (this.input.isKeyPressed('Space') || this.input.isKeyPressed('Enter') || touchSkip)) {
+        // Skip/continue - keyboard only (use JUST pressed to prevent repeat triggers)
+        // Require longer wait and use justPressed to prevent accidental skips from boss fight inputs
+        if (this.victoryTimer > 120 && (this.input.isKeyJustPressed('Space') || this.input.isKeyJustPressed('Enter'))) {
             if (this.victoryPhase < 3) {
                 this.startVictoryPhase(3);
             } else {
+                this.endVictorySequence();
+            }
+        }
+        // Touch skip handled separately with debounce - only in phase 3
+        if (this.victoryPhase === 3 && this.victoryTimer > 180) {
+            const touchSkip = this.input.touchControls &&
+                (this.input.touchControls.isAttackPressed() || this.input.touchControls.isJumpPressed());
+            if (touchSkip && !this.victoryTouchSkipUsed) {
+                this.victoryTouchSkipUsed = true;
                 this.endVictorySequence();
             }
         }
@@ -1624,6 +1653,7 @@ class Game {
      * End victory sequence and show escape confirmation
      */
     endVictorySequence() {
+        console.log('=== END VICTORY SEQUENCE ===');
         this.victoryActive = false;
         this.victoryWaitStartTime = null;
 
@@ -1635,6 +1665,7 @@ class Game {
      * Show the escape confirmation modal
      */
     showEscapeModal() {
+        console.log('=== SHOW ESCAPE MODAL ===');
         this.state = 'escape';
 
         const modal = document.getElementById('escape-modal');
@@ -1642,45 +1673,87 @@ class Game {
         const timeDisplay = document.getElementById('escape-time');
         const killsDisplay = document.getElementById('escape-kills');
 
+        // Safety check - if modal doesn't exist, go straight to cutscene
+        if (!modal || !escapeBtn) {
+            console.error('Escape modal elements not found, playing cutscene directly');
+            this.playVictoryCutscene();
+            return;
+        }
+
         // Update stats
-        if (this.victoryStats) {
-            timeDisplay.textContent = this.victoryStats.time || '00:00';
-            killsDisplay.textContent = this.victoryStats.kills || '0';
+        try {
+            if (this.victoryStats && timeDisplay) {
+                timeDisplay.textContent = this.victoryStats.time || '00:00';
+            }
+            if (this.victoryStats && killsDisplay) {
+                killsDisplay.textContent = this.victoryStats.totalKills || '0';
+            }
+        } catch (e) {
+            console.warn('Error updating escape modal stats:', e);
         }
 
         // Show modal
         modal.classList.remove('hidden');
+        console.log('Escape modal shown, button disabled for 1 second');
 
-        // Handle escape button click
-        const handleEscape = (e) => {
-            e.preventDefault();
-            this.audio.playUIClick();
+        // Disable button initially to prevent accidental taps
+        escapeBtn.disabled = true;
+        escapeBtn.style.opacity = '0.5';
 
-            // Remove listeners
-            escapeBtn.removeEventListener('click', handleEscape);
-            escapeBtn.removeEventListener('touchend', handleEscape);
+        // Store reference for cleanup
+        const self = this;
 
-            // Hide modal
-            modal.classList.add('hidden');
+        // Enable button after 1 second delay
+        setTimeout(() => {
+            if (!escapeBtn) return;
 
-            // Now play the victory cutscene
-            this.playVictoryCutscene();
-        };
+            escapeBtn.disabled = false;
+            escapeBtn.style.opacity = '1';
+            console.log('Escape button now enabled');
 
-        escapeBtn.addEventListener('click', handleEscape);
-        escapeBtn.addEventListener('touchend', handleEscape);
+            // Handle escape button click (only add listeners after delay)
+            const handleEscape = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('Escape button pressed!');
+
+                try {
+                    self.audio.playUIClick();
+                } catch (err) {
+                    console.warn('Audio error:', err);
+                }
+
+                // Remove listeners
+                escapeBtn.removeEventListener('click', handleEscape);
+                escapeBtn.removeEventListener('touchend', handleEscape);
+
+                // Hide modal
+                modal.classList.add('hidden');
+
+                // Now play the victory cutscene
+                self.playVictoryCutscene();
+            };
+
+            escapeBtn.addEventListener('click', handleEscape);
+            escapeBtn.addEventListener('touchend', handleEscape);
+        }, 1000);
     }
 
     /**
      * Play the victory/escape cutscene
      */
     playVictoryCutscene() {
+        console.log('=== PLAY VICTORY CUTSCENE ===');
+        console.log('CutsceneSystem exists:', !!this.cutsceneSystem);
+
         if (this.cutsceneSystem) {
             this.state = 'cutscene';
             this.cutsceneSystem.playVictory(() => {
+                console.log('Victory cutscene complete, returning to menu');
                 this.returnToMainMenu();
             }, this.victoryStats);
         } else {
+            console.warn('No cutscene system, returning to menu');
             this.returnToMainMenu();
         }
     }

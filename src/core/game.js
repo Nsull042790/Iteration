@@ -11,6 +11,10 @@ class Game {
         this.renderer = new Renderer(canvas);
         this.input = new InputHandler();
         this.input.initTouchControls(); // Initialize mobile touch controls
+        // Hide touch controls initially - only show during gameplay
+        if (this.input.touchControls) {
+            this.input.touchControls.hide();
+        }
         this.physics = new Physics();
         this.camera = new Camera(GAME_CONFIG.CANVAS_WIDTH, GAME_CONFIG.CANVAS_HEIGHT);
         this.hud = new HUD(canvas);
@@ -2374,6 +2378,13 @@ class Game {
         this.runStartTime = Date.now();
         const char = this.characterSystem.getSelected();
 
+        // Show touch controls for mobile gameplay
+        if (this.input.touchControls) {
+            this.input.touchControls.show();
+            // Highlight the active weapon button (default is weapon 0)
+            this.input.touchControls.setActiveWeapon(this.weaponSystem.activeIndex || 0);
+        }
+
         // Play simulation drop sound - you're being thrown into the AI simulation
         this.audio.playSimulationDrop();
 
@@ -2591,18 +2602,21 @@ class Game {
             if (this.weaponSystem.switchTo(0)) {
                 this.audio.playWeaponSwitch();
                 this.hud.addMessage(`WEAPON: ${this.weaponSystem.getActiveTierData().name}`, 'system');
+                if (this.input.touchControls) this.input.touchControls.setActiveWeapon(0);
             }
         }
         if (this.input.isKeyJustPressed('Digit2') || this.input.isKeyJustPressed('Numpad2')) {
             if (this.weaponSystem.switchTo(1)) {
                 this.audio.playWeaponSwitch();
                 this.hud.addMessage(`WEAPON: ${this.weaponSystem.getActiveTierData().name}`, 'system');
+                if (this.input.touchControls) this.input.touchControls.setActiveWeapon(1);
             }
         }
         if (this.input.isKeyJustPressed('Digit3') || this.input.isKeyJustPressed('Numpad3')) {
             if (this.weaponSystem.switchTo(2)) {
                 this.audio.playWeaponSwitch();
                 this.hud.addMessage(`WEAPON: ${this.weaponSystem.getActiveTierData().name}`, 'system');
+                if (this.input.touchControls) this.input.touchControls.setActiveWeapon(2);
             }
         }
 
@@ -3968,6 +3982,11 @@ class Game {
         this.player.active = false;
         this.state = 'gameover';
 
+        // Hide touch controls during game over
+        if (this.input.touchControls) {
+            this.input.touchControls.hide();
+        }
+
         // Play death sound and stop music
         this.audio.playPlayerDeath();
         this.audio.stopMusic();
@@ -4082,6 +4101,11 @@ class Game {
      * Return to main menu from game over or pause
      */
     returnToMainMenu() {
+        // Hide touch controls when returning to menu
+        if (this.input.touchControls) {
+            this.input.touchControls.hide();
+        }
+
         // Reset game state
         this.state = 'title';
         this.isPaused = false;

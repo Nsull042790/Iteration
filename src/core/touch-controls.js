@@ -357,6 +357,23 @@ class TouchControls {
     }
 
     /**
+     * Set the active weapon for visual feedback (0, 1, or 2 for weapons 1-3)
+     */
+    setActiveWeapon(index) {
+        if (!this.container) return;
+
+        // Find all weapon buttons and update their active state
+        const weaponButtons = this.container.querySelectorAll('.touch-btn-weapon');
+        weaponButtons.forEach((btn, i) => {
+            if (i === index) {
+                btn.classList.add('weapon-selected');
+            } else {
+                btn.classList.remove('weapon-selected');
+            }
+        });
+    }
+
+    /**
      * Check if button was just pressed this frame
      */
     wasButtonJustPressed(action) {

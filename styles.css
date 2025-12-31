@@ -2354,6 +2354,16 @@ body {
         0 1px 2px rgba(0, 0, 0, 0.5);
 }
 
+.touch-btn-weapon.weapon-selected {
+    background: radial-gradient(circle at 30% 30%, #00f0ff 0%, #0088aa 100%);
+    border-color: #00f0ff;
+    box-shadow:
+        0 0 20px rgba(0, 240, 255, 0.6),
+        0 0 40px rgba(0, 240, 255, 0.3),
+        0 2px 4px rgba(0, 0, 0, 0.5);
+    transform: scale(1.1);
+}
+
 /* Mobile device adjustments */
 body.mobile-device #game-canvas {
     max-height: calc(100vh - 180px);

@@ -1712,9 +1712,14 @@ class Game {
             console.log('Escape button now enabled');
 
             // Handle escape button click (only add listeners after delay)
+            let escapeHandled = false; // Prevent double-triggering
             const handleEscape = (e) => {
+                if (escapeHandled) return; // Already handled
+                escapeHandled = true;
+
                 e.preventDefault();
                 e.stopPropagation();
+                e.stopImmediatePropagation();
                 console.log('Escape button pressed!');
 
                 try {
@@ -1723,19 +1728,23 @@ class Game {
                     console.warn('Audio error:', err);
                 }
 
-                // Remove listeners
+                // Remove listeners immediately
                 escapeBtn.removeEventListener('click', handleEscape);
                 escapeBtn.removeEventListener('touchend', handleEscape);
+                escapeBtn.removeEventListener('touchstart', handleEscape);
 
                 // Hide modal
                 modal.classList.add('hidden');
 
-                // Now play the victory cutscene
-                self.playVictoryCutscene();
+                // Delay cutscene start slightly to prevent touch from bubbling
+                setTimeout(() => {
+                    self.playVictoryCutscene();
+                }, 100);
             };
 
             escapeBtn.addEventListener('click', handleEscape);
             escapeBtn.addEventListener('touchend', handleEscape);
+            escapeBtn.addEventListener('touchstart', handleEscape); // Catch touch early
         }, 1000);
     }
 

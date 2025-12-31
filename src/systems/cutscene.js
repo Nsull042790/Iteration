@@ -103,7 +103,10 @@ class CutsceneSystem {
         this.fadeDirection = -1;
         this.textRevealIndex = 0;
         this.particleEffects = [];
-        this.skipLockout = 90; // Prevent skip for 1.5 seconds (90 frames)
+        this.glitchIntensity = 0;
+
+        // Longer lockout for victory cutscene
+        this.skipLockout = this.isVictoryCutscene ? 180 : 90; // 3 seconds for victory, 1.5 for intro
 
         // For victory cutscene, use longer delay and don't enable touch skip immediately
         // This prevents the tap from victory screen from skipping the cutscene
@@ -120,7 +123,7 @@ class CutsceneSystem {
                 if (this.active) {
                     this.enableTouchSkip();
                 }
-            }, 2000); // 2 second delay for victory
+            }, 3000); // 3 second delay for victory
         }
         console.log('Cutscene started, active:', this.active, 'isVictory:', this.isVictoryCutscene);
     }
@@ -220,7 +223,8 @@ class CutsceneSystem {
                 description: 'You dive through. The simulation screams behind you.',
                 background: 'escape_light',
                 elements: ['light', 'particles'],
-                textColor: '#ffd700',
+                textColor: '#1a0a30',  // Dark purple for contrast against bright light
+                textShadow: '#ffffff', // White glow for readability
                 duration: 300
             },
             {
@@ -1447,6 +1451,9 @@ class CutsceneSystem {
 
         let charIndex = 0;
 
+        // Determine shadow color - use textShadow if specified, otherwise use textColor
+        const shadowColor = scene.textShadow || scene.textColor || '#ffffff';
+
         // Title
         if (scene.title) {
             const titleChars = Math.min(this.textRevealIndex, scene.title.length);
@@ -1455,9 +1462,14 @@ class CutsceneSystem {
             ctx.font = 'bold 64px "Share Tech Mono", monospace';
             ctx.textAlign = 'center';
             ctx.fillStyle = scene.textColor || '#ffffff';
-            ctx.shadowColor = scene.textColor || '#ffffff';
-            ctx.shadowBlur = 20;
+            ctx.shadowColor = shadowColor;
+            ctx.shadowBlur = scene.textShadow ? 30 : 20; // Stronger glow if custom shadow
             ctx.fillText(title, w/2, h/2 - 60);
+
+            // Draw again for stronger effect on bright backgrounds
+            if (scene.textShadow) {
+                ctx.fillText(title, w/2, h/2 - 60);
+            }
             ctx.shadowBlur = 0;
 
             charIndex += scene.title.length;
@@ -1469,8 +1481,14 @@ class CutsceneSystem {
             const subtitle = scene.subtitle.substring(0, subChars);
 
             ctx.font = '28px "Share Tech Mono", monospace';
-            ctx.fillStyle = '#888888';
+            // Use darker color for bright backgrounds
+            ctx.fillStyle = scene.textShadow ? scene.textColor : '#888888';
+            if (scene.textShadow) {
+                ctx.shadowColor = shadowColor;
+                ctx.shadowBlur = 15;
+            }
             ctx.fillText(subtitle, w/2, h/2 - 10);
+            ctx.shadowBlur = 0;
 
             charIndex += scene.subtitle.length;
         }
@@ -1481,13 +1499,19 @@ class CutsceneSystem {
             const description = scene.description.substring(0, descChars);
 
             ctx.font = '20px "Share Tech Mono", monospace';
-            ctx.fillStyle = '#aaaaaa';
+            // Use darker color for bright backgrounds
+            ctx.fillStyle = scene.textShadow ? scene.textColor : '#aaaaaa';
+            if (scene.textShadow) {
+                ctx.shadowColor = shadowColor;
+                ctx.shadowBlur = 10;
+            }
             ctx.fillText(description, w/2, h/2 + 50);
+            ctx.shadowBlur = 0;
         }
 
         // Scene indicator
         ctx.font = '14px "Share Tech Mono", monospace';
-        ctx.fillStyle = '#444444';
+        ctx.fillStyle = scene.textShadow ? 'rgba(0,0,0,0.5)' : '#444444';
         ctx.textAlign = 'right';
         ctx.fillText(`${this.currentScene + 1}/${this.scenes.length}`, w - 30, h - 30);
     }

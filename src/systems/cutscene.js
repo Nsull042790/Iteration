@@ -187,7 +187,8 @@ class CutsceneSystem {
                 description: 'Your blade pierces the Corrupted Core.',
                 background: 'coreStrike',
                 elements: ['sparks', 'energy'],
-                textColor: '#ff4444',
+                textColor: '#ffffff',
+                textShadow: '#ff0000', // Red glow on white text
                 duration: 180 // 3 seconds - quick impact
             },
             {
@@ -196,7 +197,8 @@ class CutsceneSystem {
                 description: 'The simulation begins to collapse around you.',
                 background: 'collapse',
                 elements: ['debris', 'glitch'],
-                textColor: '#ff0000',
+                textColor: '#ffffff',
+                textShadow: '#ff0000', // Red glow
                 duration: 240
             },
             {
@@ -206,6 +208,7 @@ class CutsceneSystem {
                 background: 'escape_run',
                 elements: ['speedlines', 'debris'],
                 textColor: '#ffffff',
+                textShadow: '#ff4400', // Orange/red glow for urgency
                 duration: 300 // Let the tension build
             },
             {
@@ -214,7 +217,8 @@ class CutsceneSystem {
                 description: 'A tear in the digital fabric. Your only way out.',
                 background: 'rift',
                 elements: ['energy', 'lightning'],
-                textColor: '#00f0ff',
+                textColor: '#ffffff',
+                textShadow: '#00f0ff', // Cyan glow
                 duration: 240
             },
             {
@@ -233,7 +237,8 @@ class CutsceneSystem {
                 description: 'Against impossible odds, you broke free.',
                 background: 'victory_glow',
                 elements: ['confetti', 'sparkle'],
-                textColor: '#ffd700',
+                textColor: '#ffffff',
+                textShadow: '#ffd700', // Gold glow
                 duration: 360
             },
             {
@@ -242,7 +247,8 @@ class CutsceneSystem {
                 description: 'But in the digital realm... nothing truly ends.\n\nThank you for playing ITERATION.',
                 background: 'digital_fade',
                 elements: ['matrix', 'fade'],
-                textColor: '#00f0ff',
+                textColor: '#ffffff',
+                textShadow: '#00f0ff', // Cyan glow
                 duration: 420
             }
         ];

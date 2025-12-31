@@ -42,8 +42,10 @@ class CutsceneSystem {
      */
     enableTouchSkip() {
         if (this.touchSkipEnabled) return;
+        console.log('Enabling touch skip handler');
 
         this.touchHandler = (e) => {
+            console.log('Touch detected on canvas, active:', this.active, 'skipLockout:', this.skipLockout);
             if (this.active) {
                 e.preventDefault();
                 e.stopPropagation();
@@ -73,6 +75,7 @@ class CutsceneSystem {
     playIntro(onComplete) {
         this.scenes = this.getIntroScenes();
         this.onComplete = onComplete;
+        this.isVictoryCutscene = false;
         this.startCutscene();
     }
 
@@ -84,6 +87,7 @@ class CutsceneSystem {
         this.scenes = this.getVictoryScenes(stats);
         console.log('Victory scenes:', this.scenes);
         this.onComplete = onComplete;
+        this.isVictoryCutscene = true; // Flag to disable touch skip for victory
         this.startCutscene();
     }
 
@@ -99,14 +103,26 @@ class CutsceneSystem {
         this.fadeDirection = -1;
         this.textRevealIndex = 0;
         this.particleEffects = [];
-        this.skipLockout = 30; // Prevent skip for 0.5 seconds (30 frames)
-        // Delay enabling touch skip to prevent the tap that started the cutscene from skipping it
-        setTimeout(() => {
-            if (this.active) {
-                this.enableTouchSkip();
-            }
-        }, 500);
-        console.log('Cutscene started, active:', this.active);
+        this.skipLockout = 90; // Prevent skip for 1.5 seconds (90 frames)
+
+        // For victory cutscene, use longer delay and don't enable touch skip immediately
+        // This prevents the tap from victory screen from skipping the cutscene
+        if (!this.isVictoryCutscene) {
+            // Intro cutscene - enable touch skip after short delay
+            setTimeout(() => {
+                if (this.active) {
+                    this.enableTouchSkip();
+                }
+            }, 500);
+        } else {
+            // Victory cutscene - enable touch skip after much longer delay
+            setTimeout(() => {
+                if (this.active) {
+                    this.enableTouchSkip();
+                }
+            }, 2000); // 2 second delay for victory
+        }
+        console.log('Cutscene started, active:', this.active, 'isVictory:', this.isVictoryCutscene);
     }
 
     /**
@@ -193,7 +209,15 @@ class CutsceneSystem {
      * Update cutscene
      */
     update() {
-        if (!this.active) return;
+        if (!this.active) {
+            console.log('Update called but cutscene not active');
+            return;
+        }
+
+        // Log every 60 frames (once per second)
+        if (this.sceneTimer % 60 === 0) {
+            console.log('Cutscene update - scene:', this.currentScene, 'timer:', this.sceneTimer, 'fade:', this.fadeAlpha.toFixed(2), 'fadeDir:', this.fadeDirection);
+        }
 
         // Decrement skip lockout
         if (this.skipLockout > 0) {
@@ -329,6 +353,7 @@ class CutsceneSystem {
      */
     nextScene() {
         this.currentScene++;
+        console.log('nextScene called, now on scene:', this.currentScene, 'of', this.scenes.length);
         this.sceneTimer = 0;
         this.textRevealIndex = 0;
         this.fadeDirection = -1;
@@ -336,6 +361,7 @@ class CutsceneSystem {
         this.particleEffects = [];
 
         if (this.currentScene >= this.scenes.length) {
+            console.log('All scenes complete, ending cutscene');
             this.endCutscene();
         }
     }
@@ -344,9 +370,11 @@ class CutsceneSystem {
      * End the cutscene
      */
     endCutscene() {
+        console.log('endCutscene called');
         this.active = false;
         this.disableTouchSkip();
         if (this.onComplete) {
+            console.log('Calling onComplete callback');
             this.onComplete();
         }
     }

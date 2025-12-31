@@ -174,33 +174,72 @@ class CutsceneSystem {
     }
 
     /**
-     * Get victory cutscene scenes
+     * Get victory cutscene scenes - EPIC CINEMATIC EXPERIENCE
      */
     getVictoryScenes(stats) {
         return [
             {
-                title: 'CORE DESTROYED',
-                subtitle: 'SIMULATION COLLAPSING',
-                description: 'The Corrupted Core has been destroyed. The simulation crumbles.',
-                background: 'explosion',
-                elements: ['debris', 'energy'],
-                textColor: '#ff4444'
+                title: 'CRITICAL HIT',
+                subtitle: 'CORE BREACH DETECTED',
+                description: 'Your blade pierces the Corrupted Core.',
+                background: 'coreStrike',
+                elements: ['sparks', 'energy'],
+                textColor: '#ff4444',
+                duration: 180 // 3 seconds - quick impact
+            },
+            {
+                title: 'SYSTEM FAILURE',
+                subtitle: '// CATASTROPHIC ERROR',
+                description: 'The simulation begins to collapse around you.',
+                background: 'collapse',
+                elements: ['debris', 'glitch'],
+                textColor: '#ff0000',
+                duration: 240
+            },
+            {
+                title: 'RUN.',
+                subtitle: '',
+                description: '',
+                background: 'escape_run',
+                elements: ['speedlines', 'debris'],
+                textColor: '#ffffff',
+                duration: 300 // Let the tension build
+            },
+            {
+                title: 'BREACH DETECTED',
+                subtitle: 'REALITY FRACTURE AHEAD',
+                description: 'A tear in the digital fabric. Your only way out.',
+                background: 'rift',
+                elements: ['energy', 'lightning'],
+                textColor: '#00f0ff',
+                duration: 240
             },
             {
                 title: 'FREEDOM',
-                subtitle: 'CYCLE BROKEN',
-                description: `After ${stats?.time || '???'} of combat, you have earned your escape.`,
-                background: 'escape',
-                elements: ['light', 'player'],
-                textColor: '#ffd700'
+                subtitle: `${stats?.time || '???'} // ${stats?.totalKills || 0} ELIMINATED`,
+                description: 'You dive through. The simulation screams behind you.',
+                background: 'escape_light',
+                elements: ['light', 'particles'],
+                textColor: '#ffd700',
+                duration: 300
+            },
+            {
+                title: stats?.characterName?.toUpperCase() || 'OPERATIVE',
+                subtitle: 'SIMULATION SURVIVOR',
+                description: 'Against impossible odds, you broke free.',
+                background: 'victory_glow',
+                elements: ['confetti', 'sparkle'],
+                textColor: '#ffd700',
+                duration: 360
             },
             {
                 title: 'THE END?',
-                subtitle: stats?.characterName || 'OPERATIVE',
-                description: 'But in the digital realm... nothing truly ends.',
-                background: 'digital',
-                elements: ['fade', 'matrix'],
-                textColor: '#00f0ff'
+                subtitle: '// CONNECTION TERMINATED',
+                description: 'But in the digital realm... nothing truly ends.\n\nThank you for playing ITERATION.',
+                background: 'digital_fade',
+                elements: ['matrix', 'fade'],
+                textColor: '#00f0ff',
+                duration: 420
             }
         ];
     }
@@ -251,8 +290,9 @@ class CutsceneSystem {
         // Update particle effects
         this.updateParticles();
 
-        // Scene duration check
-        if (this.sceneTimer >= this.sceneDuration) {
+        // Scene duration check (use scene-specific duration or default)
+        const currentDuration = scene.duration || this.sceneDuration;
+        if (this.sceneTimer >= currentDuration) {
             this.fadeDirection = 1; // Start fade out
         }
     }
@@ -275,6 +315,32 @@ class CutsceneSystem {
             if (scene.elements.includes('debris')) {
                 this.spawnDebrisParticle();
             }
+            if (scene.elements.includes('sparks')) {
+                this.spawnSparksParticle();
+            }
+            if (scene.elements.includes('confetti')) {
+                this.spawnConfettiParticle();
+            }
+            if (scene.elements.includes('sparkle')) {
+                this.spawnSparkleParticle();
+            }
+        }
+
+        // Speedlines spawn more frequently
+        if (this.sceneTimer % 2 === 0 && scene.elements.includes('speedlines')) {
+            this.spawnSpeedlineParticle();
+        }
+
+        // Lightning spawns occasionally
+        if (this.sceneTimer % 20 === 0 && scene.elements.includes('lightning')) {
+            this.spawnLightningParticle();
+        }
+
+        // Glitch effect
+        if (scene.elements.includes('glitch')) {
+            this.glitchIntensity = 0.3 + Math.sin(this.sceneTimer * 0.1) * 0.2;
+        } else {
+            this.glitchIntensity = 0;
         }
 
         // Update existing particles
@@ -345,6 +411,107 @@ class CutsceneSystem {
             rotationSpeed: (Math.random() - 0.5) * 10,
             life: 150,
             color: ['#ff4444', '#ff8800', '#ffff00'][Math.floor(Math.random() * 3)]
+        });
+    }
+
+    /**
+     * Spawn sparks particle (for core strike)
+     */
+    spawnSparksParticle() {
+        const centerX = this.canvas.width / 2;
+        const centerY = this.canvas.height / 2;
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 5 + Math.random() * 10;
+
+        this.particleEffects.push({
+            type: 'spark',
+            x: centerX,
+            y: centerY,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+            gravity: 0.2,
+            size: 2 + Math.random() * 3,
+            life: 40 + Math.random() * 30,
+            color: ['#ffffff', '#ffff00', '#ff8800'][Math.floor(Math.random() * 3)]
+        });
+    }
+
+    /**
+     * Spawn speedline particle (for running scene)
+     */
+    spawnSpeedlineParticle() {
+        this.particleEffects.push({
+            type: 'speedline',
+            x: this.canvas.width + 10,
+            y: Math.random() * this.canvas.height,
+            vx: -20 - Math.random() * 15,
+            vy: 0,
+            length: 50 + Math.random() * 100,
+            life: 30,
+            color: `rgba(255, 255, 255, ${0.3 + Math.random() * 0.4})`
+        });
+    }
+
+    /**
+     * Spawn lightning particle (for rift scene)
+     */
+    spawnLightningParticle() {
+        const startX = this.canvas.width / 2 + (Math.random() - 0.5) * 200;
+        const startY = 0;
+        const segments = [];
+        let x = startX;
+        let y = startY;
+
+        // Create jagged lightning path
+        for (let i = 0; i < 8; i++) {
+            const nextX = x + (Math.random() - 0.5) * 60;
+            const nextY = y + this.canvas.height / 8;
+            segments.push({ x1: x, y1: y, x2: nextX, y2: nextY });
+            x = nextX;
+            y = nextY;
+        }
+
+        this.particleEffects.push({
+            type: 'lightning',
+            segments: segments,
+            life: 15,
+            color: '#00f0ff'
+        });
+    }
+
+    /**
+     * Spawn confetti particle (for victory)
+     */
+    spawnConfettiParticle() {
+        this.particleEffects.push({
+            type: 'confetti',
+            x: Math.random() * this.canvas.width,
+            y: -10,
+            vx: (Math.random() - 0.5) * 3,
+            vy: 2 + Math.random() * 3,
+            gravity: 0.05,
+            size: 6 + Math.random() * 6,
+            rotation: Math.random() * 360,
+            rotationSpeed: (Math.random() - 0.5) * 15,
+            life: 200,
+            color: ['#ff71ce', '#01cdfe', '#ffd700', '#05ffa1', '#b967ff', '#ff6b6b'][Math.floor(Math.random() * 6)]
+        });
+    }
+
+    /**
+     * Spawn sparkle particle (for celebration)
+     */
+    spawnSparkleParticle() {
+        this.particleEffects.push({
+            type: 'sparkle',
+            x: Math.random() * this.canvas.width,
+            y: Math.random() * this.canvas.height,
+            vx: 0,
+            vy: 0,
+            size: 3 + Math.random() * 5,
+            life: 60,
+            maxLife: 60,
+            color: '#ffd700'
         });
     }
 
@@ -460,17 +627,36 @@ class CutsceneSystem {
             case 'escape':
                 this.renderEscape();
                 break;
+            // New cinematic backgrounds
+            case 'coreStrike':
+                this.renderCoreStrike();
+                break;
+            case 'collapse':
+                this.renderCollapse();
+                break;
+            case 'escape_run':
+                this.renderEscapeRun();
+                break;
+            case 'rift':
+                this.renderRift();
+                break;
+            case 'escape_light':
+                this.renderEscapeLight();
+                break;
+            case 'victory_glow':
+                this.renderVictoryGlow();
+                break;
+            case 'digital_fade':
+                this.renderDigitalFade();
+                break;
             default:
                 this.renderDigitalWorld();
         }
 
-        // DEBUG: Show debug info on screen
-        ctx.save();
-        ctx.fillStyle = '#ff0000';
-        ctx.font = '14px monospace';
-        ctx.fillText(`Scene: ${this.currentScene}/${this.scenes.length} Timer: ${this.sceneTimer} Lock: ${this.skipLockout}`, 10, 20);
-        ctx.fillText(`Renders: ${this.debugRenderCount} Active: ${this.active}`, 10, 40);
-        ctx.restore();
+        // Apply glitch effect if active
+        if (this.glitchIntensity > 0) {
+            this.applyGlitchEffect();
+        }
     }
 
     /**
@@ -732,6 +918,398 @@ class CutsceneSystem {
     }
 
     /**
+     * Render core strike - blade hitting the core
+     */
+    renderCoreStrike() {
+        const ctx = this.ctx;
+        const w = this.canvas.width;
+        const h = this.canvas.height;
+
+        // Dark background with red pulse
+        ctx.fillStyle = '#0a0005';
+        ctx.fillRect(0, 0, w, h);
+
+        // Central impact flash
+        const flashIntensity = Math.max(0, 1 - this.sceneTimer / 30);
+        if (flashIntensity > 0) {
+            const flashGrad = ctx.createRadialGradient(w/2, h/2, 0, w/2, h/2, 300);
+            flashGrad.addColorStop(0, `rgba(255, 255, 255, ${flashIntensity})`);
+            flashGrad.addColorStop(0.3, `rgba(255, 200, 100, ${flashIntensity * 0.8})`);
+            flashGrad.addColorStop(1, 'transparent');
+            ctx.fillStyle = flashGrad;
+            ctx.fillRect(0, 0, w, h);
+        }
+
+        // Cracking core
+        const coreSize = 80 + Math.sin(this.sceneTimer * 0.2) * 10;
+        ctx.save();
+        ctx.translate(w/2, h/2);
+
+        // Core body
+        const coreGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, coreSize);
+        coreGrad.addColorStop(0, '#ff0000');
+        coreGrad.addColorStop(0.5, '#880000');
+        coreGrad.addColorStop(1, '#330000');
+        ctx.fillStyle = coreGrad;
+        ctx.beginPath();
+        ctx.arc(0, 0, coreSize, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Cracks
+        ctx.strokeStyle = '#ffff00';
+        ctx.lineWidth = 3;
+        ctx.shadowColor = '#ffff00';
+        ctx.shadowBlur = 10;
+        for (let i = 0; i < 8; i++) {
+            const angle = (i / 8) * Math.PI * 2;
+            const len = 30 + Math.random() * 40;
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(Math.cos(angle) * len, Math.sin(angle) * len);
+            ctx.stroke();
+        }
+        ctx.restore();
+    }
+
+    /**
+     * Render collapse - environment falling apart
+     */
+    renderCollapse() {
+        const ctx = this.ctx;
+        const w = this.canvas.width;
+        const h = this.canvas.height;
+
+        // Shaking red background
+        const shakeX = (Math.random() - 0.5) * 8;
+        const shakeY = (Math.random() - 0.5) * 8;
+        ctx.save();
+        ctx.translate(shakeX, shakeY);
+
+        // Dark red gradient
+        const grad = ctx.createLinearGradient(0, 0, 0, h);
+        grad.addColorStop(0, '#200000');
+        grad.addColorStop(0.5, '#100000');
+        grad.addColorStop(1, '#050000');
+        ctx.fillStyle = grad;
+        ctx.fillRect(-10, -10, w + 20, h + 20);
+
+        // Falling grid lines (breaking apart)
+        ctx.strokeStyle = '#ff000033';
+        ctx.lineWidth = 1;
+        for (let x = 0; x < w; x += 50) {
+            const offset = Math.sin(x * 0.1 + this.sceneTimer * 0.05) * 20;
+            ctx.beginPath();
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x + offset, h);
+            ctx.stroke();
+        }
+
+        // Warning stripes
+        const stripeY = (this.sceneTimer * 3) % 100 - 50;
+        ctx.fillStyle = 'rgba(255, 0, 0, 0.1)';
+        for (let y = stripeY; y < h; y += 100) {
+            ctx.fillRect(0, y, w, 30);
+        }
+
+        ctx.restore();
+    }
+
+    /**
+     * Render escape run - running through corridor
+     */
+    renderEscapeRun() {
+        const ctx = this.ctx;
+        const w = this.canvas.width;
+        const h = this.canvas.height;
+
+        // Dark corridor
+        ctx.fillStyle = '#050505';
+        ctx.fillRect(0, 0, w, h);
+
+        // Perspective corridor walls
+        const vanishX = w / 2;
+        const vanishY = h / 2;
+
+        // Floor lines (moving toward viewer)
+        ctx.strokeStyle = '#ff000044';
+        ctx.lineWidth = 2;
+        for (let i = 0; i < 20; i++) {
+            const z = (i * 50 + this.sceneTimer * 8) % 1000;
+            const scale = 1000 / (z + 100);
+            const lineY = vanishY + (h/2 - vanishY) * scale + (h * 0.3) * scale;
+            const lineWidth = w * scale;
+
+            ctx.globalAlpha = Math.min(1, z / 200);
+            ctx.beginPath();
+            ctx.moveTo(vanishX - lineWidth/2, lineY);
+            ctx.lineTo(vanishX + lineWidth/2, lineY);
+            ctx.stroke();
+        }
+        ctx.globalAlpha = 1;
+
+        // Side wall lights (streaking by)
+        ctx.fillStyle = '#ff4400';
+        for (let i = 0; i < 10; i++) {
+            const z = (i * 100 + this.sceneTimer * 10) % 1000;
+            const scale = 500 / (z + 50);
+            const y = vanishY - 50 * scale;
+            const x1 = vanishX - (w/2) * scale - 20;
+            const x2 = vanishX + (w/2) * scale + 20;
+
+            ctx.globalAlpha = Math.min(0.8, z / 300);
+            ctx.fillRect(x1 - 30, y - 5, 30, 10);
+            ctx.fillRect(x2, y - 5, 30, 10);
+        }
+        ctx.globalAlpha = 1;
+
+        // Emergency red flash
+        if (Math.sin(this.sceneTimer * 0.15) > 0.5) {
+            ctx.fillStyle = 'rgba(255, 0, 0, 0.1)';
+            ctx.fillRect(0, 0, w, h);
+        }
+    }
+
+    /**
+     * Render rift - tear in reality
+     */
+    renderRift() {
+        const ctx = this.ctx;
+        const w = this.canvas.width;
+        const h = this.canvas.height;
+
+        // Dark void
+        ctx.fillStyle = '#000010';
+        ctx.fillRect(0, 0, w, h);
+
+        // Rift in center
+        const riftWidth = 60 + Math.sin(this.sceneTimer * 0.1) * 20;
+        const riftHeight = h * 0.8;
+
+        ctx.save();
+        ctx.translate(w/2, h/2);
+
+        // Rift glow
+        const riftGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, 200);
+        riftGrad.addColorStop(0, 'rgba(0, 240, 255, 0.5)');
+        riftGrad.addColorStop(0.5, 'rgba(0, 100, 255, 0.2)');
+        riftGrad.addColorStop(1, 'transparent');
+        ctx.fillStyle = riftGrad;
+        ctx.fillRect(-200, -200, 400, 400);
+
+        // Rift tear
+        ctx.fillStyle = '#ffffff';
+        ctx.shadowColor = '#00f0ff';
+        ctx.shadowBlur = 50;
+        ctx.beginPath();
+        ctx.moveTo(0, -riftHeight/2);
+
+        // Jagged edges
+        for (let y = -riftHeight/2; y < riftHeight/2; y += 20) {
+            const xOffset = (Math.random() - 0.5) * 20 + Math.sin(y * 0.1 + this.sceneTimer * 0.1) * 10;
+            ctx.lineTo(riftWidth/2 + xOffset, y);
+        }
+        ctx.lineTo(0, riftHeight/2);
+        for (let y = riftHeight/2; y > -riftHeight/2; y -= 20) {
+            const xOffset = (Math.random() - 0.5) * 20 + Math.sin(y * 0.1 + this.sceneTimer * 0.1) * 10;
+            ctx.lineTo(-riftWidth/2 + xOffset, y);
+        }
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.restore();
+
+        // Particles being pulled toward rift
+        ctx.fillStyle = '#00f0ff';
+        for (let i = 0; i < 20; i++) {
+            const angle = (i / 20) * Math.PI * 2 + this.sceneTimer * 0.02;
+            const dist = 200 + Math.sin(this.sceneTimer * 0.05 + i) * 100;
+            const x = w/2 + Math.cos(angle) * dist;
+            const y = h/2 + Math.sin(angle) * dist * 0.5;
+            const size = 2 + Math.random() * 3;
+            ctx.globalAlpha = 0.5 + Math.random() * 0.5;
+            ctx.beginPath();
+            ctx.arc(x, y, size, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+    }
+
+    /**
+     * Render escape light - emerging into light
+     */
+    renderEscapeLight() {
+        const ctx = this.ctx;
+        const w = this.canvas.width;
+        const h = this.canvas.height;
+
+        // Bright golden light
+        const progress = Math.min(this.sceneTimer / 120, 1);
+        const brightness = 0.3 + progress * 0.7;
+
+        const grad = ctx.createRadialGradient(w/2, h/2, 0, w/2, h/2, w);
+        grad.addColorStop(0, `rgba(255, 255, 255, ${brightness})`);
+        grad.addColorStop(0.2, `rgba(255, 215, 0, ${brightness * 0.9})`);
+        grad.addColorStop(0.5, `rgba(255, 140, 0, ${brightness * 0.6})`);
+        grad.addColorStop(1, '#000000');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, w, h);
+
+        // God rays
+        ctx.save();
+        ctx.translate(w/2, h/2);
+        for (let i = 0; i < 16; i++) {
+            const angle = (i / 16) * Math.PI * 2 + this.sceneTimer * 0.005;
+            const rayLength = w;
+            const rayWidth = 40 + Math.sin(this.sceneTimer * 0.05 + i) * 20;
+
+            ctx.rotate(angle);
+            ctx.fillStyle = `rgba(255, 255, 200, ${0.05 + Math.sin(this.sceneTimer * 0.03 + i * 0.5) * 0.03})`;
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(-rayWidth, -rayLength);
+            ctx.lineTo(rayWidth, -rayLength);
+            ctx.closePath();
+            ctx.fill();
+            ctx.rotate(-angle);
+        }
+        ctx.restore();
+
+        // Lens flare
+        if (progress > 0.5) {
+            const flareAlpha = (progress - 0.5) * 2;
+            ctx.fillStyle = `rgba(255, 255, 255, ${flareAlpha * 0.3})`;
+            ctx.beginPath();
+            ctx.arc(w/2, h/2, 50, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+
+    /**
+     * Render victory glow - celebration moment
+     */
+    renderVictoryGlow() {
+        const ctx = this.ctx;
+        const w = this.canvas.width;
+        const h = this.canvas.height;
+
+        // Deep purple/gold gradient
+        const grad = ctx.createRadialGradient(w/2, h * 0.3, 0, w/2, h/2, w);
+        grad.addColorStop(0, '#ffd700');
+        grad.addColorStop(0.3, '#b967ff');
+        grad.addColorStop(0.6, '#1a0a30');
+        grad.addColorStop(1, '#0a0015');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, w, h);
+
+        // Rotating light rays
+        ctx.save();
+        ctx.translate(w/2, h * 0.3);
+        const rayCount = 20;
+        for (let i = 0; i < rayCount; i++) {
+            const angle = (i / rayCount) * Math.PI * 2 + this.sceneTimer * 0.003;
+            ctx.rotate(angle);
+            const rayGrad = ctx.createLinearGradient(0, 0, 0, -h);
+            rayGrad.addColorStop(0, 'rgba(255, 215, 0, 0.3)');
+            rayGrad.addColorStop(1, 'transparent');
+            ctx.fillStyle = rayGrad;
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(-20, -h);
+            ctx.lineTo(20, -h);
+            ctx.closePath();
+            ctx.fill();
+            ctx.rotate(-angle);
+        }
+        ctx.restore();
+
+        // Crown glow at top
+        const crownY = 80 + Math.sin(this.sceneTimer * 0.05) * 10;
+        const crownGrad = ctx.createRadialGradient(w/2, crownY, 0, w/2, crownY, 100);
+        crownGrad.addColorStop(0, 'rgba(255, 215, 0, 0.5)');
+        crownGrad.addColorStop(1, 'transparent');
+        ctx.fillStyle = crownGrad;
+        ctx.beginPath();
+        ctx.arc(w/2, crownY, 100, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    /**
+     * Render digital fade - ending with matrix effect
+     */
+    renderDigitalFade() {
+        const ctx = this.ctx;
+        const w = this.canvas.width;
+        const h = this.canvas.height;
+
+        // Fade to darker over time
+        const fadeProgress = Math.min(this.sceneTimer / 300, 1);
+
+        // Gradient from cyan to black
+        const grad = ctx.createLinearGradient(0, 0, 0, h);
+        grad.addColorStop(0, `rgba(0, 20, 40, ${0.8 + fadeProgress * 0.2})`);
+        grad.addColorStop(1, '#000000');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, w, h);
+
+        // Grid that fades out
+        ctx.strokeStyle = `rgba(0, 240, 255, ${0.2 * (1 - fadeProgress)})`;
+        ctx.lineWidth = 1;
+        for (let x = 0; x < w; x += 40) {
+            ctx.beginPath();
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, h);
+            ctx.stroke();
+        }
+        for (let y = 0; y < h; y += 40) {
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.lineTo(w, y);
+            ctx.stroke();
+        }
+
+        // Scanlines
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+        for (let y = 0; y < h; y += 4) {
+            ctx.fillRect(0, y, w, 2);
+        }
+    }
+
+    /**
+     * Apply glitch effect overlay
+     */
+    applyGlitchEffect() {
+        const ctx = this.ctx;
+        const w = this.canvas.width;
+        const h = this.canvas.height;
+
+        // RGB split
+        if (Math.random() < this.glitchIntensity) {
+            const sliceY = Math.random() * h;
+            const sliceH = 5 + Math.random() * 30;
+            const offset = (Math.random() - 0.5) * 20;
+
+            ctx.save();
+            ctx.globalCompositeOperation = 'lighter';
+            ctx.fillStyle = 'rgba(255, 0, 0, 0.1)';
+            ctx.fillRect(offset, sliceY, w, sliceH);
+            ctx.fillStyle = 'rgba(0, 255, 255, 0.1)';
+            ctx.fillRect(-offset, sliceY, w, sliceH);
+            ctx.restore();
+        }
+
+        // Random blocks
+        if (Math.random() < this.glitchIntensity * 0.5) {
+            ctx.fillStyle = `rgba(${Math.random() > 0.5 ? 255 : 0}, 0, ${Math.random() > 0.5 ? 255 : 0}, 0.3)`;
+            ctx.fillRect(
+                Math.random() * w,
+                Math.random() * h,
+                Math.random() * 100 + 20,
+                Math.random() * 20 + 5
+            );
+        }
+    }
+
+    /**
      * Render particles
      */
     renderParticles() {
@@ -739,7 +1317,16 @@ class CutsceneSystem {
 
         for (const p of this.particleEffects) {
             ctx.save();
-            ctx.globalAlpha = p.life / (p.type === 'matrix' ? 200 : 60);
+
+            // Calculate alpha based on particle type
+            let alpha = 1;
+            if (p.type === 'matrix') alpha = p.life / 200;
+            else if (p.type === 'confetti') alpha = Math.min(p.life / 50, 1);
+            else if (p.type === 'sparkle') alpha = Math.sin((p.life / p.maxLife) * Math.PI);
+            else if (p.type === 'lightning') alpha = p.life / 15;
+            else alpha = p.life / 60;
+
+            ctx.globalAlpha = alpha;
 
             if (p.type === 'matrix') {
                 ctx.font = '16px "MS Gothic", monospace';
@@ -760,10 +1347,94 @@ class CutsceneSystem {
                 p.rotation += p.rotationSpeed;
                 ctx.fillStyle = p.color;
                 ctx.fillRect(-p.size/2, -p.size/2, p.size, p.size);
+            } else if (p.type === 'spark') {
+                // Sparks with trail
+                ctx.fillStyle = p.color;
+                ctx.shadowColor = p.color;
+                ctx.shadowBlur = 10;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                ctx.fill();
+                // Trail
+                ctx.strokeStyle = p.color;
+                ctx.lineWidth = p.size / 2;
+                ctx.beginPath();
+                ctx.moveTo(p.x, p.y);
+                ctx.lineTo(p.x - p.vx * 2, p.y - p.vy * 2);
+                ctx.stroke();
+            } else if (p.type === 'speedline') {
+                // Speed lines for running effect
+                ctx.strokeStyle = p.color;
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(p.x, p.y);
+                ctx.lineTo(p.x + p.length, p.y);
+                ctx.stroke();
+            } else if (p.type === 'lightning') {
+                // Lightning bolt segments
+                ctx.strokeStyle = p.color;
+                ctx.shadowColor = p.color;
+                ctx.shadowBlur = 20;
+                ctx.lineWidth = 3;
+                for (const seg of p.segments) {
+                    ctx.beginPath();
+                    ctx.moveTo(seg.x1, seg.y1);
+                    ctx.lineTo(seg.x2, seg.y2);
+                    ctx.stroke();
+                }
+                // Glow effect
+                ctx.lineWidth = 8;
+                ctx.globalAlpha = alpha * 0.3;
+                for (const seg of p.segments) {
+                    ctx.beginPath();
+                    ctx.moveTo(seg.x1, seg.y1);
+                    ctx.lineTo(seg.x2, seg.y2);
+                    ctx.stroke();
+                }
+            } else if (p.type === 'confetti') {
+                ctx.translate(p.x, p.y);
+                ctx.rotate(p.rotation * Math.PI / 180);
+                p.rotation += p.rotationSpeed;
+                ctx.fillStyle = p.color;
+                // Rectangular confetti
+                ctx.fillRect(-p.size/2, -p.size/4, p.size, p.size/2);
+            } else if (p.type === 'sparkle') {
+                // Star-shaped sparkle
+                ctx.fillStyle = p.color;
+                ctx.shadowColor = p.color;
+                ctx.shadowBlur = 15;
+                this.drawStar(ctx, p.x, p.y, 4, p.size, p.size / 2);
             }
 
             ctx.restore();
         }
+    }
+
+    /**
+     * Helper to draw a star shape
+     */
+    drawStar(ctx, cx, cy, spikes, outerRadius, innerRadius) {
+        let rot = Math.PI / 2 * 3;
+        let x = cx;
+        let y = cy;
+        const step = Math.PI / spikes;
+
+        ctx.beginPath();
+        ctx.moveTo(cx, cy - outerRadius);
+        for (let i = 0; i < spikes; i++) {
+            x = cx + Math.cos(rot) * outerRadius;
+            y = cy + Math.sin(rot) * outerRadius;
+            ctx.lineTo(x, y);
+            rot += step;
+
+            x = cx + Math.cos(rot) * innerRadius;
+            y = cy + Math.sin(rot) * innerRadius;
+            ctx.lineTo(x, y);
+            rot += step;
+        }
+        ctx.lineTo(cx, cy - outerRadius);
+        ctx.closePath();
+        ctx.fill();
     }
 
     /**

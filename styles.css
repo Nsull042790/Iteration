@@ -1669,6 +1669,135 @@ body {
 }
 
 /* ============================================
+   Escape Confirmation Modal
+   ============================================ */
+
+#escape-modal {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: radial-gradient(ellipse at center, rgba(255, 215, 0, 0.1) 0%, rgba(0, 0, 0, 0.95) 70%);
+}
+
+.escape-content {
+    position: relative;
+    border-color: #ffd700;
+    box-shadow:
+        0 0 50px rgba(255, 215, 0, 0.4),
+        0 0 100px rgba(255, 215, 0, 0.2),
+        inset 0 0 60px rgba(255, 215, 0, 0.05);
+    text-align: center;
+    overflow: hidden;
+}
+
+.escape-glow {
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255, 215, 0, 0.1) 0%, transparent 50%);
+    animation: escapeGlowPulse 2s ease-in-out infinite;
+    pointer-events: none;
+}
+
+@keyframes escapeGlowPulse {
+    0%, 100% { opacity: 0.5; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.1); }
+}
+
+.escape-title {
+    color: #ffd700 !important;
+    font-size: 36px !important;
+    text-shadow:
+        0 0 20px rgba(255, 215, 0, 0.8),
+        0 0 40px rgba(255, 215, 0, 0.4) !important;
+    animation: escapeTitlePulse 1.5s ease-in-out infinite;
+}
+
+@keyframes escapeTitlePulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+}
+
+.escape-subtitle {
+    color: #ffaa00 !important;
+    animation: blink 1s step-end infinite;
+}
+
+@keyframes blink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0.3; }
+}
+
+.escape-message {
+    margin: 30px 0;
+    padding: 20px;
+    background: rgba(255, 215, 0, 0.05);
+    border-left: 3px solid #ffd700;
+}
+
+.escape-text {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 16px;
+    margin: 10px 0;
+    letter-spacing: 1px;
+}
+
+.escape-text.highlight {
+    color: #ffd700;
+    font-size: 18px;
+    font-weight: bold;
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+    margin-top: 20px;
+}
+
+.escape-stats {
+    display: flex;
+    justify-content: center;
+    gap: 60px;
+    margin: 20px 0;
+    padding: 20px 0;
+    border-top: 1px solid rgba(255, 215, 0, 0.3);
+    border-bottom: 1px solid rgba(255, 215, 0, 0.3);
+}
+
+.escape-stats .stat-value {
+    color: #ffd700;
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+}
+
+.escape-btn {
+    background: linear-gradient(135deg, #ffd700 0%, #ff8c00 100%);
+    color: #000 !important;
+    font-size: 18px;
+    padding: 20px 40px;
+    margin-top: 20px;
+    box-shadow:
+        0 4px 0 #996600,
+        0 0 30px rgba(255, 215, 0, 0.5),
+        0 0 60px rgba(255, 215, 0, 0.3);
+    animation: escapeButtonPulse 1s ease-in-out infinite;
+}
+
+.escape-btn:hover {
+    transform: translateY(-2px) scale(1.05);
+    box-shadow:
+        0 6px 0 #996600,
+        0 0 50px rgba(255, 215, 0, 0.7),
+        0 0 100px rgba(255, 215, 0, 0.4);
+}
+
+@keyframes escapeButtonPulse {
+    0%, 100% { box-shadow: 0 4px 0 #996600, 0 0 30px rgba(255, 215, 0, 0.5); }
+    50% { box-shadow: 0 4px 0 #996600, 0 0 50px rgba(255, 215, 0, 0.8), 0 0 80px rgba(255, 215, 0, 0.4); }
+}
+
+.escape-btn .btn-icon {
+    font-size: 24px;
+}
+
+/* ============================================
    Upgrade Selection Modal
    ============================================ */
 

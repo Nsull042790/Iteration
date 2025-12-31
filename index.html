@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>ITERATION</title>
-    <link rel="stylesheet" href="styles.css?v=20251231b">
+    <link rel="stylesheet" href="styles.css?v=20251231c">
 </head>
 <body>
     <div id="game-container">
@@ -184,6 +184,39 @@
                 </div>
 
                 <div class="gameover-hint">Press SPACE to restart | ESC for main menu</div>
+            </div>
+        </div>
+
+        <!-- Escape Confirmation Modal -->
+        <div id="escape-modal" class="screen hidden">
+            <div class="modal-content escape-content">
+                <div class="escape-glow"></div>
+                <div class="modal-header">
+                    <div class="modal-title escape-title">CORE DESTROYED</div>
+                    <div class="modal-subtitle escape-subtitle">// SIMULATION COLLAPSE IMMINENT</div>
+                </div>
+
+                <div class="escape-message">
+                    <p class="escape-text">The corrupted core has been destroyed.</p>
+                    <p class="escape-text">A breach in the simulation has opened.</p>
+                    <p class="escape-text highlight">This is your only chance to escape.</p>
+                </div>
+
+                <div class="escape-stats">
+                    <div class="stat-item">
+                        <span class="stat-label">TIME SURVIVED</span>
+                        <span class="stat-value" id="escape-time">00:00</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">ENEMIES DESTROYED</span>
+                        <span class="stat-value" id="escape-kills">0</span>
+                    </div>
+                </div>
+
+                <button id="escape-button" class="start-btn escape-btn">
+                    <span class="btn-text">INITIATE ESCAPE SEQUENCE</span>
+                    <span class="btn-icon">⚡</span>
+                </button>
             </div>
         </div>
 
@@ -520,10 +553,10 @@
     <script src="src/systems/leaderboard.js?v=1.8.2"></script>
     <script src="src/systems/audio.js?v=1.8.2"></script>
     <script src="src/systems/ghosts.js?v=1.8.2"></script>
-    <script src="src/systems/cutscene.js?v=20251231a"></script>
-    <script src="src/ui/hud.js?v=20251231a"></script>
-    <script src="src/core/renderer.js?v=20251231a"></script>
-    <script src="src/core/game.js?v=20251231a"></script>
-    <script src="main.js?v=20251231a"></script>
+    <script src="src/systems/cutscene.js?v=20251231c"></script>
+    <script src="src/ui/hud.js?v=20251231c"></script>
+    <script src="src/core/renderer.js?v=20251231c"></script>
+    <script src="src/core/game.js?v=20251231c"></script>
+    <script src="main.js?v=20251231c"></script>
 </body>
 </html>

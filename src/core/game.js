@@ -1621,25 +1621,66 @@ class Game {
     }
 
     /**
-     * End victory sequence and play victory cutscene
+     * End victory sequence and show escape confirmation
      */
     endVictorySequence() {
         this.victoryActive = false;
         this.victoryWaitStartTime = null;
 
-        console.log('endVictorySequence called, cutsceneSystem:', this.cutsceneSystem);
+        // Show the escape confirmation modal instead of immediately playing cutscene
+        this.showEscapeModal();
+    }
 
-        // Play victory cutscene before returning to main menu
+    /**
+     * Show the escape confirmation modal
+     */
+    showEscapeModal() {
+        this.state = 'escape';
+
+        const modal = document.getElementById('escape-modal');
+        const escapeBtn = document.getElementById('escape-button');
+        const timeDisplay = document.getElementById('escape-time');
+        const killsDisplay = document.getElementById('escape-kills');
+
+        // Update stats
+        if (this.victoryStats) {
+            timeDisplay.textContent = this.victoryStats.time || '00:00';
+            killsDisplay.textContent = this.victoryStats.kills || '0';
+        }
+
+        // Show modal
+        modal.classList.remove('hidden');
+
+        // Handle escape button click
+        const handleEscape = (e) => {
+            e.preventDefault();
+            this.audio.playUIClick();
+
+            // Remove listeners
+            escapeBtn.removeEventListener('click', handleEscape);
+            escapeBtn.removeEventListener('touchend', handleEscape);
+
+            // Hide modal
+            modal.classList.add('hidden');
+
+            // Now play the victory cutscene
+            this.playVictoryCutscene();
+        };
+
+        escapeBtn.addEventListener('click', handleEscape);
+        escapeBtn.addEventListener('touchend', handleEscape);
+    }
+
+    /**
+     * Play the victory/escape cutscene
+     */
+    playVictoryCutscene() {
         if (this.cutsceneSystem) {
             this.state = 'cutscene';
-            console.log('Starting victory cutscene, state:', this.state);
             this.cutsceneSystem.playVictory(() => {
-                console.log('Victory cutscene complete, returning to main menu');
                 this.returnToMainMenu();
             }, this.victoryStats);
-            console.log('playVictory called, isPlaying:', this.cutsceneSystem.isPlaying());
         } else {
-            console.log('No cutsceneSystem, returning to main menu directly');
             this.returnToMainMenu();
         }
     }

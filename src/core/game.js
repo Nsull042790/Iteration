@@ -2385,6 +2385,10 @@ class Game {
             this.input.touchControls.setActiveWeapon(this.weaponSystem.activeIndex || 0);
         }
 
+        // Set initial weapon style (sword, nunchucks, lightsaber)
+        const weaponStyles = ['sword', 'nunchucks', 'lightsaber'];
+        this.player.weaponStyle = weaponStyles[this.weaponSystem.activeIndex || 0];
+
         // Play simulation drop sound - you're being thrown into the AI simulation
         this.audio.playSimulationDrop();
 
@@ -2598,11 +2602,15 @@ class Game {
         }
 
         // Weapon switching with 1, 2, 3 keys
+        // Weapon styles: 0 = sword, 1 = nunchucks, 2 = lightsaber
+        const weaponStyles = ['sword', 'nunchucks', 'lightsaber'];
+
         if (this.input.isKeyJustPressed('Digit1') || this.input.isKeyJustPressed('Numpad1')) {
             if (this.weaponSystem.switchTo(0)) {
                 this.audio.playWeaponSwitch();
                 this.hud.addMessage(`WEAPON: ${this.weaponSystem.getActiveTierData().name}`, 'system');
                 if (this.input.touchControls) this.input.touchControls.setActiveWeapon(0);
+                this.player.weaponStyle = weaponStyles[0];
             }
         }
         if (this.input.isKeyJustPressed('Digit2') || this.input.isKeyJustPressed('Numpad2')) {
@@ -2610,6 +2618,7 @@ class Game {
                 this.audio.playWeaponSwitch();
                 this.hud.addMessage(`WEAPON: ${this.weaponSystem.getActiveTierData().name}`, 'system');
                 if (this.input.touchControls) this.input.touchControls.setActiveWeapon(1);
+                this.player.weaponStyle = weaponStyles[1];
             }
         }
         if (this.input.isKeyJustPressed('Digit3') || this.input.isKeyJustPressed('Numpad3')) {
@@ -2617,6 +2626,7 @@ class Game {
                 this.audio.playWeaponSwitch();
                 this.hud.addMessage(`WEAPON: ${this.weaponSystem.getActiveTierData().name}`, 'system');
                 if (this.input.touchControls) this.input.touchControls.setActiveWeapon(2);
+                this.player.weaponStyle = weaponStyles[2];
             }
         }
 

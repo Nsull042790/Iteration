@@ -49,6 +49,10 @@ class Player extends Entity {
         this.bladeSwingTrail = [];
         this.bladePulsePhase = 0;
 
+        // Weapon style (sword, nunchucks, lightsaber) - set by weapon system
+        this.weaponStyle = 'sword';
+        this.nunchuckPhase = 0; // Animation phase for nunchucks
+
         // Dash ability
         this.isDashing = false;
         this.dashTimer = 0;
@@ -751,7 +755,7 @@ class Player extends Entity {
     }
 
     /**
-     * Render the blade based on current evolution tier
+     * Render the blade based on current evolution tier and weapon style
      */
     renderBlade(ctx, screenPos) {
         const centerX = screenPos.x + this.width / 2;
@@ -782,28 +786,40 @@ class Player extends Entity {
         ctx.shadowColor = this.bladeGlow;
         ctx.shadowBlur = (this.isAttacking ? v.glowIntensity * 2 : v.glowIntensity * 1.3) * pulse;
 
-        // Render based on blade shape/tier
-        switch (v.shape) {
-            case 'stick':
-                this.renderStickBlade(ctx, v, pulse);
+        // Render based on weapon style
+        switch (this.weaponStyle) {
+            case 'nunchucks':
+                this.renderNunchucks(ctx, v, pulse);
                 break;
-            case 'blade':
-                this.renderChargedBlade(ctx, v, pulse);
+            case 'lightsaber':
+                this.renderLightsaber(ctx, v, pulse);
                 break;
             case 'sword':
-                this.renderSwordBlade(ctx, v, pulse);
-                break;
-            case 'heatsword':
-                this.renderHeatSword(ctx, v, pulse);
-                break;
-            case 'corrupt':
-                this.renderCorruptBlade(ctx, v, pulse);
-                break;
-            case 'laser':
-                this.renderLaserBlade(ctx, v, pulse);
-                break;
             default:
-                this.renderStickBlade(ctx, v, pulse);
+                // Render sword based on blade evolution shape/tier
+                switch (v.shape) {
+                    case 'stick':
+                        this.renderStickBlade(ctx, v, pulse);
+                        break;
+                    case 'blade':
+                        this.renderChargedBlade(ctx, v, pulse);
+                        break;
+                    case 'sword':
+                        this.renderSwordBlade(ctx, v, pulse);
+                        break;
+                    case 'heatsword':
+                        this.renderHeatSword(ctx, v, pulse);
+                        break;
+                    case 'corrupt':
+                        this.renderCorruptBlade(ctx, v, pulse);
+                        break;
+                    case 'laser':
+                        this.renderLaserBlade(ctx, v, pulse);
+                        break;
+                    default:
+                        this.renderStickBlade(ctx, v, pulse);
+                }
+                break;
         }
 
         ctx.restore();
@@ -1124,6 +1140,202 @@ class Player extends Entity {
         ctx.globalAlpha = pulse;
         ctx.fillRect(-2, -4, 4, 8);
         ctx.globalAlpha = 1;
+    }
+
+    /**
+     * Nunchucks weapon style - spinning dual sticks connected by chain
+     */
+    renderNunchucks(ctx, v, pulse) {
+        // Update nunchuck animation phase
+        this.nunchuckPhase += this.isAttacking ? 0.4 : 0.1;
+
+        const stickLength = v.length * 0.45;
+        const stickWidth = v.width * 0.6;
+        const chainLength = 12;
+        const spinSpeed = this.isAttacking ? this.nunchuckPhase : this.nunchuckPhase * 0.3;
+
+        // First stick (held)
+        ctx.save();
+        ctx.fillStyle = '#4a3728';
+        ctx.strokeStyle = this.bladeColor;
+        ctx.lineWidth = 2;
+
+        // Handle with energy wrap
+        const gradient1 = ctx.createLinearGradient(0, 0, stickLength * 0.4, 0);
+        gradient1.addColorStop(0, '#3a2718');
+        gradient1.addColorStop(0.5, '#5a4738');
+        gradient1.addColorStop(1, '#3a2718');
+        ctx.fillStyle = gradient1;
+        ctx.fillRect(0, -stickWidth, stickLength * 0.4, stickWidth * 2);
+
+        // Energy bands on handle
+        ctx.strokeStyle = this.bladeColor;
+        ctx.lineWidth = 2;
+        ctx.globalAlpha = pulse;
+        for (let i = 0; i < 3; i++) {
+            const bandX = 5 + i * 8;
+            ctx.beginPath();
+            ctx.moveTo(bandX, -stickWidth);
+            ctx.lineTo(bandX, stickWidth);
+            ctx.stroke();
+        }
+        ctx.globalAlpha = 1;
+
+        // Chain connection point
+        const chainStartX = stickLength * 0.4;
+
+        // Chain links (glowing)
+        ctx.strokeStyle = this.bladeColor;
+        ctx.lineWidth = 2;
+        ctx.shadowColor = this.bladeGlow;
+        ctx.shadowBlur = 8;
+
+        // Animated spinning stick position
+        const spinAngle = spinSpeed;
+        const endStickX = chainStartX + Math.cos(spinAngle) * (chainLength + stickLength * 0.5);
+        const endStickY = Math.sin(spinAngle) * (chainLength + stickLength * 0.5);
+
+        // Draw chain
+        ctx.beginPath();
+        ctx.moveTo(chainStartX, 0);
+        const midX = chainStartX + chainLength * 0.5;
+        const midY = Math.sin(spinAngle * 0.5) * 5;
+        ctx.quadraticCurveTo(midX, midY, chainStartX + chainLength, Math.sin(spinAngle) * 8);
+        ctx.stroke();
+
+        // Second stick (spinning)
+        ctx.save();
+        ctx.translate(chainStartX + chainLength, Math.sin(spinAngle) * 8);
+        ctx.rotate(spinAngle + Math.PI * 0.25);
+
+        // Spinning stick body
+        const gradient2 = ctx.createLinearGradient(0, 0, stickLength * 0.6, 0);
+        gradient2.addColorStop(0, '#3a2718');
+        gradient2.addColorStop(0.5, '#5a4738');
+        gradient2.addColorStop(1, '#3a2718');
+        ctx.fillStyle = gradient2;
+        ctx.shadowBlur = 0;
+        ctx.fillRect(-2, -stickWidth, stickLength * 0.6, stickWidth * 2);
+
+        // Energy tip
+        ctx.fillStyle = this.bladeColor;
+        ctx.shadowColor = this.bladeGlow;
+        ctx.shadowBlur = v.glowIntensity * pulse;
+        ctx.fillRect(stickLength * 0.5, -stickWidth * 0.8, 8, stickWidth * 1.6);
+
+        // Motion trail when attacking
+        if (this.isAttacking) {
+            ctx.globalAlpha = 0.3;
+            ctx.strokeStyle = this.bladeColor;
+            ctx.lineWidth = stickWidth * 2;
+            ctx.beginPath();
+            ctx.arc(stickLength * 0.3, 0, stickLength * 0.4, 0, Math.PI * 0.5);
+            ctx.stroke();
+            ctx.globalAlpha = 1;
+        }
+
+        ctx.restore();
+        ctx.restore();
+    }
+
+    /**
+     * Lightsaber weapon style - energy blade with distinctive hilt
+     */
+    renderLightsaber(ctx, v, pulse) {
+        const hiltLength = 12;
+        const bladeLength = v.length;
+        const bladeWidth = v.width * 0.8;
+
+        // Hilt (metallic cylinder)
+        ctx.save();
+
+        // Hilt base
+        const hiltGradient = ctx.createLinearGradient(0, -6, 0, 6);
+        hiltGradient.addColorStop(0, '#666666');
+        hiltGradient.addColorStop(0.3, '#aaaaaa');
+        hiltGradient.addColorStop(0.5, '#cccccc');
+        hiltGradient.addColorStop(0.7, '#aaaaaa');
+        hiltGradient.addColorStop(1, '#666666');
+
+        ctx.fillStyle = hiltGradient;
+        ctx.fillRect(-4, -6, hiltLength, 12);
+
+        // Hilt details (grip lines)
+        ctx.strokeStyle = '#444444';
+        ctx.lineWidth = 1;
+        for (let i = 0; i < 4; i++) {
+            ctx.beginPath();
+            ctx.moveTo(i * 2.5, -5);
+            ctx.lineTo(i * 2.5, 5);
+            ctx.stroke();
+        }
+
+        // Emitter ring
+        ctx.fillStyle = '#333333';
+        ctx.beginPath();
+        ctx.arc(hiltLength - 2, 0, 5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = this.bladeColor;
+        ctx.globalAlpha = pulse;
+        ctx.beginPath();
+        ctx.arc(hiltLength - 2, 0, 3, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+
+        // Blade - energy beam with soft edges
+        const bladeGradient = ctx.createLinearGradient(hiltLength, 0, hiltLength + bladeLength, 0);
+        bladeGradient.addColorStop(0, this.bladeColor);
+        bladeGradient.addColorStop(0.8, this.bladeColor);
+        bladeGradient.addColorStop(1, '#ffffff');
+
+        // Outer glow
+        ctx.shadowColor = this.bladeGlow;
+        ctx.shadowBlur = v.glowIntensity * 2 * pulse;
+
+        // Main blade body
+        ctx.fillStyle = bladeGradient;
+        ctx.beginPath();
+        ctx.moveTo(hiltLength, -bladeWidth);
+        ctx.lineTo(hiltLength + bladeLength * 0.1, -bladeWidth * 1.1);
+        ctx.lineTo(hiltLength + bladeLength * 0.95, -bladeWidth * 0.3);
+        ctx.quadraticCurveTo(hiltLength + bladeLength, 0, hiltLength + bladeLength * 0.95, bladeWidth * 0.3);
+        ctx.lineTo(hiltLength + bladeLength * 0.1, bladeWidth * 1.1);
+        ctx.lineTo(hiltLength, bladeWidth);
+        ctx.closePath();
+        ctx.fill();
+
+        // White core
+        ctx.fillStyle = '#ffffff';
+        ctx.globalAlpha = 0.8;
+        ctx.beginPath();
+        ctx.moveTo(hiltLength + 2, -bladeWidth * 0.3);
+        ctx.lineTo(hiltLength + bladeLength * 0.9, 0);
+        ctx.lineTo(hiltLength + 2, bladeWidth * 0.3);
+        ctx.closePath();
+        ctx.fill();
+        ctx.globalAlpha = 1;
+
+        // Blade flicker effect
+        if (Math.random() > 0.9) {
+            ctx.globalAlpha = 0.5;
+            ctx.fillStyle = '#ffffff';
+            const flickerX = hiltLength + Math.random() * bladeLength * 0.8;
+            ctx.fillRect(flickerX, -bladeWidth * 0.5, 3, bladeWidth);
+            ctx.globalAlpha = 1;
+        }
+
+        // Humming effect - subtle width variation
+        const hum = Math.sin(this.bladePulsePhase * 3) * 0.5;
+        ctx.strokeStyle = this.bladeGlow;
+        ctx.lineWidth = 1 + hum;
+        ctx.globalAlpha = 0.5;
+        ctx.beginPath();
+        ctx.moveTo(hiltLength, 0);
+        ctx.lineTo(hiltLength + bladeLength * 0.9, 0);
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+
+        ctx.restore();
     }
 
     /**

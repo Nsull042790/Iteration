@@ -99,7 +99,13 @@ class CutsceneSystem {
         this.fadeDirection = -1;
         this.textRevealIndex = 0;
         this.particleEffects = [];
-        this.enableTouchSkip();
+        this.skipLockout = 30; // Prevent skip for 0.5 seconds (30 frames)
+        // Delay enabling touch skip to prevent the tap that started the cutscene from skipping it
+        setTimeout(() => {
+            if (this.active) {
+                this.enableTouchSkip();
+            }
+        }, 500);
         console.log('Cutscene started, active:', this.active);
     }
 
@@ -188,6 +194,11 @@ class CutsceneSystem {
      */
     update() {
         if (!this.active) return;
+
+        // Decrement skip lockout
+        if (this.skipLockout > 0) {
+            this.skipLockout--;
+        }
 
         // Update fade
         this.fadeAlpha += this.fadeDirection * this.fadeSpeed;
@@ -344,6 +355,12 @@ class CutsceneSystem {
      * Skip cutscene
      */
     skip() {
+        // Don't skip if lockout is active (prevents accidental skip from touch that started cutscene)
+        if (this.skipLockout > 0) {
+            console.log('Skip blocked by lockout:', this.skipLockout);
+            return;
+        }
+        console.log('Skipping cutscene');
         this.endCutscene();
     }
 

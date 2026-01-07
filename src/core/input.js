@@ -184,9 +184,9 @@ class InputHandler {
             return true;
         }
 
-        // Check mouse (right click = attack, left click = interact)
-        if (action === 'attack' && this.mouse.rightDown) return true;
-        if (action === 'interact' && this.mouse.leftDown) return true;
+        // Check mouse - left click can be attack (handled specially in game.js for interact priority)
+        // Right click is not used for now
+        if (action === 'attack' && this.mouse.leftDown) return true;
 
         // Check touch controls
         if (this.touchControls && this.touchControls.enabled) {
@@ -212,9 +212,8 @@ class InputHandler {
             return true;
         }
 
-        // Check mouse (right click = attack, left click = interact)
-        if (action === 'attack' && this.mouseJustPressed.right) return true;
-        if (action === 'interact' && this.mouseJustPressed.left) return true;
+        // Mouse left-click for attack is handled specially in game.js
+        // (interact takes priority when clicking on interactables)
 
         // Check touch controls
         if (this.touchControls && this.touchControls.enabled) {
@@ -310,5 +309,52 @@ class InputHandler {
      */
     isTouchEnabled() {
         return this.touchControls && this.touchControls.enabled;
+    }
+
+    /**
+     * Get mouse position relative to canvas
+     */
+    getMouseCanvasPosition(canvas) {
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        return {
+            x: (this.mouse.x - rect.left) * scaleX,
+            y: (this.mouse.y - rect.top) * scaleY
+        };
+    }
+
+    /**
+     * Get mouse position in world coordinates (accounting for camera)
+     */
+    getMouseWorldPosition(canvas, camera) {
+        const canvasPos = this.getMouseCanvasPosition(canvas);
+        return {
+            x: canvasPos.x + (camera ? camera.x : 0),
+            y: canvasPos.y + (camera ? camera.y : 0)
+        };
+    }
+
+    /**
+     * Check if mouse is over a rectangle (in world coordinates)
+     */
+    isMouseOver(canvas, camera, x, y, width, height) {
+        const mouseWorld = this.getMouseWorldPosition(canvas, camera);
+        return mouseWorld.x >= x && mouseWorld.x <= x + width &&
+               mouseWorld.y >= y && mouseWorld.y <= y + height;
+    }
+
+    /**
+     * Check if left mouse button was just clicked
+     */
+    isLeftClickJustPressed() {
+        return this.mouseJustPressed.left;
+    }
+
+    /**
+     * Check if right mouse button was just clicked
+     */
+    isRightClickJustPressed() {
+        return this.mouseJustPressed.right;
     }
 }

@@ -283,6 +283,21 @@ class Interactable {
 
         ctx.save();
 
+        // Mouse hover highlight effect (shows clickable objects)
+        if (this.mouseHover && !this.used) {
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 2;
+            ctx.shadowColor = '#ffffff';
+            ctx.shadowBlur = 15;
+            ctx.strokeRect(
+                screenPos.x - 4,
+                screenPos.y - 4,
+                this.width + 8,
+                this.height + 8
+            );
+            ctx.shadowBlur = 0;
+        }
+
         switch (this.type) {
             case 'chest':
                 this.renderChest(ctx, screenPos);
@@ -308,8 +323,9 @@ class Interactable {
         }
 
         // Render interaction prompt (not for auto-collect items)
-        if (this.playerNearby && !this.used && !this.autoCollect) {
-            this.renderPrompt(ctx, screenPos);
+        // Show for keyboard when nearby, or for mouse when hovering
+        if (!this.used && !this.autoCollect && (this.playerNearby || this.mouseHover)) {
+            this.renderPrompt(ctx, screenPos, this.mouseHover);
         }
 
         ctx.restore();
@@ -639,19 +655,20 @@ class Interactable {
         ctx.globalAlpha = 1;
     }
 
-    renderPrompt(ctx, screenPos) {
+    renderPrompt(ctx, screenPos, isMouseHover = false) {
         const promptY = screenPos.y - 25;
         const pulse = Math.sin(this.pulsePhase * 2) * 0.2 + 0.8;
 
         ctx.globalAlpha = pulse;
         ctx.font = 'bold 10px "Courier New", monospace';
-        ctx.fillStyle = GAME_CONFIG.COLORS.CYAN;
+        ctx.fillStyle = isMouseHover ? '#ffffff' : GAME_CONFIG.COLORS.CYAN;
         ctx.textAlign = 'center';
-        ctx.shadowColor = GAME_CONFIG.COLORS.CYAN;
+        ctx.shadowColor = isMouseHover ? '#ffffff' : GAME_CONFIG.COLORS.CYAN;
         ctx.shadowBlur = 5;
 
-        // Key indicator
-        ctx.fillText('[←]', screenPos.x + this.width / 2, promptY);
+        // Key indicator - show CLICK for mouse, [←] for keyboard
+        const keyHint = isMouseHover ? '[CLICK]' : '[←]';
+        ctx.fillText(keyHint, screenPos.x + this.width / 2, promptY);
 
         // Action text
         ctx.fillText(this.interactPrompt, screenPos.x + this.width / 2, promptY + 12);

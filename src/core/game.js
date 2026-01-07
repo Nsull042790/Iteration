@@ -2955,10 +2955,17 @@ class Game {
             this.completeLevel();
         }
 
-        // Update interactables
+        // Update interactables and check mouse hover
         for (const interactable of this.interactables) {
             interactable.update(deltaTime);
             interactable.checkPlayerProximity(this.player);
+
+            // Check if mouse is hovering over this interactable (for visual feedback)
+            interactable.mouseHover = !interactable.used && this.input.isMouseOver(
+                this.canvas, this.camera,
+                interactable.x, interactable.y,
+                interactable.width, interactable.height
+            );
 
             // Auto-collect items (health potions)
             if (interactable.autoCollect && interactable.checkCollision(this.player)) {
@@ -2969,7 +2976,43 @@ class Game {
             }
         }
 
-        // Handle interaction
+        // Handle interaction - keyboard/button OR mouse click on object
+        let mouseClickedOnInteractable = false;
+
+        // Check for left-click on interactables (interact takes priority over attack)
+        if (this.input.isLeftClickJustPressed()) {
+            for (const interactable of this.interactables) {
+                if (!interactable.used && interactable.mouseHover) {
+                    // Check if player is close enough to interact (extended range for mouse)
+                    const dx = (this.player.x + this.player.width / 2) - (interactable.x + interactable.width / 2);
+                    const dy = (this.player.y + this.player.height / 2) - (interactable.y + interactable.height / 2);
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+
+                    // Allow interaction from further away with mouse (150px vs 60px for keyboard)
+                    if (distance < 150) {
+                        const result = interactable.interact(this.player, this);
+                        if (result) {
+                            if (result.type === 'portal') {
+                                this.nextLevel();
+                            } else if (result.type === 'lore') {
+                                this.hud.addMessage(result.message, 'lore');
+                            } else {
+                                this.hud.addMessage(result.message, 'success');
+                            }
+                        }
+                        mouseClickedOnInteractable = true;
+                        break;
+                    }
+                }
+            }
+
+            // If didn't click on an interactable, treat as attack
+            if (!mouseClickedOnInteractable && this.player && this.player.active) {
+                this.player.attack();
+            }
+        }
+
+        // Handle keyboard/button interaction (original method)
         if (this.input.isActionJustPressed('interact')) {
             for (const interactable of this.interactables) {
                 if (interactable.playerNearby && !interactable.used) {

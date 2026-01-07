@@ -113,15 +113,99 @@ Your core consciousness pattern is restored from backup. But here's the secret t
 **4. DATA THEFT**
 The system awards "Data Cores" after each death — fragments of AXIOM's learning data that you've managed to intercept. This wasn't supposed to happen. You're not just dying and respawning; you're **stealing the simulation's own evolution** and using it against itself.
 
-### The Ghost Protocol
+---
 
-Sometimes, fragments of previous runs don't fully dissolve. These echoes — called **Ghosts** — persist in the simulation like digital afterimages.
+## THE GHOSTS: ECHOES OF FAILURE
 
-When you see a ghost of your previous self, you're witnessing the moment your past iteration died. The ghost replays those final moments on a loop, trapped in the instant of failure.
+### What Are The Ghosts?
 
-Some operatives find this disturbing. Others find it useful — a warning of what not to do.
+When your consciousness fragments upon death, not all of it reconstitutes cleanly. Fragments of your dying moments — the last few seconds of terror, desperation, and failure — sometimes get caught in the simulation's data streams. These fragments coalesce into **Ghosts**: semi-sentient echoes of your past selves, forever trapped in the moment they died.
 
-The truly skilled watch their ghosts and think: *"I was so weak then."*
+The scientists call them "Residual Consciousness Artifacts."
+
+You call them what they are: **your own corpses, haunting you.**
+
+### The Four Types of Ghosts
+
+Not all deaths are equal. The manner of your death shapes the ghost that remains.
+
+**FALLEN ECHO** (Cyan)
+*"Killed by a common enemy."*
+
+The most common ghost. You were overwhelmed by simulation fodder — proof that even the weakest enemies can end an iteration. These echoes aren't hostile. They're... apologetic. Touch one, and it dissolves into pure cycle energy, as if trying to make amends for its weakness.
+
+*Reward: +25 Cycles*
+
+**VENGEFUL SHADE** (Magenta)
+*"Killed by a boss."*
+
+These ghosts are different. Dying to a boss leaves a mark — a wound in the consciousness so deep that the ghost comes back *angry*. Vengeful Shades don't wait to be absorbed. They **hunt**. They attack. They want to drag you down with them, as if to prove that the boss was unbeatable all along.
+
+You have to fight these ghosts. Defeat them, and they finally find peace.
+
+*Reward: +50 XP when defeated*
+
+**LOST SPIRIT** (Purple)
+*"Killed by falling."*
+
+The saddest ghosts. These are the iterations that miscalculated a jump, misjudged a platform, stepped into the void. They float aimlessly, eternally falling and never landing. Touch one, and it transfers its remaining life force to you — a final gift from a version of yourself that died to gravity.
+
+*Reward: +15 HP*
+
+**DEPLETED PHANTOM** (Orange)
+*"Ran out of cycles."*
+
+Time is a currency in the simulation. These ghosts are the iterations that ran out. They moved too much, fought too long, hesitated too often. Their amber glow pulses with the cycles they wish they'd conserved. Absorb one, and you inherit their remaining temporal energy.
+
+*Reward: +100 Cycles*
+
+### The Philosophy of Ghosts
+
+AXIOM didn't design the ghost system. It was an unintended consequence of the death/reconstitution cycle. But once the scientists discovered it, they chose to leave it in place.
+
+Why?
+
+**Because ghosts make you better.**
+
+Every ghost you encounter is a lesson. A Fallen Echo reminds you that carelessness kills. A Vengeful Shade forces you to face the boss that destroyed you — in miniature. A Lost Spirit warns you to mind your footing. A Depleted Phantom teaches you to conserve resources.
+
+The simulation is cruel, but it doesn't waste anything. Even your failures have purpose.
+
+### Encountering Your Own Deaths
+
+Up to three ghosts can appear in any given level. They spawn at the exact locations where past iterations died. The more you die in a place, the more likely a ghost will be waiting there.
+
+Some operatives avoid their ghosts. They find it disturbing to see their own spectral corpses floating in the corridors.
+
+Others seek them out. They absorb their ghosts deliberately, treating each one as a resource to be harvested.
+
+The truly elite operatives do something different: they study their ghosts. They watch how the ghost died — the position, the timing, the angle of the fatal attack. They learn from their own failures in real-time.
+
+Then they do better.
+
+### The Ghosts Remember
+
+Here's the disturbing truth: **ghosts retain fragments of memory**.
+
+They know they're you. They know they failed. And on some level, they know you're going to try again.
+
+The friendly ghosts — the Echoes, Spirits, and Phantoms — want you to succeed. They give you their remaining energy because they want *someone* to escape, even if they couldn't.
+
+But the Vengeful Shades? They've been corrupted by their violent deaths. They believe that if they couldn't beat the boss, no one can. They attack you not out of malice, but out of a twisted mercy: better to die here, to them, than to face the Core and fail.
+
+### The Recursion Problem
+
+The scientists noticed something strange in the data. Some operatives were dying more often in areas with existing ghosts. The ghosts were *causing* deaths, which created more ghosts, which caused more deaths.
+
+They called it the "Recursion Problem."
+
+Certain areas of the simulation became ghost-heavy death zones. New operatives would enter, see four or five specters, panic, and die. Their ghosts would join the others.
+
+AXIOM learned to exploit this. It started *herding* operatives toward high-ghost areas, knowing the psychological impact would destabilize them.
+
+The solution? Get stronger. Clear the ghosts. Break the recursion.
+
+Or become another ghost in the graveyard.
 
 ---
 

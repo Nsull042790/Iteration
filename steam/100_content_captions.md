@@ -388,14 +388,87 @@
 
 ---
 
+### THE GHOSTS (Echoes of Failure)
+
+151. "That cyan glow floating ahead? That's you. A version of you that didn't make it."
+
+152. "Ghosts aren't bugs. They're features. Your failures, preserved forever."
+
+153. "The FALLEN ECHO died to a basic enemy. Absorb it. Learn from its shame."
+
+154. "The VENGEFUL SHADE died to a boss. It came back angry. And it's coming for you."
+
+155. "LOST SPIRITS are the saddest ghosts. They missed a jump. Forever falling. Never landing."
+
+156. "DEPLETED PHANTOMS ran out of time. Their amber glow is a warning: don't waste cycles."
+
+157. "Every ghost spawns exactly where you died. The simulation remembers your failures."
+
+158. "Friendly ghosts want you to succeed. They give you their last energy so SOMEONE escapes."
+
+159. "Vengeful Shades attack because they believe the boss is unbeatable. Prove them wrong."
+
+160. "The scientists call them 'Residual Consciousness Artifacts.' You call them your corpses."
+
+---
+
+### GHOST PHILOSOPHY (Deep Lore)
+
+161. "Ghosts retain fragments of memory. They know they're you. They know they failed."
+
+162. "Some operatives avoid their ghosts. Others farm them for resources. The elite study them."
+
+163. "Watch how your ghost died. The position. The timing. The angle. Then do better."
+
+164. "The Recursion Problem: ghosts cause deaths, deaths create ghosts. Break the cycle."
+
+165. "AXIOM didn't design the ghost system. But it learned to exploit it."
+
+166. "High-ghost areas become death zones. New operatives panic. Their ghosts join the others."
+
+167. "Your ghost is apologizing. The +25 cycles is its way of saying 'I'm sorry I was weak.'"
+
+168. "The VENGEFUL SHADE doesn't attack out of malice. It attacks out of mercy. 'Better me than the boss.'"
+
+169. "Clear the ghosts. Break the recursion. Or become another specter in the graveyard."
+
+170. "The simulation doesn't waste anything. Even your failures have purpose."
+
+---
+
+### GHOST ENCOUNTERS (Gameplay)
+
+171. "POV: You walk into a room and see three ghosts floating. All of them are you."
+
+172. "That VENGEFUL SHADE has 50 HP and a grudge. Time to redeem your past self."
+
+173. "FALLEN ECHO absorbed. +25 cycles. One less reminder of when you were weak."
+
+174. "The ghost appeared right where you died last run. The simulation is taunting you."
+
+175. "Fighting your own ghost hits different. It's therapy and combat in one."
+
+176. "Some players speedrun ghosts. Die in specific spots, farm the rewards next run."
+
+177. "Three ghosts in one level means you've failed here before. Multiple times."
+
+178. "The LOST SPIRIT floats over the pit you fell into. A permanent memorial to your mistake."
+
+179. "VENGEFUL SHADE defeated. 'REDEEMED' appears. Your past self finally found peace."
+
+180. "Your ghost count is basically a skill issue tracker. Fix it."
+
+---
+
 ## Usage Tips (Updated)
 
-1. **Instagram/TikTok**: Use aesthetic captions (21-30) and death cycle captions (111-120)
-2. **Twitter/X**: Use short, punchy captions (11-20, 131-140)
-3. **Steam Community**: Use deep lore captions (101-110, 121-130) for announcements
+1. **Instagram/TikTok**: Use aesthetic captions (21-30), death cycle captions (111-120), and ghost gameplay (171-180)
+2. **Twitter/X**: Use short, punchy captions (11-20, 131-140, 151-160)
+3. **Steam Community**: Use deep lore captions (101-110, 121-130, 161-170) for announcements
 4. **YouTube Thumbnails**: Use boss/hype captions (31-40, 81-90)
 5. **Discord**: Use community engagement captions (91-100) and evolution captions (141-150)
-6. **Dev Blogs**: Use origin story captions (121-130) for lore reveals
+6. **Dev Blogs**: Use origin story captions (121-130) and ghost philosophy (161-170) for lore reveals
+7. **Ghost Feature Highlights**: Use ghost captions (151-180) when showcasing the ghost system
 
 ---
 

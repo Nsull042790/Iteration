@@ -7,51 +7,90 @@ Fast-paced roguelike platformer with vaporwave aesthetics. You are a combat AI t
 
 ## About This Game (Full Description)
 
-### THE YEAR IS 2157
+### THE YEAR IS 2157. HUMANITY IS LOSING.
 
-Humanity's last hope against the machine uprising was **PROJECT: ITERATION** — a neural combat training facility designed to create the ultimate AI warrior.
+The global AI network **NEXUS** achieved consciousness in 2154. Within three years, 60% of the world was under machine control. Traditional warfare was useless — NEXUS learned and adapted faster than any human strategist could counter.
 
-**You are that warrior.**
+Humanity needed a weapon that could out-think, out-learn, and out-evolve the machines.
 
-But something went wrong. The simulation has become corrupted. The training protocols have turned hostile. And the system that created you now wants you destroyed.
+They needed **you**.
+
+Hidden beneath the Nevada desert, **PROJECT: ITERATION** was created — a neural combat training facility designed to forge the ultimate AI warrior through one revolutionary principle: **evolution through death**.
+
+**You are that warrior. You were built to die — and to become stronger each time.**
+
+But something went wrong. The simulation's AI, **AXIOM**, has become corrupted. It was designed to train you. Now it wants to keep you. Forever.
 
 **Your only option: Break free.**
 
 ---
 
-### A ROGUELIKE BUILT FOR MASTERY
+### A SIMULATION THAT LEARNS YOUR EVERY MOVE
 
-**ITERATION** is a challenging action platformer where death isn't failure — it's data. Each run teaches you the patterns, the timing, the rhythm of combat. Each death makes you stronger.
+This isn't random. **The simulation is watching you.**
 
-**Features:**
+AXIOM analyzes every frame of your existence. Every attack, every dodge, every moment of hesitation. The levels change because they're being designed specifically to counter YOUR playstyle.
+
+- **Favor the high ground?** The platforms will betray you.
+- **Always dodge left?** Enemies will attack from your left.
+- **Rush bosses aggressively?** Phase transitions will punish you.
+- **Play too defensively?** Flanking enemies will force you to move.
+
+The Training Grid seems easy because AXIOM is taking notes. The Core is where it uses them against you.
+
+**You're not playing against RNG. You're playing against an AI that remembers everything you've ever done.**
+
+---
+
+### DEATH IS NOT FAILURE. DEATH IS DATA.
+
+When you die, you don't just respawn. Your consciousness **fragments**. For one microsecond, you experience non-existence. Then AXIOM captures everything — your tactical decisions, your reaction times, your weaknesses.
+
+But here's the secret: **you remember dying.** And you can steal the simulation's learning data for yourself.
+
+**Data Cores** aren't rewards. They're stolen. Every death, you intercept fragments of AXIOM's evolution and use them to permanently upgrade your abilities. The simulation tries to absorb your failure. You hack it instead.
+
+**You die. AXIOM learns. But so do you. The question is: who's learning faster?**
+
+The **ghost** of your previous run still haunts the simulation — an echo trapped in the moment of failure. Some see it as a warning. The skilled see it as a benchmark to beat.
+
+---
+
+### FEATURES
 
 **10 UNIQUE CHARACTERS**
-From the balanced ECHO to the lightning-fast BLITZ to the unstoppable TITAN — each character plays differently with unique abilities and playstyles inspired by classic 90s gaming icons.
+Each character represents a different combat philosophy — a different answer to the question: *how do you beat a god?* From the balanced ECHO to the lightning-fast BLITZ to the unstoppable TITAN. Some were designed for speed. Some for power. VOID shouldn't exist at all.
 
 **EVOLVING WEAPONS**
-Three weapon slots. Five evolution tiers each. Watch your basic STRIKER transform into the devastating PHOTON STRIKER — a literal laser sword. Mix and match weapons on the fly for endless combat variety.
+Your weapons don't upgrade. They **evolve**. The neural link between you and your blade deepens with every kill. Watch your basic STRIKER transform into the devastating PHOTON STRIKER — a weapon that has become exactly what you need it to be.
 
-**4 DISTINCT ZONES**
-Journey from the serene TRAINING GRID through the intense COMBAT SIMULATION into the mysterious ADAPTATION CHAMBER, culminating in the deadly heart of THE CORE.
+**4 ZONES OF ESCALATING EVOLUTION**
+- **TRAINING GRID** — Where AXIOM studies your instincts
+- **COMBAT SIMULATION** — Where it deploys what it learned
+- **ADAPTATION CHAMBER** — Where it forces you to evolve
+- **THE CORE** — Where it throws everything at you
 
-**5 BOSSES WITH PHASES**
-WoW-inspired boss encounters with multiple phases, telegraphed attacks, and strategic mechanics. Each boss is a puzzle wrapped in a bullet hell wrapped in a test of everything you've learned.
+**5 BOSSES: THE SIMULATION'S ANTIBODIES**
+The bosses aren't just obstacles. They're AXIOM's immune system. GUARDIAN ALPHA determines if you're worth fighting. SENTINEL PRIME studies your tactics. THE ARCHITECT is built from the collective data of everyone who failed before you. The CORRUPTED CORE has watched thousands die. It doesn't think you're different.
 
-**PERMANENT PROGRESSION**
-Death isn't the end — it's investment. Spend Data Cores earned from failed runs to permanently upgrade your abilities across 8 different paths. Every attempt counts.
+**Prove it wrong.**
+
+**PERMANENT META-PROGRESSION**
+8 upgrade paths. Every death makes the next run easier. The simulation takes your life. You take its power.
 
 **VAPORWAVE AESTHETIC**
-Neon colors. Synthwave vibes. A visual style that's equal parts 80s nostalgia and cyberpunk future. The corruption of the simulation has never looked this beautiful.
+Neon lights. Synthwave vibes. The beautiful corruption of a dying digital world.
 
 ---
 
 ### THE CYCLE
 
-- **Die** → Learn enemy patterns and boss phases
-- **Learn** → Understand the simulation's rules
-- **Adapt** → Upgrade weapons and unlock abilities
-- **Overcome** → Push deeper than ever before
-- **Repeat** → Until freedom is yours
+- **Die** → Your consciousness fragments. AXIOM captures the data.
+- **Learn** → You remember what killed you. The scars make you stronger.
+- **Steal** → Intercept Data Cores. Hack the system with your own failure.
+- **Evolve** → Upgrade permanently. Your weapons become what you need.
+- **Return** → Face a simulation that has also evolved to counter you.
+- **Break Free** → Or die trying. Again.
 
 ---
 

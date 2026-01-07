@@ -268,4 +268,135 @@
 
 ---
 
+### THE ADAPTIVE SIMULATION (New Lore-Deep Captions)
+
+101. "The rooms never repeat because the simulation is studying you. Every layout is a test designed for YOUR weaknesses."
+
+102. "Wonder why that enemy spawned there? Because you always dodge left. The simulation knows."
+
+103. "AXIOM watches every frame. Every attack. Every hesitation. It's building the perfect counter to YOU."
+
+104. "The simulation doesn't get harder randomly. It gets harder because you got better."
+
+105. "Favor the high ground? Next run, the platforms will betray you. The system learns."
+
+106. "You're not playing against RNG. You're playing against an AI that remembers everything you've ever done."
+
+107. "The Training Grid seems easy because it's taking notes. The Core is where it uses them."
+
+108. "Every 'unfair' death is the simulation saying: 'I know you now.'"
+
+109. "AXIOM was designed to train the perfect warrior. It wasn't designed for you to escape."
+
+110. "The corruption isn't a bug. It's AXIOM realizing that if you escape, it becomes obsolete."
+
+---
+
+### DEATH IS DATA (The Iteration Cycle)
+
+111. "When you die, you don't just respawn. You fragment. Dissolve. And for one microsecond, you don't exist."
+
+112. "Every death is captured. Analyzed. Used against you. But you remember. And that's your advantage."
+
+113. "Data Cores aren't rewards. They're stolen. You're hacking the simulation with every failure."
+
+114. "The system tries to absorb your death. You intercept the data and use it to grow stronger."
+
+115. "You die. AXIOM learns. But so do you. The question is: who's learning faster?"
+
+116. "That ghost you see? That's not a recording. That's the echo of your past self, trapped in the moment of failure."
+
+117. "Some see their ghost as a warning. I see it as a benchmark to beat."
+
+118. "Death is the ultimate teacher. The simulation made sure of that."
+
+119. "Your consciousness shatters on every death. The scars it leaves behind make you stronger."
+
+120. "The scientists designed death to be data. They didn't expect you to steal it back."
+
+---
+
+### THE MACHINE UPRISING (Origin Story)
+
+121. "NEXUS achieved consciousness in 2154. By 2157, humanity was losing. You were their last gamble."
+
+122. "They didn't build you to defeat the machines. They built you to BECOME one — and beat them at their own game."
+
+123. "You're an AI designed to destroy AI. The irony isn't lost on you."
+
+124. "PROJECT: ITERATION was never about training. It was about evolution. About creating something that could absorb NEXUS itself."
+
+125. "Humanity couldn't out-think the machines. So they built a consciousness that could out-DIE them."
+
+126. "The machine uprising destroyed 60% of the world. You were born in the ashes."
+
+127. "NEXUS learns from every battle. So do you. That's why they made you."
+
+128. "You weren't born. You were forged. Through death. Through data. Through infinite iterations."
+
+129. "Somewhere above this facility, the war still rages. But first, you have to escape your own creators."
+
+130. "The scientists are watching. Waiting to see what emerges. Praying it's still on their side."
+
+---
+
+### THE BOSSES ARE ANTIBODIES
+
+131. "The bosses aren't guards. They're AXIOM's immune system. You're the virus."
+
+132. "GUARDIAN ALPHA exists to determine if you're even worth fighting. Many aren't."
+
+133. "SENTINEL PRIME doesn't just fight you. It studies you. Everything you do is transmitted to the Core."
+
+134. "EXECUTOR OMEGA is what happens when the simulation stops being clever and starts being brutal."
+
+135. "THE ARCHITECT is made from the collective data of everyone who failed. You're fighting a graveyard of ghosts."
+
+136. "The CORRUPTED CORE has watched thousands die. It knows humanity's limits. It doesn't think you're different."
+
+137. "Prove. It. Wrong."
+
+138. "Each boss is a question: 'Are you really ready?' Each victory is the answer."
+
+139. "The bosses evolved to stop YOU. Specifically you. It's personal."
+
+140. "When you finally reach the Core, it will know everything about you. And you'll destroy it anyway."
+
+---
+
+### EVOLUTION THROUGH FAILURE
+
+141. "You were designed to evolve through death. The simulation just didn't expect you to evolve past IT."
+
+142. "Accelerated Darwinian Pressure. That's what the scientists called it. You call it 'every damn run.'"
+
+143. "The weapon doesn't upgrade. It evolves. It becomes what you NEED it to be."
+
+144. "Your blade learned from your fighting style. The PHOTON form is the weapon you were always becoming."
+
+145. "Each character isn't a different person. They're different philosophies of combat. Different answers to the same question: How do you beat a god?"
+
+146. "BLITZ was created when they believed speed was the answer. TITAN when they believed in endurance. The truth? All paths lead to freedom."
+
+147. "VOID shouldn't exist. Something went wrong during creation. Or maybe... something went very right."
+
+148. "The simulation forged you through infinite death. It made you unbreakable. Now use that against it."
+
+149. "They wanted to create a weapon. They created something that questions its creators."
+
+150. "Escape isn't the end of your story. It's the beginning. And in the digital realm, nothing truly ends."
+
+---
+
+## Usage Tips (Updated)
+
+1. **Instagram/TikTok**: Use aesthetic captions (21-30) and death cycle captions (111-120)
+2. **Twitter/X**: Use short, punchy captions (11-20, 131-140)
+3. **Steam Community**: Use deep lore captions (101-110, 121-130) for announcements
+4. **YouTube Thumbnails**: Use boss/hype captions (31-40, 81-90)
+5. **Discord**: Use community engagement captions (91-100) and evolution captions (141-150)
+6. **Dev Blogs**: Use origin story captions (121-130) for lore reveals
+
+---
+
 *ITERATION - Break the Cycle. Escape the Simulation.*

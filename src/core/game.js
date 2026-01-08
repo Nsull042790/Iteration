@@ -2442,6 +2442,9 @@ class Game {
         this.state = 'character_select';
         this.showingCharacterSelect = true;
 
+        // Track when character select was shown to prevent accidental clicks
+        this.charSelectShownAt = Date.now();
+
         const modal = document.getElementById('character-modal');
         const grid = document.getElementById('character-grid');
 
@@ -2485,7 +2488,15 @@ class Game {
                 </div>
             `;
 
-            card.addEventListener('click', () => {
+            card.addEventListener('click', (e) => {
+                // Prevent accidental selection from double-clicks during cutscene skip
+                // Require at least 300ms since modal was shown
+                if (Date.now() - this.charSelectShownAt < 300) {
+                    console.log('Ignoring click - character select just appeared');
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return;
+                }
                 this.selectCharacter(char.id);
             });
 
@@ -2493,6 +2504,15 @@ class Game {
         });
 
         modal.classList.remove('hidden');
+
+        // Back button handler
+        const backBtn = document.getElementById('character-back-btn');
+        this.charSelectBackHandler = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this.hideCharacterSelect();
+        };
+        backBtn.addEventListener('click', this.charSelectBackHandler);
 
         // Keyboard navigation
         this.charSelectKeyHandler = (e) => {
@@ -2509,9 +2529,41 @@ class Game {
             } else if (e.code === 'Enter' || e.code === 'Space') {
                 const charId = this.characterSystem.characters[selectedIndex].id;
                 this.selectCharacter(charId);
+            } else if (e.code === 'Escape') {
+                this.hideCharacterSelect();
             }
         };
         window.addEventListener('keydown', this.charSelectKeyHandler);
+    }
+
+    /**
+     * Hide character select and return to main menu
+     */
+    hideCharacterSelect() {
+        const modal = document.getElementById('character-modal');
+        modal.classList.add('hidden');
+
+        // Remove keyboard handler
+        if (this.charSelectKeyHandler) {
+            window.removeEventListener('keydown', this.charSelectKeyHandler);
+            this.charSelectKeyHandler = null;
+        }
+
+        // Remove back button handler
+        const backBtn = document.getElementById('character-back-btn');
+        if (backBtn && this.charSelectBackHandler) {
+            backBtn.removeEventListener('click', this.charSelectBackHandler);
+            this.charSelectBackHandler = null;
+        }
+
+        this.showingCharacterSelect = false;
+        this.state = 'menu';
+
+        // Show main menu again
+        const menuModal = document.getElementById('menu-modal');
+        if (menuModal) {
+            menuModal.classList.remove('hidden');
+        }
     }
 
     /**
@@ -2528,6 +2580,13 @@ class Game {
         if (this.charSelectKeyHandler) {
             window.removeEventListener('keydown', this.charSelectKeyHandler);
             this.charSelectKeyHandler = null;
+        }
+
+        // Remove back button handler
+        const backBtn = document.getElementById('character-back-btn');
+        if (backBtn && this.charSelectBackHandler) {
+            backBtn.removeEventListener('click', this.charSelectBackHandler);
+            this.charSelectBackHandler = null;
         }
 
         this.showingCharacterSelect = false;

@@ -59,6 +59,7 @@ class CutsceneSystem {
             console.log('Click detected on canvas, active:', this.active, 'skipLockout:', this.skipLockout);
             if (this.active) {
                 e.preventDefault();
+                e.stopPropagation();
                 this.skip();
             }
         };
@@ -121,18 +122,18 @@ class CutsceneSystem {
         this.particleEffects = [];
         this.glitchIntensity = 0;
 
-        // Longer lockout for victory cutscene
-        this.skipLockout = this.isVictoryCutscene ? 180 : 90; // 3 seconds for victory, 1.5 for intro
+        // Longer lockout for victory cutscene, shorter for intro
+        this.skipLockout = this.isVictoryCutscene ? 180 : 15; // 3 seconds for victory, 0.25s for intro
 
         // For victory cutscene, use longer delay and don't enable touch skip immediately
         // This prevents the tap from victory screen from skipping the cutscene
         if (!this.isVictoryCutscene) {
-            // Intro cutscene - enable touch skip after short delay
+            // Intro cutscene - enable touch skip after very short delay
             setTimeout(() => {
                 if (this.active) {
                     this.enableTouchSkip();
                 }
-            }, 500);
+            }, 100);
         } else {
             // Victory cutscene - enable touch skip after much longer delay
             setTimeout(() => {

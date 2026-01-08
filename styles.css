@@ -2301,6 +2301,41 @@ body {
     animation: pulse 2s ease-in-out infinite;
 }
 
+/* Back button for character select */
+.back-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin: 20px auto 0;
+    padding: 12px 24px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    color: rgba(255, 255, 255, 0.6);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 14px;
+    letter-spacing: 2px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.back-button:hover {
+    background: rgba(255, 113, 206, 0.1);
+    border-color: #ff71ce;
+    color: #ff71ce;
+    box-shadow: 0 0 15px rgba(255, 113, 206, 0.3);
+}
+
+.back-button .back-icon {
+    font-size: 18px;
+    transition: transform 0.2s ease;
+}
+
+.back-button:hover .back-icon {
+    transform: translateX(-3px);
+}
+
 @media (max-width: 900px) {
     .character-grid {
         grid-template-columns: repeat(2, 1fr);

@@ -631,7 +631,8 @@ body {
 /* Game Premise - Enhanced */
 .game-premise {
     max-width: 600px;
-    margin: 30px auto 40px auto;
+    margin: 30px auto 60px auto;
+    padding-bottom: 20px;
     text-align: center;
     line-height: 2;
 }

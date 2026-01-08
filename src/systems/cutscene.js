@@ -46,7 +46,6 @@ class CutsceneSystem {
 
         // Touch handler for mobile
         this.touchHandler = (e) => {
-            console.log('Touch detected on canvas, active:', this.active, 'skipLockout:', this.skipLockout);
             if (this.active) {
                 e.preventDefault();
                 e.stopPropagation();
@@ -56,7 +55,6 @@ class CutsceneSystem {
 
         // Mouse click handler for desktop
         this.clickHandler = (e) => {
-            console.log('Click detected on canvas, active:', this.active, 'skipLockout:', this.skipLockout);
             if (this.active) {
                 e.preventDefault();
                 e.stopPropagation();

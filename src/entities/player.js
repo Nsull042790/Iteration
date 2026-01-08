@@ -248,6 +248,23 @@ class Player extends Entity {
     }
 
     /**
+     * Trigger attack directly (for mouse click)
+     */
+    attack() {
+        // Check cooldown and if already attacking
+        if (this.attackCooldown > 0 || this.isAttacking || this.isCharging) {
+            return false;
+        }
+
+        // Start attack
+        this.isAttacking = true;
+        this.attackFrame = 0;
+        this.chargeLevel = 0;
+        this.attackCooldown = 20;
+        return true;
+    }
+
+    /**
      * Update player state
      */
     update(deltaTime, input) {

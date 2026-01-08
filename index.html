@@ -59,7 +59,7 @@
                             <div class="logo-glitch-wrapper">
                                 <div class="logo-text" data-text="ITERATION">ITERATION</div>
                             </div>
-                            <div class="logo-version">v2.4.7</div>
+                            <div class="logo-version">v2.4.8</div>
                             <div class="logo-subtitle glitch-text">// BREAK THE LOOP</div>
                         </div>
                         <div class="logo-decoration">
@@ -103,6 +103,10 @@
                 <button id="leaderboard-btn" class="title-action-btn">
                     <span class="btn-icon">🏆</span>
                     <span class="btn-text">SCORES</span>
+                </button>
+                <button id="loadout-btn" class="title-action-btn">
+                    <span class="btn-icon">🎨</span>
+                    <span class="btn-text">LOADOUT</span>
                 </button>
                 <button id="godmode-btn" class="title-action-btn">
                     <span class="btn-icon">👁</span>
@@ -149,6 +153,52 @@
                 <div class="character-hint">Click to select or use arrow keys + ENTER</div>
 
                 <button id="character-back-btn" class="back-button">
+                    <span class="back-icon">←</span>
+                    <span class="back-text">BACK</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Loadout Modal (Cosmetics) -->
+        <div id="loadout-modal" class="screen hidden">
+            <div class="modal-content loadout-content">
+                <div class="modal-header">
+                    <div class="modal-title loadout-title">LOADOUT</div>
+                    <div class="modal-subtitle">// CUSTOMIZE YOUR OPERATIVE</div>
+                </div>
+
+                <div class="loadout-sections">
+                    <!-- Hats Section -->
+                    <div class="loadout-section">
+                        <div class="section-header">
+                            <span class="section-icon">🎩</span>
+                            <span class="section-title">HEADGEAR</span>
+                        </div>
+                        <div class="loadout-grid" id="loadout-hats">
+                            <!-- Hat items will be generated here -->
+                        </div>
+                    </div>
+
+                    <!-- Suits Section -->
+                    <div class="loadout-section">
+                        <div class="section-header">
+                            <span class="section-icon">👔</span>
+                            <span class="section-title">SUIT</span>
+                        </div>
+                        <div class="loadout-grid" id="loadout-suits">
+                            <!-- Suit items will be generated here -->
+                        </div>
+                    </div>
+                </div>
+
+                <div class="loadout-preview">
+                    <div class="preview-label">PREVIEW</div>
+                    <canvas id="loadout-preview-canvas" width="100" height="120"></canvas>
+                </div>
+
+                <div class="loadout-hint">Click to equip • Locked items found as drops</div>
+
+                <button id="loadout-close-btn" class="back-button">
                     <span class="back-icon">←</span>
                     <span class="back-text">BACK</span>
                 </button>

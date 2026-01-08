@@ -1960,6 +1960,7 @@ class Game {
         const titleBtn = document.getElementById('title-start-btn');
         const codexBtn = document.getElementById('codex-btn');
         const leaderboardBtn = document.getElementById('leaderboard-btn');
+        const loadoutBtn = document.getElementById('loadout-btn');
         const godmodeBtn = document.getElementById('godmode-btn');
         const levelselectBtn = document.getElementById('levelselect-btn');
 
@@ -1996,6 +1997,9 @@ class Game {
 
         // Leaderboard button
         leaderboardBtn.onclick = () => this.showLeaderboardModal();
+
+        // Loadout button
+        loadoutBtn.onclick = () => this.showLoadoutModal();
 
         // God mode button
         godmodeBtn.onclick = () => this.toggleGodMode(godmodeBtn);
@@ -2047,6 +2051,149 @@ class Game {
 
         modal.classList.remove('hidden');
 
+        closeBtn.onclick = () => {
+            modal.classList.add('hidden');
+        };
+
+        // ESC to close
+        const handleEsc = (e) => {
+            if (e.code === 'Escape' && !modal.classList.contains('hidden')) {
+                modal.classList.add('hidden');
+                window.removeEventListener('keydown', handleEsc);
+            }
+        };
+        window.addEventListener('keydown', handleEsc);
+    }
+
+    /**
+     * Show loadout (cosmetics) modal
+     */
+    showLoadoutModal() {
+        const modal = document.getElementById('loadout-modal');
+        const hatsGrid = document.getElementById('loadout-hats');
+        const suitsGrid = document.getElementById('loadout-suits');
+        const closeBtn = document.getElementById('loadout-close-btn');
+        const previewCanvas = document.getElementById('loadout-preview-canvas');
+        const previewCtx = previewCanvas.getContext('2d');
+
+        // Clear grids
+        hatsGrid.innerHTML = '';
+        suitsGrid.innerHTML = '';
+
+        // Render preview function
+        const renderPreview = () => {
+            previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+
+            const suit = this.cosmeticsSystem.getEquippedSuit();
+            const hat = this.cosmeticsSystem.getEquippedHat();
+
+            const centerX = previewCanvas.width / 2;
+            const centerY = previewCanvas.height / 2 + 10;
+
+            // Body color
+            const bodyColor = suit.bodyColor || '#00f0ff';
+            const coreColor = suit.coreColor || '#ffffff';
+
+            // Draw body
+            previewCtx.fillStyle = bodyColor;
+            previewCtx.shadowColor = bodyColor;
+            previewCtx.shadowBlur = 15;
+            previewCtx.beginPath();
+            previewCtx.ellipse(centerX, centerY, 20, 25, 0, 0, Math.PI * 2);
+            previewCtx.fill();
+
+            // Draw core/eye
+            previewCtx.fillStyle = coreColor;
+            previewCtx.shadowColor = coreColor;
+            previewCtx.shadowBlur = 10;
+            previewCtx.beginPath();
+            previewCtx.ellipse(centerX + 5, centerY - 5, 6, 8, 0, 0, Math.PI * 2);
+            previewCtx.fill();
+
+            // Draw hat
+            previewCtx.shadowBlur = 0;
+            this.cosmeticsSystem.renderHat(previewCtx, centerX, centerY - 25, true);
+        };
+
+        // Populate hats
+        this.cosmeticsSystem.hats.forEach(hat => {
+            const item = document.createElement('div');
+            item.className = 'loadout-item';
+            item.dataset.rarity = hat.rarity;
+            item.title = hat.name;
+
+            const isUnlocked = this.cosmeticsSystem.unlockedHats.includes(hat.id);
+            const isEquipped = this.cosmeticsSystem.equippedHat === hat.id;
+
+            if (!isUnlocked) item.classList.add('locked');
+            if (isEquipped) item.classList.add('equipped');
+
+            // Icon or preview
+            if (hat.id === 'none') {
+                item.innerHTML = '<span class="item-icon">∅</span>';
+            } else if (hat.icon) {
+                item.innerHTML = `<span class="item-icon" style="color: ${hat.color || '#fff'}">${hat.icon}</span>`;
+            } else {
+                item.innerHTML = `<div class="item-preview" style="background: ${hat.color}"></div>`;
+            }
+
+            // Click handler
+            item.onclick = () => {
+                if (isUnlocked) {
+                    this.cosmeticsSystem.equipHat(hat.id);
+                    // Update UI
+                    hatsGrid.querySelectorAll('.loadout-item').forEach(i => i.classList.remove('equipped'));
+                    item.classList.add('equipped');
+                    renderPreview();
+                    this.audio.playUIClick();
+                }
+            };
+
+            hatsGrid.appendChild(item);
+        });
+
+        // Populate suits
+        this.cosmeticsSystem.suits.forEach(suit => {
+            const item = document.createElement('div');
+            item.className = 'loadout-item';
+            item.dataset.rarity = suit.rarity;
+            item.title = suit.name;
+
+            const isUnlocked = this.cosmeticsSystem.unlockedSuits.includes(suit.id);
+            const isEquipped = this.cosmeticsSystem.equippedSuit === suit.id;
+
+            if (!isUnlocked) item.classList.add('locked');
+            if (isEquipped) item.classList.add('equipped');
+
+            // Preview color
+            if (suit.id === 'none') {
+                item.innerHTML = '<span class="item-icon">∅</span>';
+            } else {
+                item.innerHTML = `<div class="item-preview" style="background: linear-gradient(135deg, ${suit.bodyColor} 60%, ${suit.coreColor} 100%)"></div>`;
+            }
+
+            // Click handler
+            item.onclick = () => {
+                if (isUnlocked) {
+                    this.cosmeticsSystem.equipSuit(suit.id);
+                    // Update UI
+                    suitsGrid.querySelectorAll('.loadout-item').forEach(i => i.classList.remove('equipped'));
+                    item.classList.add('equipped');
+                    renderPreview();
+                    this.audio.playUIClick();
+                }
+            };
+
+            suitsGrid.appendChild(item);
+        });
+
+        // Initial preview
+        renderPreview();
+
+        // Show modal
+        modal.classList.remove('hidden');
+
+        // Close button
         closeBtn.onclick = () => {
             modal.classList.add('hidden');
         };

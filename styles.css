@@ -2343,6 +2343,185 @@ body {
 }
 
 /* ============================================
+   Loadout Modal (Cosmetics)
+   ============================================ */
+
+.loadout-content {
+    max-width: 700px;
+    padding: 30px;
+}
+
+.loadout-title {
+    color: #00f0ff;
+    text-shadow: 0 0 20px rgba(0, 240, 255, 0.5);
+}
+
+.loadout-sections {
+    display: flex;
+    gap: 30px;
+    margin: 20px 0;
+}
+
+.loadout-section {
+    flex: 1;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 15px;
+}
+
+.section-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.section-icon {
+    font-size: 20px;
+}
+
+.section-title {
+    font-size: 14px;
+    letter-spacing: 2px;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.loadout-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+}
+
+.loadout-item {
+    width: 50px;
+    height: 50px;
+    background: rgba(0, 0, 0, 0.4);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.loadout-item:hover {
+    border-color: #00f0ff;
+    background: rgba(0, 240, 255, 0.1);
+    transform: scale(1.05);
+}
+
+.loadout-item.equipped {
+    border-color: #00f0ff;
+    background: rgba(0, 240, 255, 0.2);
+    box-shadow: 0 0 15px rgba(0, 240, 255, 0.4);
+}
+
+.loadout-item.locked {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.loadout-item.locked:hover {
+    transform: none;
+    border-color: rgba(255, 255, 255, 0.2);
+    background: rgba(0, 0, 0, 0.4);
+}
+
+.loadout-item.locked::after {
+    content: '🔒';
+    position: absolute;
+    font-size: 12px;
+    bottom: 2px;
+    right: 2px;
+}
+
+.loadout-item .item-icon {
+    font-size: 20px;
+}
+
+.loadout-item .item-preview {
+    width: 30px;
+    height: 30px;
+    border-radius: 4px;
+}
+
+.loadout-item[data-rarity="uncommon"] {
+    border-color: rgba(0, 255, 136, 0.4);
+}
+
+.loadout-item[data-rarity="rare"] {
+    border-color: rgba(0, 136, 255, 0.4);
+}
+
+.loadout-item[data-rarity="legendary"] {
+    border-color: rgba(255, 170, 0, 0.4);
+}
+
+.loadout-item[data-rarity="uncommon"]:hover,
+.loadout-item[data-rarity="uncommon"].equipped {
+    border-color: #00ff88;
+    box-shadow: 0 0 15px rgba(0, 255, 136, 0.4);
+}
+
+.loadout-item[data-rarity="rare"]:hover,
+.loadout-item[data-rarity="rare"].equipped {
+    border-color: #0088ff;
+    box-shadow: 0 0 15px rgba(0, 136, 255, 0.4);
+}
+
+.loadout-item[data-rarity="legendary"]:hover,
+.loadout-item[data-rarity="legendary"].equipped {
+    border-color: #ffaa00;
+    box-shadow: 0 0 15px rgba(255, 170, 0, 0.4);
+}
+
+.loadout-preview {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 20px 0;
+    padding: 15px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+}
+
+.preview-label {
+    font-size: 12px;
+    letter-spacing: 2px;
+    color: rgba(255, 255, 255, 0.5);
+    margin-bottom: 10px;
+}
+
+#loadout-preview-canvas {
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 4px;
+}
+
+.loadout-hint {
+    text-align: center;
+    margin: 15px 0;
+    color: rgba(255, 255, 255, 0.3);
+    font-size: 12px;
+    letter-spacing: 2px;
+}
+
+@media (max-width: 600px) {
+    .loadout-sections {
+        flex-direction: column;
+    }
+
+    .loadout-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+/* ============================================
    Glow effects
    ============================================ */
 

@@ -173,16 +173,56 @@ class Game {
         this.spawnEnemies();
         this.spawnInteractables();
 
-        // Hide loading screen and show title screen
+        // Hide loading screen and show splash screen
         setTimeout(() => {
             const loadingScreen = document.getElementById('loading-screen');
             if (loadingScreen) {
                 loadingScreen.classList.add('hidden');
             }
 
+            // Show splash screen (entry point)
+            this.showSplashScreen();
+        }, 1500);
+    }
+
+    /**
+     * Show splash/entry screen
+     */
+    showSplashScreen() {
+        const splashScreen = document.getElementById('splash-screen');
+        const splashBtn = document.getElementById('splash-enter-btn');
+
+        splashScreen.classList.remove('hidden');
+
+        const handleSplashClick = () => {
+            // Initialize audio on first user interaction
+            this.audio.init();
+            this.audio.resume();
+            this.audio.startTitleMusic();
+
+            // Hide splash screen
+            splashScreen.classList.add('hidden');
+
             // Show title screen
             this.showTitleScreen();
-        }, 1500);
+
+            // Clean up
+            splashBtn.removeEventListener('click', handleSplashClick);
+            splashBtn.removeEventListener('touchend', handleSplashClick);
+        };
+
+        splashBtn.addEventListener('click', handleSplashClick);
+        splashBtn.addEventListener('touchend', handleSplashClick);
+
+        // Also allow Enter/Space to proceed
+        const handleSplashKey = (e) => {
+            if (e.code === 'Space' || e.code === 'Enter') {
+                e.preventDefault();
+                handleSplashClick();
+                window.removeEventListener('keydown', handleSplashKey);
+            }
+        };
+        window.addEventListener('keydown', handleSplashKey);
     }
 
     /**
@@ -1972,10 +2012,7 @@ class Game {
         // Handle button click/touch
         const handleTitleClick = (e) => {
             e.preventDefault();
-            // Initialize audio on first user interaction
-            this.audio.init();
-            this.audio.resume(); // Ensure audio context is resumed on mobile
-            this.audio.startTitleMusic();
+            // Audio already initialized by splash screen
             this.audio.playUIClick();
 
             titleScreen.classList.add('hidden');

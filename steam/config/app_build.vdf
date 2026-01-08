@@ -8,24 +8,76 @@
 
 	"Depots"
 	{
-		// Main game depot (Windows)
+		// Windows depot
 		"000001"  // Replace with your Depot ID (usually AppID + 1)
 		{
 			"FileMapping"
 			{
-				"LocalPath" "*"
+				"LocalPath" "build\win\*"
 				"DepotPath" "."
 				"recursive" "1"
 			}
 			"FileExclusion" "*.pdb"
-			"FileExclusion" "*.vdf"
-			"FileExclusion" "steam_appid.txt"
 			"FileExclusion" ".git*"
-			"FileExclusion" "steam/*"
-			"FileExclusion" "node_modules/*"
-			"FileExclusion" "*.md"
 			"FileExclusion" ".DS_Store"
 			"FileExclusion" "Thumbs.db"
+		}
+
+		// macOS depot
+		"000002"  // Replace with your Mac Depot ID (usually AppID + 2)
+		{
+			"FileMapping"
+			{
+				"LocalPath" "build\mac\*"
+				"DepotPath" "."
+				"recursive" "1"
+			}
+			"FileExclusion" ".git*"
+			"FileExclusion" ".DS_Store"
+			"FileExclusion" "Thumbs.db"
+		}
+
+		// Linux depot (optional)
+		"000003"  // Replace with your Linux Depot ID (usually AppID + 3)
+		{
+			"FileMapping"
+			{
+				"LocalPath" "build\linux\*"
+				"DepotPath" "."
+				"recursive" "1"
+			}
+			"FileExclusion" ".git*"
+			"FileExclusion" ".DS_Store"
+		}
+
+		// Shared content depot (game assets - all platforms)
+		"000004"  // Replace with your Shared Depot ID
+		{
+			"FileMapping"
+			{
+				"LocalPath" "assets\*"
+				"DepotPath" "assets"
+				"recursive" "1"
+			}
+			"FileMapping"
+			{
+				"LocalPath" "src\*"
+				"DepotPath" "src"
+				"recursive" "1"
+			}
+			"FileMapping"
+			{
+				"LocalPath" "index.html"
+				"DepotPath" "."
+			}
+			"FileMapping"
+			{
+				"LocalPath" "styles.css"
+				"DepotPath" "."
+			}
+			"FileExclusion" ".git*"
+			"FileExclusion" "*.md"
+			"FileExclusion" ".DS_Store"
 		}
 	}
 }

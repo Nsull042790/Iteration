@@ -1,0 +1,80 @@
+{
+  "_comment": "ITERATION - Steam Launch Options Configuration",
+  "_description": "Configure in Steamworks Partner Site under Installation > General Installation",
+
+  "launch_options": {
+    "windows": {
+      "executable": "ITERATION.exe",
+      "arguments": "",
+      "working_directory": "",
+      "description": "Play ITERATION",
+      "type": "default",
+      "os": "windows",
+      "os_arch": "64"
+    },
+    "macos": {
+      "executable": "ITERATION.app",
+      "arguments": "",
+      "working_directory": "",
+      "description": "Play ITERATION",
+      "type": "default",
+      "os": "macos",
+      "os_arch": "64"
+    },
+    "linux": {
+      "executable": "ITERATION",
+      "arguments": "",
+      "working_directory": "",
+      "description": "Play ITERATION",
+      "type": "default",
+      "os": "linux",
+      "os_arch": "64"
+    }
+  },
+
+  "steamworks_setup": {
+    "instructions": [
+      "1. Go to Steamworks Partner Site",
+      "2. Navigate to your App > Installation > General Installation",
+      "3. Under 'Launch Options', click 'Add new launch option'",
+      "4. For Windows:",
+      "   - Executable: ITERATION.exe",
+      "   - Operating System: Windows",
+      "   - CPU Architecture: 64-bit only (recommended)",
+      "5. For macOS:",
+      "   - Executable: ITERATION.app",
+      "   - Operating System: macOS",
+      "   - CPU Architecture: 64-bit only",
+      "6. For Linux (optional):",
+      "   - Executable: ITERATION",
+      "   - Operating System: Linux",
+      "   - CPU Architecture: 64-bit only",
+      "7. Save changes"
+    ]
+  },
+
+  "wrapper_notes": {
+    "description": "ITERATION is a browser-based game that needs to be wrapped for desktop",
+    "recommended_wrappers": [
+      {
+        "name": "Electron",
+        "url": "https://www.electronjs.org/",
+        "pros": ["Full Chromium", "Good Steam integration", "Active development"],
+        "cons": ["Large file size (~150MB)"]
+      },
+      {
+        "name": "NW.js",
+        "url": "https://nwjs.io/",
+        "pros": ["Similar to Electron", "Node.js integration"],
+        "cons": ["Large file size"]
+      },
+      {
+        "name": "Tauri",
+        "url": "https://tauri.app/",
+        "pros": ["Small file size (~10MB)", "Rust backend"],
+        "cons": ["Uses system WebView", "May have compatibility issues"]
+      }
+    ],
+    "steam_integration": "Use greenworks or steamworks.js for Steam API integration"
+  }
+}

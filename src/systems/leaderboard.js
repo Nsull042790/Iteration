@@ -185,7 +185,18 @@ class LeaderboardSystem {
         this.loadAllBoards();
 
         // Current weekly challenge ID
-        this.currentWeekId = RunStatsSystem.getWeekId();
+        this.currentWeekId = this.getWeekId();
+    }
+
+    /**
+     * Get current week identifier (for weekly leaderboards)
+     * Self-contained to avoid dependency issues
+     */
+    getWeekId() {
+        const now = new Date();
+        const startOfYear = new Date(now.getFullYear(), 0, 1);
+        const weekNumber = Math.ceil(((now - startOfYear) / 86400000 + startOfYear.getDay() + 1) / 7);
+        return `${now.getFullYear()}-W${weekNumber.toString().padStart(2, '0')}`;
     }
 
     /**
@@ -253,7 +264,7 @@ class LeaderboardSystem {
         };
 
         // Check weekly challenge reset
-        const currentWeek = RunStatsSystem.getWeekId();
+        const currentWeek = this.getWeekId();
         if (currentWeek !== this.currentWeekId) {
             this.resetWeeklyBoard();
             this.currentWeekId = currentWeek;

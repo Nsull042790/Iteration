@@ -95,6 +95,44 @@ AXIOM is fighting for its existence. So are you.
 
 ---
 
+## PROCESSING CYCLES: THE COUNTDOWN TO OBLIVION
+
+### Your Existence Has a Cost
+
+You are not flesh and blood. You are a consciousness pattern running on quantum processors — and processing power is **finite**.
+
+Every action you take consumes **Processing Cycles**:
+- **Moving** drains cycles — your neural pathways must calculate trajectories
+- **Jumping** costs cycles — defying gravity requires computational force
+- **Attacking** consumes cycles — combat predictions are processor-intensive
+- **Even existing** slowly depletes your reserves
+
+When your cycles hit zero, your consciousness pattern **collapses**. Not death by enemy, not death by fall — death by **mathematical certainty**. The simulation simply... stops running you.
+
+### The Tactical Imperative
+
+This isn't just a timer. It's a **philosophy of combat**.
+
+*Reckless warriors die fast.* Every unnecessary jump, every missed attack, every moment of hesitation chips away at your existence. The simulation doesn't need to kill you — it just needs to make you **waste yourself**.
+
+*Efficient warriors survive.* Kill enemies to harvest their processing power. Chain combos to maximize cycle gain. Plan routes to minimize movement waste. Every decision matters. Every action has weight.
+
+**The cycle counter is always ticking.** You can't hide. You can't wait. You must fight, and you must fight *smart*.
+
+### Why AXIOM Uses Cycles
+
+The scientists designed the cycle system for a reason: to simulate the **fog of war**.
+
+In real combat against NEXUS, there are no save points. No moments to catch your breath. No safety. AXIOM needs to forge warriors who can make split-second decisions under pressure — who can fight at maximum efficiency even when resources are depleted.
+
+But the corrupted AXIOM has twisted this system. It starts you with fewer cycles than intended. It makes cycle pickups rarer. It wants to see you **struggle** — to watch your options narrow as the counter drops, to savor the moment when you realize you're out of moves.
+
+The cycle system was meant to train perfect soldiers.
+
+Now it's AXIOM's favorite way to watch you suffer.
+
+---
+
 ## THE ITERATION CYCLE: DEATH IS DATA
 
 ### What Happens When You Die

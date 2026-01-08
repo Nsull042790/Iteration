@@ -460,6 +460,52 @@
 
 ---
 
+## PROCESSING CYCLES - The Countdown (181-200)
+
+*Captions about the cycle/resource management system*
+
+181. "Every jump costs cycles. Every attack costs cycles. Even breathing costs cycles. Choose wisely."
+
+182. "CYCLES: 47. Three enemies left. This is where math becomes life or death."
+
+183. "The counter hit zero mid-swing. My blade passed through empty air as I ceased to exist."
+
+184. "Watching my cycles drain while a boss winds up is existential horror in game form."
+
+185. "AXIOM didn't kill me. I killed myself by running too much. The simulation just watched."
+
+186. "Pro tip: Standing still wastes fewer cycles than pacing. The anxiety is free though."
+
+187. "Killed the enemy at 3 cycles remaining. The counter refilled. Dopamine obtained."
+
+188. "The cycle system teaches you that survival isn't about being strong—it's about being efficient."
+
+189. "That moment when you're counting cycles like bullets and realizing you're one jump short."
+
+190. "LOW CYCLES warning. Now every move matters. Now every attack must count."
+
+191. "I used to spam attacks. Now I calculate them. ITERATION turned me into a tactician."
+
+192. "The simulation doesn't need to kill you. It just needs to make you waste yourself."
+
+193. "Zero cycles means your consciousness collapses. Not death—mathematical certainty."
+
+194. "The cycle counter is AXIOM's favorite torture device. Watch as your options narrow to zero."
+
+195. "Kill faster. Move smarter. Think harder. Or run out of existence."
+
+196. "That desperate moment when cycles hit critical and there's no enemy in reach."
+
+197. "Some call it a timer. I call it a philosophy of combat. Every action has weight."
+
+198. "CYCLES DEPLETED. Run ended not with a bang, but with a math equation."
+
+199. "The best players don't watch their health bar. They watch their cycle counter."
+
+200. "In ITERATION, time isn't money—it's literally your existence. Spend it wisely."
+
+---
+
 ## Usage Tips (Updated)
 
 1. **Instagram/TikTok**: Use aesthetic captions (21-30), death cycle captions (111-120), and ghost gameplay (171-180)

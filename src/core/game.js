@@ -155,6 +155,18 @@ class Game {
             }
         });
 
+        // Setup in-game mute button
+        const gameMuteBtn = document.getElementById('game-mute-btn');
+        if (gameMuteBtn) {
+            gameMuteBtn.onclick = () => {
+                this.audio.toggleMute();
+                this.updateMuteButton(gameMuteBtn);
+                // Also update title screen mute button if visible
+                const titleMuteBtn = document.getElementById('mute-btn');
+                if (titleMuteBtn) this.updateMuteButton(titleMuteBtn);
+            };
+        }
+
         // Create player
         this.player = new Player(100, 100);
 
@@ -2649,6 +2661,12 @@ class Game {
      * Show character selection screen
      */
     showCharacterSelect() {
+        // Prevent showing character select if already playing or in wrong state
+        if (this.state === 'playing' || this.state === 'controls' || this.showingCharacterSelect) {
+            console.log('showCharacterSelect blocked - already in state:', this.state);
+            return;
+        }
+
         this.state = 'character_select';
         this.showingCharacterSelect = true;
 
@@ -2850,6 +2868,27 @@ class Game {
 
         modal.classList.remove('hidden');
 
+        // Handle key press - store as instance property for cleanup
+        const handleControlsKey = (e) => {
+            if (this.state === 'controls' && (e.code === 'Space' || e.code === 'Enter')) {
+                e.preventDefault();
+                cleanup();
+                this.startGame();
+            }
+        };
+        this.controlsKeyHandler = handleControlsKey;
+
+        // Cleanup function to remove all handlers
+        const cleanup = () => {
+            startButton.removeEventListener('click', handleStart);
+            startButton.removeEventListener('touchend', handleStart);
+            if (this.controlsKeyHandler) {
+                window.removeEventListener('keydown', this.controlsKeyHandler);
+                this.controlsKeyHandler = null;
+            }
+            modal.classList.add('hidden');
+        };
+
         // Handle start button click (with touch support)
         const handleStart = (e) => {
             if (e) {
@@ -2859,23 +2898,12 @@ class Game {
             if (dontShowCheckbox.checked) {
                 localStorage.setItem('iteration_skip_controls', 'true');
             }
-            modal.classList.add('hidden');
-            startButton.removeEventListener('click', handleStart);
-            startButton.removeEventListener('touchend', handleStart);
+            cleanup();
             this.startGame();
         };
 
         startButton.addEventListener('click', handleStart);
         startButton.addEventListener('touchend', handleStart);
-
-        // Handle key press
-        const handleControlsKey = (e) => {
-            if (this.state === 'controls' && (e.code === 'Space' || e.code === 'Enter')) {
-                e.preventDefault();
-                startButton.click();
-                window.removeEventListener('keydown', handleControlsKey);
-            }
-        };
         window.addEventListener('keydown', handleControlsKey);
     }
 

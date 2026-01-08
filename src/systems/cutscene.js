@@ -562,12 +562,23 @@ class CutsceneSystem {
      * End the cutscene
      */
     endCutscene() {
+        // Prevent double-ending
+        if (!this.active) {
+            console.log('endCutscene called but already inactive');
+            return;
+        }
+
         console.log('endCutscene called');
         this.active = false;
         this.disableTouchSkip();
-        if (this.onComplete) {
+
+        // Save and clear callback before calling to prevent double-execution
+        const callback = this.onComplete;
+        this.onComplete = null;
+
+        if (callback) {
             console.log('Calling onComplete callback');
-            this.onComplete();
+            callback();
         }
     }
 
@@ -575,6 +586,12 @@ class CutsceneSystem {
      * Skip cutscene
      */
     skip() {
+        // Don't skip if already inactive
+        if (!this.active) {
+            console.log('Skip ignored - cutscene not active');
+            return;
+        }
+
         // Don't skip if lockout is active (prevents accidental skip from touch that started cutscene)
         if (this.skipLockout > 0) {
             console.log('Skip blocked by lockout:', this.skipLockout);

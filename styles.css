@@ -214,6 +214,25 @@ body {
     line-height: 1;
 }
 
+/* In-game mute button */
+.game-mute {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    width: 40px;
+    height: 40px;
+    z-index: 50;
+    opacity: 0.6;
+}
+
+.game-mute:hover {
+    opacity: 1;
+}
+
+.game-mute .mute-icon {
+    font-size: 18px;
+}
+
 /* ============================================
    Loading Screen
    ============================================ */

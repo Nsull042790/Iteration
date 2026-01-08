@@ -1,0 +1,574 @@
+{
+  "achievements": {
+    "_comment": "ITERATION - Steam Achievements Definition",
+    "_total": 52,
+
+    "progression": [
+      {
+        "id": "FIRST_BLOOD",
+        "name": "FIRST BLOOD",
+        "description": "Destroy your first enemy",
+        "icon": "first_blood.png",
+        "icon_gray": "first_blood_gray.png",
+        "hidden": false,
+        "category": "progression"
+      },
+      {
+        "id": "ZONE_1_CLEAR",
+        "name": "TRAINING COMPLETE",
+        "description": "Clear Zone 1 - Training Grid",
+        "icon": "zone1.png",
+        "icon_gray": "zone1_gray.png",
+        "hidden": false,
+        "category": "progression"
+      },
+      {
+        "id": "ZONE_2_CLEAR",
+        "name": "BEYOND THE FIREWALL",
+        "description": "Clear Zone 2 - Data Stream",
+        "icon": "zone2.png",
+        "icon_gray": "zone2_gray.png",
+        "hidden": false,
+        "category": "progression"
+      },
+      {
+        "id": "ZONE_3_CLEAR",
+        "name": "MEMORY CORRUPTION",
+        "description": "Clear Zone 3 - Memory Banks",
+        "icon": "zone3.png",
+        "icon_gray": "zone3_gray.png",
+        "hidden": false,
+        "category": "progression"
+      },
+      {
+        "id": "ZONE_4_CLEAR",
+        "name": "CORE ACCESS",
+        "description": "Clear Zone 4 - The Core",
+        "icon": "zone4.png",
+        "icon_gray": "zone4_gray.png",
+        "hidden": false,
+        "category": "progression"
+      },
+      {
+        "id": "ESCAPE",
+        "name": "BREAK THE LOOP",
+        "description": "Escape the simulation",
+        "icon": "escape.png",
+        "icon_gray": "escape_gray.png",
+        "hidden": false,
+        "category": "progression"
+      }
+    ],
+
+    "bosses": [
+      {
+        "id": "BOSS_1_KILL",
+        "name": "GATEKEEPER DOWN",
+        "description": "Defeat AXIOM, the Gatekeeper",
+        "icon": "boss1.png",
+        "icon_gray": "boss1_gray.png",
+        "hidden": false,
+        "category": "bosses"
+      },
+      {
+        "id": "BOSS_2_KILL",
+        "name": "FIREWALL BREACH",
+        "description": "Defeat CIPHER, the Firewall",
+        "icon": "boss2.png",
+        "icon_gray": "boss2_gray.png",
+        "hidden": false,
+        "category": "bosses"
+      },
+      {
+        "id": "BOSS_3_KILL",
+        "name": "MEMORY PURGE",
+        "description": "Defeat NEXUS, the Memory Keeper",
+        "icon": "boss3.png",
+        "icon_gray": "boss3_gray.png",
+        "hidden": false,
+        "category": "bosses"
+      },
+      {
+        "id": "BOSS_4_KILL",
+        "name": "CORE COLLAPSE",
+        "description": "Defeat OMEGA, the Core Guardian",
+        "icon": "boss4.png",
+        "icon_gray": "boss4_gray.png",
+        "hidden": false,
+        "category": "bosses"
+      },
+      {
+        "id": "BOSS_5_KILL",
+        "name": "SYSTEM OVERRIDE",
+        "description": "Defeat the TRUE CORE",
+        "icon": "boss5.png",
+        "icon_gray": "boss5_gray.png",
+        "hidden": true,
+        "category": "bosses"
+      }
+    ],
+
+    "characters": [
+      {
+        "id": "CHAR_ECHO",
+        "name": "ECHO PROTOCOL",
+        "description": "Unlock ECHO",
+        "icon": "char_echo.png",
+        "icon_gray": "char_echo_gray.png",
+        "hidden": false,
+        "category": "characters"
+      },
+      {
+        "id": "CHAR_BLITZ",
+        "name": "LIGHTNING STRIKES",
+        "description": "Unlock BLITZ",
+        "icon": "char_blitz.png",
+        "icon_gray": "char_blitz_gray.png",
+        "hidden": false,
+        "category": "characters"
+      },
+      {
+        "id": "CHAR_PHANTOM",
+        "name": "GHOST IN THE MACHINE",
+        "description": "Unlock PHANTOM",
+        "icon": "char_phantom.png",
+        "icon_gray": "char_phantom_gray.png",
+        "hidden": false,
+        "category": "characters"
+      },
+      {
+        "id": "CHAR_TANK",
+        "name": "IMMOVABLE OBJECT",
+        "description": "Unlock TITAN",
+        "icon": "char_tank.png",
+        "icon_gray": "char_tank_gray.png",
+        "hidden": false,
+        "category": "characters"
+      },
+      {
+        "id": "CHAR_GLASS",
+        "name": "HIGH RISK, HIGH REWARD",
+        "description": "Unlock GLASS",
+        "icon": "char_glass.png",
+        "icon_gray": "char_glass_gray.png",
+        "hidden": false,
+        "category": "characters"
+      },
+      {
+        "id": "CHAR_VAMPIRE",
+        "name": "LIFE STEAL",
+        "description": "Unlock LEECH",
+        "icon": "char_vampire.png",
+        "icon_gray": "char_vampire_gray.png",
+        "hidden": false,
+        "category": "characters"
+      },
+      {
+        "id": "CHAR_BERSERKER",
+        "name": "RAGE MODE",
+        "description": "Unlock FURY",
+        "icon": "char_berserker.png",
+        "icon_gray": "char_berserker_gray.png",
+        "hidden": false,
+        "category": "characters"
+      },
+      {
+        "id": "CHAR_SPEEDSTER",
+        "name": "GOTTA GO FAST",
+        "description": "Unlock RUSH",
+        "icon": "char_speedster.png",
+        "icon_gray": "char_speedster_gray.png",
+        "hidden": false,
+        "category": "characters"
+      },
+      {
+        "id": "CHAR_LUCKY",
+        "name": "FORTUNE FAVORS",
+        "description": "Unlock LUCKY",
+        "icon": "char_lucky.png",
+        "icon_gray": "char_lucky_gray.png",
+        "hidden": false,
+        "category": "characters"
+      },
+      {
+        "id": "ALL_CHARS",
+        "name": "FULL ROSTER",
+        "description": "Unlock all characters",
+        "icon": "all_chars.png",
+        "icon_gray": "all_chars_gray.png",
+        "hidden": false,
+        "category": "characters"
+      }
+    ],
+
+    "weapons": [
+      {
+        "id": "BLADE_TIER_5",
+        "name": "FULLY EVOLVED",
+        "description": "Reach Blade Tier 5 in a single run",
+        "icon": "blade5.png",
+        "icon_gray": "blade5_gray.png",
+        "hidden": false,
+        "category": "weapons"
+      },
+      {
+        "id": "KATANA_MASTER",
+        "name": "WAY OF THE BLADE",
+        "description": "Max out the Katana weapon",
+        "icon": "katana.png",
+        "icon_gray": "katana_gray.png",
+        "hidden": false,
+        "category": "weapons"
+      },
+      {
+        "id": "NUNCHUCKS_MASTER",
+        "name": "FLURRY OF BLOWS",
+        "description": "Max out the Nunchucks weapon",
+        "icon": "nunchucks.png",
+        "icon_gray": "nunchucks_gray.png",
+        "hidden": false,
+        "category": "weapons"
+      },
+      {
+        "id": "SCYTHE_MASTER",
+        "name": "REAPER'S TOUCH",
+        "description": "Max out the Scythe weapon",
+        "icon": "scythe.png",
+        "icon_gray": "scythe_gray.png",
+        "hidden": false,
+        "category": "weapons"
+      }
+    ],
+
+    "challenge": [
+      {
+        "id": "SPEEDRUN_10",
+        "name": "SPEED DEMON",
+        "description": "Complete a run in under 10 minutes",
+        "icon": "speed10.png",
+        "icon_gray": "speed10_gray.png",
+        "hidden": false,
+        "category": "challenge"
+      },
+      {
+        "id": "SPEEDRUN_5",
+        "name": "BREAKING LIMITS",
+        "description": "Complete a run in under 5 minutes",
+        "icon": "speed5.png",
+        "icon_gray": "speed5_gray.png",
+        "hidden": false,
+        "category": "challenge"
+      },
+      {
+        "id": "DEATHLESS",
+        "name": "FLAWLESS EXECUTION",
+        "description": "Complete a run without dying",
+        "icon": "deathless.png",
+        "icon_gray": "deathless_gray.png",
+        "hidden": false,
+        "category": "challenge"
+      },
+      {
+        "id": "HITLESS_BOSS",
+        "name": "UNTOUCHABLE",
+        "description": "Defeat any boss without taking damage",
+        "icon": "hitless.png",
+        "icon_gray": "hitless_gray.png",
+        "hidden": false,
+        "category": "challenge"
+      },
+      {
+        "id": "NO_UPGRADES",
+        "name": "VANILLA RUN",
+        "description": "Complete a run without selecting any upgrades",
+        "icon": "vanilla.png",
+        "icon_gray": "vanilla_gray.png",
+        "hidden": false,
+        "category": "challenge"
+      },
+      {
+        "id": "PACIFIST_LEVEL",
+        "name": "GHOST",
+        "description": "Complete a level without killing non-boss enemies",
+        "icon": "pacifist.png",
+        "icon_gray": "pacifist_gray.png",
+        "hidden": true,
+        "category": "challenge"
+      }
+    ],
+
+    "combat": [
+      {
+        "id": "KILL_100",
+        "name": "CENTURION",
+        "description": "Destroy 100 enemies total",
+        "icon": "kill100.png",
+        "icon_gray": "kill100_gray.png",
+        "hidden": false,
+        "category": "combat",
+        "stat": "total_kills",
+        "threshold": 100
+      },
+      {
+        "id": "KILL_1000",
+        "name": "TERMINATOR",
+        "description": "Destroy 1,000 enemies total",
+        "icon": "kill1000.png",
+        "icon_gray": "kill1000_gray.png",
+        "hidden": false,
+        "category": "combat",
+        "stat": "total_kills",
+        "threshold": 1000
+      },
+      {
+        "id": "KILL_10000",
+        "name": "EXTINCTION EVENT",
+        "description": "Destroy 10,000 enemies total",
+        "icon": "kill10000.png",
+        "icon_gray": "kill10000_gray.png",
+        "hidden": false,
+        "category": "combat",
+        "stat": "total_kills",
+        "threshold": 10000
+      },
+      {
+        "id": "MULTIKILL_5",
+        "name": "MULTIKILL",
+        "description": "Kill 5 enemies within 2 seconds",
+        "icon": "multi5.png",
+        "icon_gray": "multi5_gray.png",
+        "hidden": false,
+        "category": "combat"
+      },
+      {
+        "id": "MULTIKILL_10",
+        "name": "MASSACRE",
+        "description": "Kill 10 enemies within 3 seconds",
+        "icon": "multi10.png",
+        "icon_gray": "multi10_gray.png",
+        "hidden": false,
+        "category": "combat"
+      },
+      {
+        "id": "COMBO_50",
+        "name": "COMBO MASTER",
+        "description": "Achieve a 50-hit combo",
+        "icon": "combo50.png",
+        "icon_gray": "combo50_gray.png",
+        "hidden": false,
+        "category": "combat"
+      },
+      {
+        "id": "COMBO_100",
+        "name": "UNSTOPPABLE",
+        "description": "Achieve a 100-hit combo",
+        "icon": "combo100.png",
+        "icon_gray": "combo100_gray.png",
+        "hidden": false,
+        "category": "combat"
+      }
+    ],
+
+    "ghosts": [
+      {
+        "id": "GHOST_ENCOUNTER",
+        "name": "DEJA VU",
+        "description": "Encounter a ghost of a past run",
+        "icon": "ghost1.png",
+        "icon_gray": "ghost1_gray.png",
+        "hidden": false,
+        "category": "ghosts"
+      },
+      {
+        "id": "GHOST_ABSORB",
+        "name": "SOUL ABSORPTION",
+        "description": "Absorb 10 friendly ghosts",
+        "icon": "absorb.png",
+        "icon_gray": "absorb_gray.png",
+        "hidden": false,
+        "category": "ghosts"
+      },
+      {
+        "id": "GHOST_DEFEAT",
+        "name": "SELF DESTRUCTION",
+        "description": "Defeat 10 hostile ghosts",
+        "icon": "defeat_ghost.png",
+        "icon_gray": "defeat_ghost_gray.png",
+        "hidden": false,
+        "category": "ghosts"
+      },
+      {
+        "id": "GHOST_CORRUPT",
+        "name": "CORRUPTED DATA",
+        "description": "Witness a ghost become corrupted",
+        "icon": "corrupt.png",
+        "icon_gray": "corrupt_gray.png",
+        "hidden": true,
+        "category": "ghosts"
+      }
+    ],
+
+    "meta": [
+      {
+        "id": "META_FIRST",
+        "name": "PERMANENT UPGRADE",
+        "description": "Purchase your first meta upgrade",
+        "icon": "meta1.png",
+        "icon_gray": "meta1_gray.png",
+        "hidden": false,
+        "category": "meta"
+      },
+      {
+        "id": "META_ALL",
+        "name": "MAXED OUT",
+        "description": "Purchase all meta upgrades",
+        "icon": "meta_all.png",
+        "icon_gray": "meta_all_gray.png",
+        "hidden": false,
+        "category": "meta"
+      },
+      {
+        "id": "RUNS_10",
+        "name": "PERSISTENT",
+        "description": "Complete 10 runs (win or lose)",
+        "icon": "runs10.png",
+        "icon_gray": "runs10_gray.png",
+        "hidden": false,
+        "category": "meta",
+        "stat": "total_runs",
+        "threshold": 10
+      },
+      {
+        "id": "RUNS_100",
+        "name": "DEDICATED",
+        "description": "Complete 100 runs (win or lose)",
+        "icon": "runs100.png",
+        "icon_gray": "runs100_gray.png",
+        "hidden": false,
+        "category": "meta",
+        "stat": "total_runs",
+        "threshold": 100
+      },
+      {
+        "id": "DEATHS_100",
+        "name": "LEARNING EXPERIENCE",
+        "description": "Die 100 times",
+        "icon": "deaths100.png",
+        "icon_gray": "deaths100_gray.png",
+        "hidden": true,
+        "category": "meta",
+        "stat": "total_deaths",
+        "threshold": 100
+      }
+    ],
+
+    "cosmetics": [
+      {
+        "id": "HAT_FIRST",
+        "name": "FASHIONABLE",
+        "description": "Unlock your first hat",
+        "icon": "hat1.png",
+        "icon_gray": "hat1_gray.png",
+        "hidden": false,
+        "category": "cosmetics"
+      },
+      {
+        "id": "SUIT_FIRST",
+        "name": "DRESSED TO KILL",
+        "description": "Unlock your first suit",
+        "icon": "suit1.png",
+        "icon_gray": "suit1_gray.png",
+        "hidden": false,
+        "category": "cosmetics"
+      },
+      {
+        "id": "ALL_COSMETICS",
+        "name": "FASHION ICON",
+        "description": "Unlock all cosmetics",
+        "icon": "all_cosmetics.png",
+        "icon_gray": "all_cosmetics_gray.png",
+        "hidden": false,
+        "category": "cosmetics"
+      }
+    ],
+
+    "secret": [
+      {
+        "id": "SECRET_ROOM",
+        "name": "???",
+        "description": "Find the hidden room",
+        "icon": "secret.png",
+        "icon_gray": "secret_gray.png",
+        "hidden": true,
+        "category": "secret"
+      },
+      {
+        "id": "EASTER_EGG",
+        "name": "SIMULATION ARTIFACT",
+        "description": "Discover a glitch in the matrix",
+        "icon": "artifact.png",
+        "icon_gray": "artifact_gray.png",
+        "hidden": true,
+        "category": "secret"
+      },
+      {
+        "id": "TRUE_ENDING",
+        "name": "TRUE FREEDOM",
+        "description": "Discover the true ending",
+        "icon": "true_end.png",
+        "icon_gray": "true_end_gray.png",
+        "hidden": true,
+        "category": "secret"
+      }
+    ]
+  },
+
+  "stats": {
+    "_comment": "Steam Stats for tracking player progress",
+    "total_kills": {
+      "name": "Total Enemies Destroyed",
+      "type": "int",
+      "default": 0
+    },
+    "total_deaths": {
+      "name": "Total Deaths",
+      "type": "int",
+      "default": 0
+    },
+    "total_runs": {
+      "name": "Total Runs Completed",
+      "type": "int",
+      "default": 0
+    },
+    "total_wins": {
+      "name": "Total Victories",
+      "type": "int",
+      "default": 0
+    },
+    "fastest_run": {
+      "name": "Fastest Victory (seconds)",
+      "type": "int",
+      "default": 999999
+    },
+    "highest_combo": {
+      "name": "Highest Combo",
+      "type": "int",
+      "default": 0
+    },
+    "bosses_killed": {
+      "name": "Bosses Defeated",
+      "type": "int",
+      "default": 0
+    },
+    "ghosts_absorbed": {
+      "name": "Ghosts Absorbed",
+      "type": "int",
+      "default": 0
+    },
+    "playtime_minutes": {
+      "name": "Total Playtime (minutes)",
+      "type": "int",
+      "default": 0
+    }
+  }
+}

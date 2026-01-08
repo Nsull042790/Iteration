@@ -1,0 +1,31 @@
+"AppBuild"
+{
+	"AppID" "000000"  // Replace with your Steam App ID
+	"Desc" "ITERATION Build"
+	"ContentRoot" "..\..\"  // Root folder containing game files
+	"BuildOutput" ".\output\"  // Build output folder
+	"Preview" "0"  // Set to 1 for preview build (doesn't upload)
+
+	"Depots"
+	{
+		// Main game depot (Windows)
+		"000001"  // Replace with your Depot ID (usually AppID + 1)
+		{
+			"FileMapping"
+			{
+				"LocalPath" "*"
+				"DepotPath" "."
+				"recursive" "1"
+			}
+			"FileExclusion" "*.pdb"
+			"FileExclusion" "*.vdf"
+			"FileExclusion" "steam_appid.txt"
+			"FileExclusion" ".git*"
+			"FileExclusion" "steam/*"
+			"FileExclusion" "node_modules/*"
+			"FileExclusion" "*.md"
+			"FileExclusion" ".DS_Store"
+			"FileExclusion" "Thumbs.db"
+		}
+	}
+}

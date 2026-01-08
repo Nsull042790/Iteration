@@ -1,0 +1,22 @@
+"DepotBuildConfig"
+{
+	"DepotID" "000001"  // Replace with your Depot ID
+	"contentroot" "..\..\"
+	"FileMapping"
+	{
+		"LocalPath" "*"
+		"DepotPath" "."
+		"recursive" "1"
+	}
+	"FileExclusion" "*.pdb"
+	"FileExclusion" "*.vdf"
+	"FileExclusion" "steam_appid.txt"
+	"FileExclusion" ".git*"
+	"FileExclusion" "steam/*"
+	"FileExclusion" "node_modules/*"
+	"FileExclusion" "*.md"
+	"FileExclusion" ".DS_Store"
+	"FileExclusion" "Thumbs.db"
+	"FileExclusion" "__pycache__/*"
+	"FileExclusion" "*.pyc"
+}

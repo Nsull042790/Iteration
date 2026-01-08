@@ -1,0 +1,158 @@
+{
+  "_comment": "ITERATION - Steam Leaderboard Configuration",
+  "_description": "Define in Steamworks Partner Site under Stats & Achievements > Leaderboards",
+  "_total_boards": 18,
+
+  "leaderboards": {
+    "global": [
+      {
+        "id": "speedrun",
+        "name": "Speedrun - Any%",
+        "sort_method": "Ascending",
+        "display_type": "TimeMilliSeconds",
+        "description": "Fastest time to complete the game"
+      },
+      {
+        "id": "speedrun_weekly",
+        "name": "Weekly Speedrun",
+        "sort_method": "Ascending",
+        "display_type": "TimeMilliSeconds",
+        "description": "Fastest time this week (resets Monday)"
+      },
+      {
+        "id": "kills",
+        "name": "Kill Count",
+        "sort_method": "Descending",
+        "display_type": "Numeric",
+        "description": "Most enemies destroyed in a single run"
+      },
+      {
+        "id": "deathless",
+        "name": "Deathless Speedrun",
+        "sort_method": "Ascending",
+        "display_type": "TimeMilliSeconds",
+        "description": "Fastest time without dying"
+      },
+      {
+        "id": "cycles",
+        "name": "Cycle Efficiency",
+        "sort_method": "Descending",
+        "display_type": "Numeric",
+        "description": "Most cycles remaining at victory"
+      },
+      {
+        "id": "combo",
+        "name": "Highest Combo",
+        "sort_method": "Descending",
+        "display_type": "Numeric",
+        "description": "Longest kill combo in a single run"
+      },
+      {
+        "id": "boss_rush",
+        "name": "Boss Rush",
+        "sort_method": "Ascending",
+        "display_type": "TimeMilliSeconds",
+        "description": "Combined time for all boss fights"
+      },
+      {
+        "id": "total_runs",
+        "name": "Runs Completed",
+        "sort_method": "Descending",
+        "display_type": "Numeric",
+        "description": "Total successful runs completed"
+      }
+    ],
+
+    "character_speedruns": [
+      {
+        "id": "speedrun_echo",
+        "name": "Speedrun - ECHO",
+        "sort_method": "Ascending",
+        "display_type": "TimeMilliSeconds",
+        "description": "Fastest time with ECHO"
+      },
+      {
+        "id": "speedrun_blitz",
+        "name": "Speedrun - BLITZ",
+        "sort_method": "Ascending",
+        "display_type": "TimeMilliSeconds",
+        "description": "Fastest time with BLITZ"
+      },
+      {
+        "id": "speedrun_phantom",
+        "name": "Speedrun - PHANTOM",
+        "sort_method": "Ascending",
+        "display_type": "TimeMilliSeconds",
+        "description": "Fastest time with PHANTOM"
+      },
+      {
+        "id": "speedrun_titan",
+        "name": "Speedrun - TITAN",
+        "sort_method": "Ascending",
+        "display_type": "TimeMilliSeconds",
+        "description": "Fastest time with TITAN"
+      },
+      {
+        "id": "speedrun_glass",
+        "name": "Speedrun - GLASS",
+        "sort_method": "Ascending",
+        "display_type": "TimeMilliSeconds",
+        "description": "Fastest time with GLASS"
+      },
+      {
+        "id": "speedrun_leech",
+        "name": "Speedrun - LEECH",
+        "sort_method": "Ascending",
+        "display_type": "TimeMilliSeconds",
+        "description": "Fastest time with LEECH"
+      },
+      {
+        "id": "speedrun_fury",
+        "name": "Speedrun - FURY",
+        "sort_method": "Ascending",
+        "display_type": "TimeMilliSeconds",
+        "description": "Fastest time with FURY"
+      },
+      {
+        "id": "speedrun_rush",
+        "name": "Speedrun - RUSH",
+        "sort_method": "Ascending",
+        "display_type": "TimeMilliSeconds",
+        "description": "Fastest time with RUSH"
+      },
+      {
+        "id": "speedrun_lucky",
+        "name": "Speedrun - LUCKY",
+        "sort_method": "Ascending",
+        "display_type": "TimeMilliSeconds",
+        "description": "Fastest time with LUCKY"
+      },
+      {
+        "id": "speedrun_null",
+        "name": "Speedrun - NULL",
+        "sort_method": "Ascending",
+        "display_type": "TimeMilliSeconds",
+        "description": "Fastest time with NULL (starter)"
+      }
+    ]
+  },
+
+  "steamworks_setup": {
+    "instructions": [
+      "1. Go to Steamworks Partner Site",
+      "2. Navigate to your App > Stats & Achievements > Leaderboards",
+      "3. Click 'Create Leaderboard' for each board listed above",
+      "4. Fill in Name, Sort Method, Display Type",
+      "5. Community Name can match the name",
+      "6. Set 'Writes' to 'Trusted' to prevent cheating",
+      "7. Set 'Reads' to 'Public'",
+      "8. Save and publish changes"
+    ],
+    "api_notes": [
+      "Use FindOrCreateLeaderboard() for dynamic creation",
+      "UploadLeaderboardScore() to submit scores",
+      "DownloadLeaderboardEntries() to fetch rankings",
+      "See src/systems/leaderboard.js for implementation"
+    ]
+  }
+}

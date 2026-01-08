@@ -1,0 +1,95 @@
+{
+  "_comment": "ITERATION - Steam Cloud Save Configuration",
+  "_description": "Configure in Steamworks Partner Site under Cloud settings",
+
+  "cloud_enabled": true,
+  "quota_bytes": 104857600,
+  "quota_files": 100,
+
+  "save_files": [
+    {
+      "description": "Player Progress & Unlocks",
+      "localStorage_key": "iteration_save",
+      "cloud_filename": "iteration_save.json",
+      "contains": [
+        "Current level progress",
+        "Unlocked characters",
+        "Meta progression upgrades",
+        "Data cores balance"
+      ]
+    },
+    {
+      "description": "Cosmetics & Loadout",
+      "localStorage_key": "iteration_cosmetics",
+      "cloud_filename": "iteration_cosmetics.json",
+      "contains": [
+        "Unlocked hats",
+        "Unlocked suits",
+        "Equipped loadout"
+      ]
+    },
+    {
+      "description": "Run Statistics",
+      "localStorage_key": "iteration_stats",
+      "cloud_filename": "iteration_stats.json",
+      "contains": [
+        "Total kills",
+        "Total deaths",
+        "Best times",
+        "Personal bests"
+      ]
+    },
+    {
+      "description": "Ghost Data",
+      "localStorage_key": "iteration_ghosts",
+      "cloud_filename": "iteration_ghosts.json",
+      "contains": [
+        "Recorded ghost runs",
+        "Ghost metadata"
+      ]
+    },
+    {
+      "description": "Leaderboard Cache",
+      "localStorage_key": "iteration_leaderboard",
+      "cloud_filename": "iteration_leaderboard.json",
+      "contains": [
+        "Personal best scores",
+        "Weekly best scores"
+      ]
+    },
+    {
+      "description": "Settings & Preferences",
+      "localStorage_key": "iteration_settings",
+      "cloud_filename": "iteration_settings.json",
+      "contains": [
+        "Audio volume levels",
+        "Control preferences",
+        "Display settings"
+      ]
+    }
+  ],
+
+  "steamworks_setup": {
+    "instructions": [
+      "1. Go to Steamworks Partner Site",
+      "2. Navigate to your App > Technical Tools > Cloud",
+      "3. Enable Steam Cloud",
+      "4. Set Byte quota: 100 MB (104857600 bytes)",
+      "5. Set File quota: 100 files",
+      "6. Root path can be left empty for browser games",
+      "7. Save changes"
+    ],
+    "notes": [
+      "ITERATION uses localStorage for saves in the browser version",
+      "For the Steam version, we sync localStorage to Steam Cloud",
+      "This allows cross-device save synchronization",
+      "Steam Cloud saves are backed up automatically"
+    ]
+  },
+
+  "implementation_notes": {
+    "sync_strategy": "Manual sync on game start and exit",
+    "conflict_resolution": "Most recent wins (by timestamp)",
+    "fallback": "Local save used if cloud unavailable"
+  }
+}

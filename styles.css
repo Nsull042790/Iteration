@@ -1102,6 +1102,162 @@ body {
     font-style: italic;
 }
 
+/* Expanded Leaderboard System */
+.leaderboard-expanded {
+    max-width: 700px;
+    min-height: 550px;
+}
+
+.lb-category-tabs {
+    display: flex;
+    gap: 5px;
+    margin-bottom: 10px;
+    border-bottom: 1px solid rgba(0, 240, 255, 0.2);
+    padding-bottom: 10px;
+}
+
+.lb-cat-tab {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(0, 240, 255, 0.3);
+    color: rgba(255, 255, 255, 0.6);
+    padding: 8px 16px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    letter-spacing: 1px;
+}
+
+.lb-cat-tab:hover {
+    background: rgba(0, 240, 255, 0.1);
+    color: #00f0ff;
+}
+
+.lb-cat-tab.active {
+    background: rgba(0, 240, 255, 0.2);
+    border-color: #00f0ff;
+    color: #00f0ff;
+}
+
+.lb-category-panel {
+    display: none;
+}
+
+.lb-category-panel.active {
+    display: block;
+}
+
+.lb-board-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-bottom: 15px;
+}
+
+.lb-char-tabs {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 4px;
+}
+
+.lb-board-tab {
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 0, 170, 0.3);
+    color: rgba(255, 255, 255, 0.5);
+    padding: 6px 10px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    letter-spacing: 0.5px;
+}
+
+.lb-board-tab:hover {
+    background: rgba(255, 0, 170, 0.1);
+    color: #ff00aa;
+}
+
+.lb-board-tab.active {
+    background: rgba(255, 0, 170, 0.2);
+    border-color: #ff00aa;
+    color: #ff00aa;
+}
+
+.lb-board-info {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(0, 240, 255, 0.2);
+    padding: 10px 15px;
+    margin-bottom: 15px;
+}
+
+.lb-board-name {
+    font-size: 16px;
+    color: #00f0ff;
+    font-weight: bold;
+    letter-spacing: 2px;
+    margin-bottom: 4px;
+}
+
+.lb-board-desc {
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.5);
+    letter-spacing: 1px;
+}
+
+.lb-personal-best {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(255, 215, 0, 0.1);
+    border: 1px solid rgba(255, 215, 0, 0.3);
+    padding: 10px 15px;
+    margin-top: 15px;
+}
+
+.lb-pb-label {
+    font-size: 11px;
+    color: #ffd700;
+    letter-spacing: 2px;
+}
+
+.lb-pb-value {
+    font-size: 18px;
+    color: #ffd700;
+    font-weight: bold;
+}
+
+.lb-steam-indicator {
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 3px;
+    margin-left: 10px;
+}
+
+.lb-steam-indicator.connected {
+    background: rgba(0, 255, 136, 0.2);
+    color: #00ff88;
+}
+
+.lb-steam-indicator.local {
+    background: rgba(255, 136, 0, 0.2);
+    color: #ff8800;
+}
+
+/* Leaderboard entry enhancements */
+.leaderboard-entry .entry-time {
+    font-size: 14px;
+    color: #00f0ff;
+    font-weight: bold;
+    min-width: 80px;
+    text-align: right;
+}
+
+.leaderboard-entry .entry-meta {
+    font-size: 9px;
+    color: rgba(255, 255, 255, 0.4);
+    margin-top: 2px;
+}
+
 /* Meta Upgrades Modal */
 .meta-content {
     max-width: 600px;

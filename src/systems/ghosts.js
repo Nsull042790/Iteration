@@ -262,6 +262,11 @@ class GhostSystem {
                     game.addBladeXP(50);
                     game.renderer.flash(ghost.typeData.coreColor, 0.3);
 
+                    // Track hostile ghost defeat in run stats
+                    if (game.runStats) {
+                        game.runStats.recordGhostInteraction(ghost.type, true);
+                    }
+
                     // Spawn particles
                     this.spawnDeathParticles(ghost, game);
                 }
@@ -280,6 +285,11 @@ class GhostSystem {
             game.hud.addMessage(ghost.typeData.message, 'success');
             game.renderer.flash(ghost.typeData.coreColor, 0.3);
             game.camera.addShake(3, 8);
+
+            // Track ghost interaction in run stats
+            if (game.runStats) {
+                game.runStats.recordGhostInteraction(ghost.type, false);
+            }
 
             // Apply bonus based on ghost type
             switch (ghost.type) {

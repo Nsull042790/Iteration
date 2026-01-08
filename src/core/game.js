@@ -55,6 +55,7 @@ class Game {
         this.cosmeticsSystem = new CosmeticsSystem();
         this.metaProgression = new MetaProgressionSystem();
         this.leaderboard = new LeaderboardSystem();
+        this.runStats = new RunStatsSystem();
         this.ghostSystem = new GhostSystem();
         this.audio = window.audioSystem;
         this.cutsceneSystem = new CutsceneSystem(this.canvas, this); // Initialize cutscene system
@@ -353,6 +354,7 @@ class Game {
 
             this.boss = new Boss(bossX, bossY, this.currentLevel);
             this.boss.name = bossName;
+            this.bossStartTime = Date.now(); // Track when boss fight begins
             this.hud.addMessage(`THREAT DETECTED: ${this.boss.name}`, 'warning');
         }, 2000);
     }
@@ -417,6 +419,7 @@ class Game {
                 this.boss = new Boss(bossX, bossY, this.currentLevel);
                 this.boss.name = bossName;
                 this.boss.isFinalBoss = true;
+                this.bossStartTime = Date.now(); // Track when final boss fight begins
 
                 // Boss descends from above
                 this.boss.isEntering = true;
@@ -658,6 +661,12 @@ class Game {
 
         // Store the level we just completed BEFORE incrementing
         const completedLevel = this.currentLevel;
+
+        // Track level completion time in run stats
+        if (this.runStats && this.levelStartTime) {
+            this.runStats.recordLevelComplete(completedLevel, this.levelStartTime);
+            this.levelStartTime = Date.now(); // Reset for next level
+        }
 
         // Check for game victory (beat level 12 - CORRUPTED CORE)
         const FINAL_LEVEL = 12;
@@ -1010,9 +1019,26 @@ class Game {
             console.warn('Error calculating stats:', e);
         }
 
-        // Submit to leaderboard (wrapped in try/catch)
+        // End run stats and submit to all applicable leaderboards
+        let leaderboardResults = { submissions: [], newRecords: [] };
         try {
-            this.leaderboard.submitScore(char.name, finalLevel, this.totalKills || 0, finalCycles);
+            // Set final cycles in stats
+            this.runStats.setFinalCycles(finalCycles);
+
+            // End the run (completed = true)
+            const runSummary = this.runStats.endRun(true, finalLevel);
+
+            // Submit to all applicable leaderboards
+            leaderboardResults = this.leaderboard.submitRun(runSummary);
+
+            // Show new records
+            if (leaderboardResults.newRecords.length > 0) {
+                setTimeout(() => {
+                    this.hud.addMessage(`NEW RECORD: ${leaderboardResults.newRecords[0]}!`, 'evolution');
+                }, 1500);
+            }
+
+            console.log('[VICTORY] Leaderboard results:', leaderboardResults);
         } catch (e) {
             console.warn('Leaderboard submission failed:', e);
         }
@@ -2036,37 +2062,112 @@ class Game {
     }
 
     /**
-     * Show leaderboard modal
+     * Show leaderboard modal - Comprehensive 18-board system
      */
     showLeaderboardModal() {
         const modal = document.getElementById('leaderboard-modal');
         const list = document.getElementById('leaderboard-list');
         const closeBtn = document.getElementById('leaderboard-close-btn');
+        const boardName = document.getElementById('lb-board-name');
+        const boardDesc = document.getElementById('lb-board-desc');
+        const pbValue = document.getElementById('lb-pb-value');
+        const steamStatus = document.getElementById('lb-steam-status');
 
-        // Populate leaderboard
-        const entries = this.leaderboard.getTopEntries(10);
+        // Current selected board
+        let currentBoard = 'speedrun';
 
-        if (entries.length === 0) {
-            list.innerHTML = '<div class="leaderboard-empty">No runs recorded yet. Start playing!</div>';
+        // Update Steam status indicator
+        if (this.leaderboard.steamEnabled) {
+            steamStatus.textContent = 'STEAM';
+            steamStatus.className = 'lb-steam-indicator connected';
         } else {
-            list.innerHTML = entries.map((entry, index) => {
-                let rankClass = '';
-                if (index === 0) rankClass = 'gold';
-                else if (index === 1) rankClass = 'silver';
-                else if (index === 2) rankClass = 'bronze';
-
-                return `
-                    <div class="leaderboard-entry ${rankClass}">
-                        <div class="leaderboard-rank">#${index + 1}</div>
-                        <div class="leaderboard-info">
-                            <div class="leaderboard-character">${entry.character}</div>
-                            <div class="leaderboard-details">Level ${entry.level} • ${entry.kills} kills • ${entry.bladeTier}</div>
-                        </div>
-                        <div class="leaderboard-score">${entry.score.toLocaleString()}</div>
-                    </div>
-                `;
-            }).join('');
+            steamStatus.textContent = 'LOCAL';
+            steamStatus.className = 'lb-steam-indicator local';
         }
+
+        // Function to render a board's entries
+        const renderBoard = (boardId) => {
+            currentBoard = boardId;
+            const definition = this.leaderboard.getBoardDefinition(boardId);
+            if (!definition) return;
+
+            // Update board info
+            boardName.textContent = definition.name;
+            boardDesc.textContent = definition.description;
+
+            // Get entries
+            const entries = this.leaderboard.getTopEntries(boardId, 10);
+
+            if (entries.length === 0) {
+                list.innerHTML = '<div class="leaderboard-empty">No entries yet. Be the first!</div>';
+            } else {
+                list.innerHTML = entries.map((entry, index) => {
+                    let rankClass = '';
+                    if (index === 0) rankClass = 'gold';
+                    else if (index === 1) rankClass = 'silver';
+                    else if (index === 2) rankClass = 'bronze';
+
+                    return `
+                        <div class="leaderboard-entry ${rankClass}">
+                            <div class="leaderboard-rank">#${index + 1}</div>
+                            <div class="leaderboard-info">
+                                <div class="leaderboard-character">${entry.character}</div>
+                                <div class="leaderboard-details entry-meta">${entry.date} • Level ${entry.finalLevel}</div>
+                            </div>
+                            <div class="entry-time">${entry.displayScore}</div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            // Update personal best
+            const pb = this.leaderboard.getPersonalBest(boardId);
+            if (pb) {
+                pbValue.textContent = pb.displayScore;
+            } else {
+                pbValue.textContent = '--';
+            }
+
+            // Update active tab styling
+            document.querySelectorAll('.lb-board-tab').forEach(tab => {
+                tab.classList.toggle('active', tab.dataset.board === boardId);
+            });
+        };
+
+        // Setup category tab switching
+        const categoryTabs = document.querySelectorAll('.lb-cat-tab');
+        const categoryPanels = document.querySelectorAll('.lb-category-panel');
+
+        categoryTabs.forEach(tab => {
+            tab.onclick = () => {
+                const category = tab.dataset.category;
+
+                // Update active category tab
+                categoryTabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+
+                // Show corresponding panel
+                categoryPanels.forEach(panel => {
+                    panel.classList.toggle('active', panel.dataset.panel === category);
+                });
+
+                // Select first board in this category
+                const firstBoardTab = document.querySelector(`.lb-category-panel[data-panel="${category}"] .lb-board-tab`);
+                if (firstBoardTab) {
+                    renderBoard(firstBoardTab.dataset.board);
+                }
+            };
+        });
+
+        // Setup board tab switching
+        document.querySelectorAll('.lb-board-tab').forEach(tab => {
+            tab.onclick = () => {
+                renderBoard(tab.dataset.board);
+            };
+        });
+
+        // Initial render
+        renderBoard('speedrun');
 
         modal.classList.remove('hidden');
 
@@ -2517,6 +2618,11 @@ class Game {
         this.runStartTime = Date.now();
         const char = this.characterSystem.getSelected();
 
+        // Start run stats tracking
+        this.runStats.startRun(char.name);
+        this.levelStartTime = Date.now();
+        this.bossStartTime = null;
+
         // Show touch controls for mobile gameplay
         if (this.input.touchControls) {
             this.input.touchControls.show();
@@ -2928,6 +3034,12 @@ class Game {
             // Boss defeated!
             this.cycles.gain(this.boss.cycleReward);
             this.totalKills++;
+
+            // Track boss kill time in run stats
+            if (this.runStats && this.bossStartTime) {
+                this.runStats.recordBossKill(this.boss.name || `Boss ${this.currentLevel}`, this.bossStartTime);
+                this.bossStartTime = null;
+            }
 
             // Track boss rewards
             this.trackReward('cycles', { amount: this.boss.cycleReward });
@@ -4195,6 +4307,9 @@ class Game {
             kills: this.totalKills
         });
 
+        // Record death in run stats
+        this.runStats.recordDeath(cause, this.currentLevel);
+
         console.log('DEATH TRIGGERED - ghost recorded');
 
         this.renderer.flash(GAME_CONFIG.COLORS.MAGENTA, 0.8);
@@ -4224,16 +4339,15 @@ class Game {
             bossKills
         );
 
-        // Add to leaderboard
-        const leaderboardResult = this.leaderboard.addEntry({
-            level: this.currentLevel,
-            kills: this.totalKills,
-            character: this.characterSystem.selectedCharacter.toUpperCase(),
-            bladeTier: this.bladeEvolution.getBladeName(),
-            dataCoresEarned: coresEarned
-        });
+        // End run stats (completed = false for game over)
+        const finalCycles = this.cycles?.getCycles() || 0;
+        this.runStats.setFinalCycles(finalCycles);
+        const runSummary = this.runStats.endRun(false, this.currentLevel);
 
-        // Update stats
+        // Submit to all applicable leaderboards (furthest_level, ghost_master, etc.)
+        const leaderboardResults = this.leaderboard.submitRun(runSummary);
+
+        // Update stats display
         levelEl.textContent = this.currentLevel;
         killsEl.textContent = this.totalKills;
         bladeEl.textContent = this.bladeEvolution.getBladeName();
@@ -4241,11 +4355,14 @@ class Game {
         // Show data cores earned
         this.hud.addMessage(`+${coresEarned} DATA CORES earned!`, 'evolution');
 
-        // Show leaderboard ranking
-        if (leaderboardResult.rank === 1) {
-            this.hud.addMessage(`NEW HIGH SCORE! #${leaderboardResult.rank}`, 'evolution');
-        } else if (leaderboardResult.rank <= 10) {
-            this.hud.addMessage(`LEADERBOARD RANK: #${leaderboardResult.rank}`, 'success');
+        // Show leaderboard achievements
+        if (leaderboardResults.newRecords.length > 0) {
+            this.hud.addMessage(`NEW RECORD: ${leaderboardResults.newRecords[0]}!`, 'evolution');
+        } else if (leaderboardResults.submissions.length > 0) {
+            const bestSubmission = leaderboardResults.submissions[0];
+            if (bestSubmission.rank <= 10) {
+                this.hud.addMessage(`RANKED #${bestSubmission.rank} on ${bestSubmission.boardName}`, 'success');
+            }
         }
 
         modal.classList.remove('hidden');

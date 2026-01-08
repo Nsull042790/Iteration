@@ -487,16 +487,65 @@
             </div>
         </div>
 
-        <!-- Leaderboard Modal -->
+        <!-- Leaderboard Modal - Comprehensive 18-Board System -->
         <div id="leaderboard-modal" class="screen hidden">
-            <div class="modal-content leaderboard-content">
+            <div class="modal-content leaderboard-content leaderboard-expanded">
                 <div class="modal-header">
-                    <div class="modal-title">🏆 LEADERBOARD</div>
-                    <div class="modal-subtitle">// TOP ITERATIONS</div>
+                    <div class="modal-title">🏆 LEADERBOARDS</div>
+                    <div class="modal-subtitle">// COMPETITIVE RANKINGS <span id="lb-steam-status" class="lb-steam-indicator"></span></div>
                 </div>
 
+                <!-- Board Category Tabs -->
+                <div class="lb-category-tabs">
+                    <button class="lb-cat-tab active" data-category="core">CORE BOARDS</button>
+                    <button class="lb-cat-tab" data-category="characters">CHARACTER SPEEDRUNS</button>
+                </div>
+
+                <!-- Core Boards Section -->
+                <div class="lb-category-panel active" data-panel="core">
+                    <div class="lb-board-tabs">
+                        <button class="lb-board-tab active" data-board="speedrun">SPEEDRUN</button>
+                        <button class="lb-board-tab" data-board="deathless">DEATHLESS</button>
+                        <button class="lb-board-tab" data-board="furthest_level">FURTHEST</button>
+                        <button class="lb-board-tab" data-board="ghost_master">GHOSTS</button>
+                        <button class="lb-board-tab" data-board="lowest_deaths">LOW DEATH</button>
+                        <button class="lb-board-tab" data-board="boss_rush">BOSS RUSH</button>
+                        <button class="lb-board-tab" data-board="cycle_efficiency">CYCLES</button>
+                        <button class="lb-board-tab" data-board="weekly">WEEKLY</button>
+                    </div>
+                </div>
+
+                <!-- Character Speedruns Section -->
+                <div class="lb-category-panel" data-panel="characters">
+                    <div class="lb-board-tabs lb-char-tabs">
+                        <button class="lb-board-tab" data-board="speedrun_echo">ECHO</button>
+                        <button class="lb-board-tab" data-board="speedrun_blitz">BLITZ</button>
+                        <button class="lb-board-tab" data-board="speedrun_titan">TITAN</button>
+                        <button class="lb-board-tab" data-board="speedrun_phantom">PHANTOM</button>
+                        <button class="lb-board-tab" data-board="speedrun_nova">NOVA</button>
+                        <button class="lb-board-tab" data-board="speedrun_havoc">HAVOC</button>
+                        <button class="lb-board-tab" data-board="speedrun_sage">SAGE</button>
+                        <button class="lb-board-tab" data-board="speedrun_chrome">CHROME</button>
+                        <button class="lb-board-tab" data-board="speedrun_void">VOID</button>
+                        <button class="lb-board-tab" data-board="speedrun_neon">NEON</button>
+                    </div>
+                </div>
+
+                <!-- Board Info -->
+                <div class="lb-board-info">
+                    <div class="lb-board-name" id="lb-board-name">SPEEDRUN (ANY%)</div>
+                    <div class="lb-board-desc" id="lb-board-desc">Fastest time to escape the simulation</div>
+                </div>
+
+                <!-- Leaderboard Entries -->
                 <div class="leaderboard-list" id="leaderboard-list">
                     <!-- Entries will be generated here -->
+                </div>
+
+                <!-- Personal Best Section -->
+                <div class="lb-personal-best" id="lb-personal-best">
+                    <div class="lb-pb-label">YOUR BEST</div>
+                    <div class="lb-pb-value" id="lb-pb-value">--</div>
                 </div>
 
                 <div class="modal-footer">
@@ -550,13 +599,14 @@
     <script src="src/systems/weapons.js?v=20260107a"></script>
     <script src="src/systems/cosmetics.js?v=20260107a"></script>
     <script src="src/systems/meta-progression.js?v=20260107a"></script>
-    <script src="src/systems/leaderboard.js?v=20260107a"></script>
+    <script src="src/systems/leaderboard.js?v=20260108a"></script>
     <script src="src/systems/audio.js?v=20260107a"></script>
-    <script src="src/systems/ghosts.js?v=20260107a"></script>
+    <script src="src/systems/ghosts.js?v=20260108a"></script>
+    <script src="src/systems/stats.js?v=20260108a"></script>
     <script src="src/systems/cutscene.js?v=20260107a"></script>
     <script src="src/ui/hud.js?v=20260107a"></script>
     <script src="src/core/renderer.js?v=20260107a"></script>
-    <script src="src/core/game.js?v=20260107a"></script>
+    <script src="src/core/game.js?v=20260108a"></script>
     <script src="main.js?v=20260107a"></script>
 </body>
 </html>

@@ -32,6 +32,7 @@ class Boss extends Entity {
         this.stateTimer = 0;
         this.attackCooldown = 0;
         this.globalCooldown = 0; // GCD between actions
+        this.patternTimer = 0; // Timer for attack pattern animations
 
         // Movement - much more aggressive
         this.moveTarget = { x: x, y: y };

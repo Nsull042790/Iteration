@@ -99,8 +99,8 @@ class HUD {
         // Render progression bar (bottom center)
         this.renderProgressBar(ctx, gameState);
 
-        // Render boss health bar if boss is active
-        if (gameState.boss && gameState.boss.active) {
+        // Render boss health bar if boss exists and is alive
+        if (gameState.boss && (gameState.boss.active || gameState.boss.health > 0)) {
             this.renderBossHealth(ctx, gameState.boss);
         }
 

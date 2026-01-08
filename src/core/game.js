@@ -2619,7 +2619,9 @@ class Game {
         const char = this.characterSystem.getSelected();
 
         // Start run stats tracking
-        this.runStats.startRun(char.name);
+        if (this.runStats) {
+            this.runStats.startRun(char.name);
+        }
         this.levelStartTime = Date.now();
         this.bossStartTime = null;
 
@@ -4308,7 +4310,9 @@ class Game {
         });
 
         // Record death in run stats
-        this.runStats.recordDeath(cause, this.currentLevel);
+        if (this.runStats) {
+            this.runStats.recordDeath(cause, this.currentLevel);
+        }
 
         console.log('DEATH TRIGGERED - ghost recorded');
 
@@ -4340,12 +4344,18 @@ class Game {
         );
 
         // End run stats (completed = false for game over)
-        const finalCycles = this.cycles?.getCycles() || 0;
-        this.runStats.setFinalCycles(finalCycles);
-        const runSummary = this.runStats.endRun(false, this.currentLevel);
-
-        // Submit to all applicable leaderboards (furthest_level, ghost_master, etc.)
-        const leaderboardResults = this.leaderboard.submitRun(runSummary);
+        let leaderboardResults = { submissions: [], newRecords: [] };
+        try {
+            const finalCycles = this.cycles?.getCycles() || 0;
+            if (this.runStats) {
+                this.runStats.setFinalCycles(finalCycles);
+                const runSummary = this.runStats.endRun(false, this.currentLevel);
+                // Submit to all applicable leaderboards (furthest_level, ghost_master, etc.)
+                leaderboardResults = this.leaderboard.submitRun(runSummary);
+            }
+        } catch (e) {
+            console.warn('Stats/leaderboard error:', e);
+        }
 
         // Update stats display
         levelEl.textContent = this.currentLevel;

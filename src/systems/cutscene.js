@@ -38,12 +38,13 @@ class CutsceneSystem {
     }
 
     /**
-     * Enable touch skip handler (call when cutscene starts)
+     * Enable touch and mouse skip handlers (call when cutscene starts)
      */
     enableTouchSkip() {
         if (this.touchSkipEnabled) return;
-        console.log('Enabling touch skip handler');
+        console.log('Enabling touch/mouse skip handler');
 
+        // Touch handler for mobile
         this.touchHandler = (e) => {
             console.log('Touch detected on canvas, active:', this.active, 'skipLockout:', this.skipLockout);
             if (this.active) {
@@ -52,12 +53,23 @@ class CutsceneSystem {
                 this.skip();
             }
         };
+
+        // Mouse click handler for desktop
+        this.clickHandler = (e) => {
+            console.log('Click detected on canvas, active:', this.active, 'skipLockout:', this.skipLockout);
+            if (this.active) {
+                e.preventDefault();
+                this.skip();
+            }
+        };
+
         this.canvas.addEventListener('touchstart', this.touchHandler, { passive: false });
+        this.canvas.addEventListener('click', this.clickHandler);
         this.touchSkipEnabled = true;
     }
 
     /**
-     * Disable touch skip handler (call when cutscene ends)
+     * Disable touch and mouse skip handlers (call when cutscene ends)
      */
     disableTouchSkip() {
         if (!this.touchSkipEnabled) return;
@@ -65,6 +77,10 @@ class CutsceneSystem {
         if (this.touchHandler) {
             this.canvas.removeEventListener('touchstart', this.touchHandler);
             this.touchHandler = null;
+        }
+        if (this.clickHandler) {
+            this.canvas.removeEventListener('click', this.clickHandler);
+            this.clickHandler = null;
         }
         this.touchSkipEnabled = false;
     }

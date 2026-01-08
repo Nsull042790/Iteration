@@ -174,6 +174,47 @@ body {
 }
 
 /* ============================================
+   Mute Button
+   ============================================ */
+
+.mute-button {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    width: 50px;
+    height: 50px;
+    background: rgba(0, 0, 0, 0.5);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    z-index: 100;
+}
+
+.mute-button:hover {
+    background: rgba(0, 240, 255, 0.1);
+    border-color: #00f0ff;
+    box-shadow: 0 0 15px rgba(0, 240, 255, 0.3);
+}
+
+.mute-button.muted {
+    border-color: rgba(255, 68, 68, 0.5);
+}
+
+.mute-button.muted:hover {
+    border-color: #ff4444;
+    box-shadow: 0 0 15px rgba(255, 68, 68, 0.3);
+}
+
+.mute-icon {
+    font-size: 22px;
+    line-height: 1;
+}
+
+/* ============================================
    Loading Screen
    ============================================ */
 

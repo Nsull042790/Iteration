@@ -411,6 +411,13 @@ class AudioSystem {
         return this.musicMuted;
     }
 
+    /**
+     * Check if audio is muted
+     */
+    isMuted() {
+        return this.muted;
+    }
+
     // ========================================
     // SOUND EFFECT GENERATORS
     // ========================================

@@ -2044,6 +2044,18 @@ class Game {
         // Level select button
         levelselectBtn.onclick = () => this.showLevelSelectModal();
 
+        // Mute button
+        const muteBtn = document.getElementById('mute-btn');
+        if (muteBtn) {
+            // Update button state based on current mute status
+            this.updateMuteButton(muteBtn);
+
+            muteBtn.onclick = () => {
+                this.audio.toggleMute();
+                this.updateMuteButton(muteBtn);
+            };
+        }
+
         // Handle key press
         const handleTitleKey = (e) => {
             if (this.state === 'title' && (e.code === 'Space' || e.code === 'Enter')) {
@@ -2056,6 +2068,20 @@ class Game {
 
         // Setup codex tabs
         this.setupCodexTabs();
+    }
+
+    /**
+     * Update mute button appearance
+     */
+    updateMuteButton(btn) {
+        const icon = btn.querySelector('.mute-icon');
+        if (this.audio.isMuted()) {
+            btn.classList.add('muted');
+            icon.textContent = '🔇';
+        } else {
+            btn.classList.remove('muted');
+            icon.textContent = '🔊';
+        }
     }
 
     /**

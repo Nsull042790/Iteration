@@ -2597,26 +2597,21 @@ class Game {
         const closeBtn = document.getElementById('meta-close-btn');
 
         const renderUpgrades = () => {
-            const cores = this.metaProgression.getDataCores();
+            const cores = this.metaProgression.dataCores;
             coresDisplay.textContent = cores;
 
             grid.innerHTML = this.metaProgression.upgrades.map(upgrade => {
                 const currentLevel = this.metaProgression.getUpgradeLevel(upgrade.id);
                 const isMaxed = currentLevel >= upgrade.maxLevel;
-                const cost = this.metaProgression.getUpgradeCost(upgrade.id);
+                const cost = isMaxed ? 0 : upgrade.cost[currentLevel];
                 const canAfford = cores >= cost;
-
-                const effectValue = upgrade.effect * (currentLevel + 1);
-                const effectText = upgrade.effectType === 'percent'
-                    ? `+${(effectValue * 100).toFixed(0)}%`
-                    : `+${effectValue}`;
 
                 return `
                     <div class="meta-upgrade-card ${isMaxed ? 'maxed' : ''} ${canAfford && !isMaxed ? 'affordable' : ''}"
                          data-upgrade="${upgrade.id}">
                         <div class="meta-upgrade-name">${upgrade.name}</div>
                         <div class="meta-upgrade-level">Level ${currentLevel}/${upgrade.maxLevel}</div>
-                        <div class="meta-upgrade-effect">${effectText} ${upgrade.description}</div>
+                        <div class="meta-upgrade-effect">${upgrade.description}</div>
                         <div class="meta-upgrade-cost">${isMaxed ? 'MAXED' : `Cost: ${cost} cores`}</div>
                     </div>
                 `;
@@ -2626,7 +2621,9 @@ class Game {
             grid.querySelectorAll('.meta-upgrade-card:not(.maxed)').forEach(card => {
                 card.onclick = () => {
                     const upgradeId = card.dataset.upgrade;
-                    if (this.metaProgression.purchaseUpgrade(upgradeId)) {
+                    const result = this.metaProgression.purchaseUpgrade(upgradeId);
+                    if (result.success) {
+                        this.audio.playUIClick();
                         renderUpgrades();
                     }
                 };

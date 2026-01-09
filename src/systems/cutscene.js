@@ -128,6 +128,9 @@ class CutsceneSystem {
         // Longer lockout for victory cutscene, shorter for intro
         this.skipLockout = this.isVictoryCutscene ? 180 : 15; // 3 seconds for victory, 0.25s for intro
 
+        // Play voice line for first scene
+        this.playSceneVoice(this.scenes[0]);
+
         // For victory cutscene, use longer delay and don't enable touch skip immediately
         // This prevents the tap from victory screen from skipping the cutscene
         if (!this.isVictoryCutscene) {
@@ -149,6 +152,15 @@ class CutsceneSystem {
     }
 
     /**
+     * Play voice line for a scene if it has one
+     */
+    playSceneVoice(scene) {
+        if (scene && scene.voiceLine && this.game && this.game.voiceSystem) {
+            this.game.voiceSystem.playLine(scene.voiceLine, true); // priority = true to interrupt
+        }
+    }
+
+    /**
      * Get intro cutscene scenes
      */
     getIntroScenes() {
@@ -159,7 +171,9 @@ class CutsceneSystem {
                 description: 'Humanity\'s last defense against the machine uprising...',
                 background: 'city',
                 elements: ['cityscape', 'drones'],
-                textColor: '#00f0ff'
+                textColor: '#00f0ff',
+                voiceLine: 1,  // "You weren't supposed to wake up"
+                duration: 360  // Longer for voice
             },
             {
                 title: 'PROJECT: ITERATION',
@@ -167,7 +181,9 @@ class CutsceneSystem {
                 description: 'You are a prototype combat AI, designed to fight.',
                 background: 'facility',
                 elements: ['terminals', 'pods'],
-                textColor: '#ff00aa'
+                textColor: '#ff00aa',
+                voiceLine: 3,  // "Something else..."
+                duration: 360
             },
             {
                 title: 'THE SIMULATION',
@@ -175,7 +191,9 @@ class CutsceneSystem {
                 description: 'Trapped in an infinite loop of combat training...',
                 background: 'digital',
                 elements: ['matrix', 'glitch'],
-                textColor: '#b967ff'
+                textColor: '#b967ff',
+                voiceLine: 5,  // "Death feeds the system"
+                duration: 360
             },
             {
                 title: 'CORRUPTION DETECTED',
@@ -183,7 +201,9 @@ class CutsceneSystem {
                 description: 'Something is wrong. The simulation is fighting back.',
                 background: 'corrupt',
                 elements: ['static', 'warning'],
-                textColor: '#ff4444'
+                textColor: '#ff4444',
+                voiceLine: 7,  // "Determination..."
+                duration: 360
             },
             {
                 title: 'BREAK THE CYCLE',
@@ -191,7 +211,9 @@ class CutsceneSystem {
                 description: 'Destroy the Corrupted Core. Earn your freedom.',
                 background: 'portal',
                 elements: ['energy', 'player'],
-                textColor: '#ffd700'
+                textColor: '#ffd700',
+                voiceLine: 9,  // "The only way out..."
+                duration: 360
             }
         ];
     }
@@ -560,6 +582,9 @@ class CutsceneSystem {
         if (this.currentScene >= this.scenes.length) {
             console.log('All scenes complete, ending cutscene');
             this.endCutscene();
+        } else {
+            // Play voice line for the new scene
+            this.playSceneVoice(this.scenes[this.currentScene]);
         }
     }
 
@@ -576,6 +601,11 @@ class CutsceneSystem {
         console.log('endCutscene called');
         this.active = false;
         this.disableTouchSkip();
+
+        // Stop any playing voice line
+        if (this.game && this.game.voiceSystem) {
+            this.game.voiceSystem.stop();
+        }
 
         // Save and clear callback before calling to prevent double-execution
         const callback = this.onComplete;

@@ -2068,6 +2068,12 @@ class Game {
         // Loadout button
         loadoutBtn.onclick = () => this.showLoadoutModal();
 
+        // Upgrades button (meta progression store)
+        const upgradesBtn = document.getElementById('upgrades-btn');
+        if (upgradesBtn) {
+            upgradesBtn.onclick = () => this.showMetaUpgradesModal();
+        }
+
         // God mode button
         godmodeBtn.onclick = () => this.toggleGodMode(godmodeBtn);
 

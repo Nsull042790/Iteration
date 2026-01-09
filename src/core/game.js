@@ -3816,6 +3816,10 @@ class Game {
                     const actualDamage = this.calculateDamageTaken(enemy.damage);
                     if (actualDamage > 0 && this.player.takeDamage(actualDamage)) {
                         this.audio.playPlayerHurt();
+                        this.audio.onPlayerDamage();
+                        if (this.voiceSystem) {
+                            this.voiceSystem.onPlayerDamage();
+                        }
                         this.cycles.applyDamagePenalty();
                         this.camera.addShake(5, 10);
                         this.renderer.flash(GAME_CONFIG.COLORS.MAGENTA, 0.3);
@@ -4058,6 +4062,14 @@ class Game {
         // Update HUD
         this.hud.update();
 
+        // Update dynamic music intensity
+        this.audio.updateMusicIntensity();
+
+        // Update voice system cooldowns
+        if (this.voiceSystem) {
+            this.voiceSystem.updateCooldowns();
+        }
+
         // Hide controls hint after some movement
         if (this.showControls && this.cycles.totalSpent > 50) {
             this.showControls = false;
@@ -4184,6 +4196,14 @@ class Game {
                 if (killed) {
                     // Play death sound
                     this.audio.playEnemyDeath();
+
+                    // Spike music intensity
+                    this.audio.onEnemyKill();
+
+                    // Reset voice silence timer (action is happening)
+                    if (this.voiceSystem) {
+                        this.voiceSystem.resetSilence();
+                    }
 
                     // Teleport imbue: warp to kill location
                     if (this.activeImbue?.type === 'teleport') {

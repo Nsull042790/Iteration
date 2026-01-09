@@ -28,6 +28,14 @@ class AudioSystem {
         this.muted = false;
         this.musicMuted = false;
 
+        // Dynamic music intensity (0 = calm, 1 = intense)
+        this.musicIntensity = 0;
+        this.targetIntensity = 0;
+        this.intensityFilter = null;
+        this.intensityGain = null;
+        this.combatTimer = 0;
+        this.lastKillTime = 0;
+
         // Track paths
         this.tracks = {
             main: 'assets/audio/anamnesis - crystal lake final cut 2.mp3',
@@ -154,7 +162,16 @@ class AudioSystem {
         }
 
         lastNode.connect(trackGain);
-        trackGain.connect(this.musicGain);
+
+        // Set up intensity chain if not already done
+        this.setupIntensityChain();
+
+        // Route through intensity filter if available, otherwise direct to musicGain
+        if (this.intensityFilter) {
+            trackGain.connect(this.intensityFilter);
+        } else {
+            trackGain.connect(this.musicGain);
+        }
 
         // Start playback
         if (duration) {
@@ -1310,6 +1327,94 @@ class AudioSystem {
         }
 
         return curve;
+    }
+
+    // ========================================
+    // DYNAMIC MUSIC INTENSITY
+    // ========================================
+
+    /**
+     * Set up intensity filter chain for dynamic music
+     */
+    setupIntensityChain() {
+        if (!this.context || this.intensityFilter) return;
+
+        // Create a filter that opens up as intensity increases
+        this.intensityFilter = this.context.createBiquadFilter();
+        this.intensityFilter.type = 'lowpass';
+        this.intensityFilter.frequency.value = 2000; // Start muffled
+        this.intensityFilter.Q.value = 1;
+
+        // Create gain for intensity boost
+        this.intensityGain = this.context.createGain();
+        this.intensityGain.gain.value = 0.8;
+
+        // Insert into music chain
+        this.intensityFilter.connect(this.intensityGain);
+        this.intensityGain.connect(this.masterGain);
+    }
+
+    /**
+     * Called when enemy is killed - spike intensity
+     */
+    onEnemyKill() {
+        this.combatTimer = 180; // 3 seconds of combat intensity
+        this.targetIntensity = Math.min(1, this.targetIntensity + 0.15);
+        this.lastKillTime = Date.now();
+    }
+
+    /**
+     * Called when player takes damage - spike intensity
+     */
+    onPlayerDamage() {
+        this.combatTimer = 240; // 4 seconds
+        this.targetIntensity = Math.min(1, this.targetIntensity + 0.25);
+    }
+
+    /**
+     * Called when boss spawns - max intensity
+     */
+    onBossEncounter() {
+        this.targetIntensity = 1;
+        this.combatTimer = 600; // 10 seconds sustained
+    }
+
+    /**
+     * Called every frame to smoothly update music intensity
+     */
+    updateMusicIntensity() {
+        if (!this.context || !this.intensityFilter) return;
+
+        // Decay combat timer
+        if (this.combatTimer > 0) {
+            this.combatTimer--;
+        } else {
+            // Gradually decrease target intensity when not in combat
+            this.targetIntensity = Math.max(0, this.targetIntensity - 0.005);
+        }
+
+        // Smoothly interpolate current intensity toward target
+        const diff = this.targetIntensity - this.musicIntensity;
+        this.musicIntensity += diff * 0.05;
+
+        // Apply intensity to filter - opens up from 2000Hz to 20000Hz
+        const minFreq = 2000;
+        const maxFreq = 20000;
+        const freq = minFreq + (maxFreq - minFreq) * this.musicIntensity;
+        this.intensityFilter.frequency.setTargetAtTime(freq, this.context.currentTime, 0.1);
+
+        // Apply intensity to gain - louder during combat
+        const minGain = 0.7;
+        const maxGain = 1.0;
+        const gain = minGain + (maxGain - minGain) * this.musicIntensity;
+        this.intensityGain.gain.setTargetAtTime(gain, this.context.currentTime, 0.1);
+    }
+
+    /**
+     * Get current music intensity (0-1)
+     */
+    getIntensity() {
+        return this.musicIntensity;
     }
 }
 

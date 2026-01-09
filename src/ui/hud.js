@@ -343,31 +343,43 @@ class HUD {
     }
 
     /**
-     * Render zone and room indicator
+     * Render zone and room indicator - prominent top center display
      */
     renderZoneIndicator(ctx, zone, room) {
-        const x = this.width - this.padding;
-        const y = this.padding;
+        const centerX = this.width / 2;
+        const y = 8;
 
         ctx.save();
-        ctx.textAlign = 'right';
-        ctx.font = '12px "Courier New", monospace';
+        ctx.textAlign = 'center';
 
-        // Zone name
+        // Background bar
+        const barWidth = 200;
+        const barHeight = 28;
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+        ctx.fillRect(centerX - barWidth/2, y, barWidth, barHeight);
+
+        // Border
+        ctx.strokeStyle = GAME_CONFIG.COLORS.CYAN;
+        ctx.lineWidth = 1;
+        ctx.strokeRect(centerX - barWidth/2, y, barWidth, barHeight);
+
+        // Zone name - large and glowing
+        ctx.font = 'bold 14px "Courier New", monospace';
         ctx.fillStyle = GAME_CONFIG.COLORS.CYAN;
         ctx.shadowColor = GAME_CONFIG.COLORS.CYAN;
-        ctx.shadowBlur = 5;
-        ctx.fillText(zone || 'TRAINING GRID', x, y + 12);
+        ctx.shadowBlur = 10;
+        ctx.fillText(zone || 'ZONE 1', centerX, y + 13);
 
-        // Room indicator
+        // Room indicator - smaller below
         ctx.shadowBlur = 0;
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
-        ctx.fillText(room || 'ROOM 01', x, y + 28);
-
-        // Version number
         ctx.font = '10px "Courier New", monospace';
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
-        ctx.fillText('v1.1.0', x, y + 44);
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+        ctx.fillText(room || 'SECTOR A-1', centerX, y + 24);
+
+        // Side decorations
+        ctx.fillStyle = GAME_CONFIG.COLORS.CYAN;
+        ctx.fillText('◄', centerX - barWidth/2 + 12, y + 17);
+        ctx.fillText('►', centerX + barWidth/2 - 12, y + 17);
 
         ctx.restore();
     }

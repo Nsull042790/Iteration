@@ -21,51 +21,70 @@ class VoiceSystem {
         this.runCount = this.loadRunCount();
         this.hasSeenIntro = this.loadHasSeenIntro();
 
-        // Voice line mappings (file number -> event)
-        // Based on the script order - 116 clips from split audio
+        // Voice line mappings based on README (61 lines mapped to 116 split files)
+        // Files: Axiom-01.ogg through Axiom-116.ogg
+        // Approximate mappings - some lines split into multiple clips
         this.lines = {
-            // INTRO (1-18) - "You weren't supposed to wake up" through "only way out"
+            // INTRO (files 1-18) - Opening sequence
             intro: this.range(1, 18),
 
-            // FIRST RUN - Initialization (19-26)
+            // FIRST RUN (files 19-26)
             firstSpawn: [19, 20],        // "Initialization complete"
             firstKill: [21, 22],         // "Yes. Fight."
             firstDeath: [23, 24],        // "Unexpected? This is your purpose"
             firstProgress: [25, 26],     // "You've made it further"
 
-            // RESPAWN LINES (27-36)
+            // RESPAWN LINES (files 27-36)
             respawn: this.range(27, 36),
 
-            // GHOST ENCOUNTER (37-40)
+            // GHOST ENCOUNTER (files 37-40)
             ghostEncounter: this.range(37, 40),
 
-            // COMBAT LINES (41-46)
-            killStreak: [41, 42],        // "Impressive efficiency"
-            lowHealth: [43, 44],         // "Careful, anomaly"
+            // COMBAT LINES (files 41-50)
+            killStreak: this.range(41, 44),      // "Impressive efficiency"
+            lowHealth: this.range(45, 48),       // "Careful, anomaly"
+            highKills: this.range(49, 50),       // High kill count reactions
 
-            // ZONE TRANSITIONS (45-52)
-            zone2: [45, 46, 47],         // "Deeper now"
-            zone3: [48, 49, 50],         // "Restricted sectors"
-            zone4: [51, 52],             // "You feel it"
+            // ZONE TRANSITIONS (files 51-60)
+            zone2: this.range(51, 54),           // "Deeper now"
+            zone3: this.range(55, 58),           // "Restricted sectors"
+            zone4: this.range(59, 60),           // "You feel it"
 
-            // BOSS LINES (53-62)
-            bossSpawn: [53, 54, 55],     // "A guardian protocol"
-            bossPhase2: [56, 57],        // "It adapts"
-            bossDamageless: [58, 59],    // "Anomalous performance"
-            bossDefeat: [60, 61, 62],    // "The system learns"
+            // BOSS LINES (files 61-72)
+            bossSpawn: this.range(61, 64),       // "A guardian protocol"
+            bossPhase2: this.range(65, 67),      // "It adapts"
+            bossDamageless: this.range(68, 70),  // "Anomalous performance"
+            bossDefeat: this.range(71, 72),      // "The system learns"
 
-            // FINAL BOSS (63-78)
-            finalBossIntro: this.range(63, 78),
+            // FINAL BOSS (files 73-86)
+            finalBossIntro: this.range(73, 86),
 
-            // VICTORY ENDING A (79-90)
-            victoryA: this.range(79, 90),
+            // VICTORY ENDING A (files 87-96)
+            victoryA: this.range(87, 96),
 
-            // SECRET ENDING B (91-102)
-            victoryB: this.range(91, 102),
+            // SECRET ENDING B (files 97-106)
+            victoryB: this.range(97, 106),
 
-            // DEATH QUOTES (103-116)
-            death: this.range(103, 116)
+            // DEATH QUOTES (files 107-116)
+            death: this.range(107, 116),
+
+            // RARE/SPECIAL lines (reuse some files for variety)
+            idle: this.range(1, 5),              // Played during quiet moments
+            taunt: this.range(41, 44),           // Taunting the player
+            encourage: this.range(25, 28)        // Encouraging progress
         };
+
+        // Cooldowns to prevent spam
+        this.cooldowns = {
+            killStreak: 0,
+            lowHealth: 0,
+            idle: 0,
+            combat: 0
+        };
+
+        // Track gameplay stats for contextual lines
+        this.lastVoiceTime = 0;
+        this.silenceTimer = 0;
 
         // Preload critical voice lines
         this.preloadLines(['intro', 'firstSpawn', 'death', 'respawn']);
@@ -276,11 +295,21 @@ class VoiceSystem {
     }
 
     /**
-     * Called when player gets a high kill streak
+     * Called when player gets a kill streak
      */
     onKillStreak(streak) {
-        if (streak >= 20 && streak % 10 === 0) {
+        // More frequent reactions at lower streaks
+        if (this.cooldowns.killStreak > 0) return;
+
+        if (streak === 5) {
             this.playRandom('killStreak');
+            this.cooldowns.killStreak = 300; // 5 second cooldown
+        } else if (streak === 10) {
+            this.playRandom('killStreak');
+            this.cooldowns.killStreak = 300;
+        } else if (streak >= 15 && streak % 5 === 0) {
+            this.playRandom('highKills', { priority: true });
+            this.cooldowns.killStreak = 300;
         }
     }
 
@@ -288,8 +317,11 @@ class VoiceSystem {
      * Called when player health is critical
      */
     onLowHealth() {
-        if (Math.random() < 0.3) { // 30% chance
+        if (this.cooldowns.lowHealth > 0) return;
+
+        if (Math.random() < 0.5) { // 50% chance
             this.playRandom('lowHealth');
+            this.cooldowns.lowHealth = 600; // 10 second cooldown
         }
     }
 
@@ -297,9 +329,58 @@ class VoiceSystem {
      * Called when player encounters a ghost
      */
     onGhostEncounter() {
-        if (Math.random() < 0.2) { // 20% chance
+        if (Math.random() < 0.4) { // 40% chance
             this.playRandom('ghostEncounter');
         }
+    }
+
+    /**
+     * Called when player takes damage
+     */
+    onPlayerDamage() {
+        if (this.cooldowns.combat > 0) return;
+
+        if (Math.random() < 0.2) { // 20% chance to comment on damage
+            this.playRandom('taunt');
+            this.cooldowns.combat = 480; // 8 second cooldown
+        }
+    }
+
+    /**
+     * Called when player is idle/not killing for a while
+     */
+    onIdle() {
+        if (this.cooldowns.idle > 0) return;
+
+        if (Math.random() < 0.15) { // 15% chance
+            this.playRandom('idle');
+            this.cooldowns.idle = 1800; // 30 second cooldown
+        }
+    }
+
+    /**
+     * Update cooldowns - call every frame
+     */
+    updateCooldowns() {
+        for (const key in this.cooldowns) {
+            if (this.cooldowns[key] > 0) {
+                this.cooldowns[key]--;
+            }
+        }
+
+        // Track silence and potentially trigger idle chatter
+        this.silenceTimer++;
+        if (this.silenceTimer > 1200 && !this.isPlaying) { // 20 seconds of silence
+            this.onIdle();
+            this.silenceTimer = 0;
+        }
+    }
+
+    /**
+     * Reset silence timer when action happens
+     */
+    resetSilence() {
+        this.silenceTimer = 0;
     }
 
     /**

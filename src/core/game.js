@@ -2121,6 +2121,12 @@ class Game {
             upgradesBtn.onclick = () => this.showMetaUpgradesModal();
         }
 
+        // Character store button
+        const charStoreBtn = document.getElementById('char-store-btn');
+        if (charStoreBtn) {
+            charStoreBtn.onclick = () => this.showCharacterStoreModal();
+        }
+
         // God mode button
         godmodeBtn.onclick = () => this.toggleGodMode(godmodeBtn);
 
@@ -2684,6 +2690,96 @@ class Game {
         };
 
         renderUpgrades();
+        modal.classList.remove('hidden');
+
+        closeBtn.onclick = () => {
+            modal.classList.add('hidden');
+        };
+
+        const handleEsc = (e) => {
+            if (e.code === 'Escape' && !modal.classList.contains('hidden')) {
+                modal.classList.add('hidden');
+                window.removeEventListener('keydown', handleEsc);
+            }
+        };
+        window.addEventListener('keydown', handleEsc);
+    }
+
+    /**
+     * Show character store modal for purchasing characters with data cores
+     */
+    showCharacterStoreModal() {
+        const modal = document.getElementById('char-store-modal');
+        const grid = document.getElementById('char-store-grid');
+        const coresDisplay = document.getElementById('char-store-cores');
+        const closeBtn = document.getElementById('char-store-close-btn');
+
+        const renderCharacters = () => {
+            const cores = this.metaProgression.dataCores;
+            coresDisplay.textContent = cores;
+
+            grid.innerHTML = this.characterSystem.characters.map(char => {
+                const isUnlocked = this.characterSystem.isUnlocked(char.id);
+                const unlockInfo = this.characterSystem.getUnlockInfo(char.id);
+                const cost = unlockInfo.coreCost;
+                const isSecret = unlockInfo.tier === 'secret';
+                const canAfford = cost && cores >= cost;
+                const canPurchase = !isUnlocked && cost && canAfford;
+
+                // Secret characters show as ??? if not unlocked
+                const displayName = isSecret && !isUnlocked ? '??????' : char.name;
+                const displayTitle = isSecret && !isUnlocked ? '?????????' : char.title;
+                const displayPassive = isSecret && !isUnlocked ? '???????????????' : (char.passive?.name || 'None');
+
+                let costDisplay = '';
+                if (isUnlocked) {
+                    costDisplay = '✓ UNLOCKED';
+                } else if (isSecret) {
+                    costDisplay = '??? (Cannot Purchase)';
+                } else if (cost) {
+                    costDisplay = `${cost} CORES`;
+                } else {
+                    costDisplay = 'FREE';
+                }
+
+                let cardClass = 'char-store-card';
+                if (isUnlocked) cardClass += ' owned';
+                else if (isSecret) cardClass += ' secret-locked';
+                else if (canAfford) cardClass += ' affordable';
+
+                return `
+                    <div class="${cardClass}" data-char="${char.id}" style="border-color: ${isUnlocked ? '#00ff88' : char.color}40;">
+                        <div class="char-store-tier">${unlockInfo.tier}</div>
+                        <div class="char-store-name" style="color: ${char.color};">${displayName}</div>
+                        <div class="char-store-title">${displayTitle}</div>
+                        <div class="char-store-passive">${displayPassive}</div>
+                        <div class="char-store-unlock">${isSecret && !isUnlocked ? '???' : unlockInfo.condition}</div>
+                        <div class="char-store-cost">${costDisplay}</div>
+                    </div>
+                `;
+            }).join('');
+
+            // Add click handlers for purchasable characters
+            grid.querySelectorAll('.char-store-card:not(.owned):not(.secret-locked)').forEach(card => {
+                card.onclick = () => {
+                    const charId = card.dataset.char;
+                    const unlockInfo = this.characterSystem.getUnlockInfo(charId);
+                    const cost = unlockInfo.coreCost;
+
+                    if (cost && this.metaProgression.dataCores >= cost) {
+                        // Purchase the character
+                        this.metaProgression.dataCores -= cost;
+                        this.metaProgression.save();
+                        this.characterSystem.unlockCharacter(charId);
+                        this.audio.playUIClick();
+                        this.hud.addMessage(`${charId.toUpperCase()} UNLOCKED!`, 'evolution');
+                        renderCharacters();
+                    }
+                };
+            });
+        };
+
+        renderCharacters();
         modal.classList.remove('hidden');
 
         closeBtn.onclick = () => {

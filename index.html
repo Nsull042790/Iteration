@@ -32,7 +32,7 @@
             </div>
             <div class="splash-content">
                 <div class="splash-glitch" data-text="ITERATION">ITERATION</div>
-                <div class="splash-subtitle">SIMULATION v2.6.0</div>
+                <div class="splash-subtitle">SIMULATION v3.0.0</div>
                 <button id="splash-enter-btn" class="splash-btn">
                     <span class="splash-btn-text">[ ENTER THE AXIOM ]</span>
                 </button>
@@ -81,7 +81,7 @@
                             <div class="logo-glitch-wrapper">
                                 <div class="logo-text" data-text="ITERATION">ITERATION</div>
                             </div>
-                            <div class="logo-version">v2.6.0</div>
+                            <div class="logo-version">v3.0.0</div>
                             <div class="logo-subtitle glitch-text">// BREAK THE LOOP</div>
                         </div>
                         <div class="logo-decoration">
@@ -106,7 +106,7 @@
                         <div class="footer-item">STATUS: <span class="status-ready">▶ READY</span></div>
                         <div class="footer-item">GHOSTS: <span class="cyan">0</span></div>
                         <div class="footer-item">BLADE: <span class="magenta">◆ STANDARD</span></div>
-                        <div class="footer-item version">v2.3.0</div>
+                        <div class="footer-item version">v3.0.0</div>
                     </div>
                 </div>
             </div>
@@ -133,6 +133,10 @@
                 <button id="upgrades-btn" class="title-action-btn">
                     <span class="btn-icon">⚡</span>
                     <span class="btn-text">UPGRADES</span>
+                </button>
+                <button id="char-store-btn" class="title-action-btn">
+                    <span class="btn-icon">👤</span>
+                    <span class="btn-text">OPERATIVES</span>
                 </button>
                 <button id="godmode-btn" class="title-action-btn">
                     <span class="btn-icon">👁</span>
@@ -831,6 +835,26 @@
 
                 <div class="modal-footer">
                     <button id="meta-close-btn" class="start-btn">
+                        <span class="btn-text">CLOSE</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Character Store Modal -->
+        <div id="char-store-modal" class="screen hidden">
+            <div class="modal-content char-store-content">
+                <div class="modal-header">
+                    <div class="modal-title">👤 OPERATIVE REQUISITION</div>
+                    <div class="modal-subtitle">// DATA CORES: <span id="char-store-cores">0</span></div>
+                </div>
+
+                <div class="char-store-grid" id="char-store-grid">
+                    <!-- Characters will be generated here -->
+                </div>
+
+                <div class="modal-footer">
+                    <button id="char-store-close-btn" class="start-btn">
                         <span class="btn-text">CLOSE</span>
                     </button>
                 </div>

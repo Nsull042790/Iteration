@@ -237,6 +237,264 @@ class CharacterSystem {
                 }
             }
         ];
+
+        // Character unlock conditions
+        this.unlockConditions = {
+            echo: { unlocked: true, condition: 'Starter character' },
+            blitz: {
+                unlocked: false,
+                condition: 'Reach Level 4',
+                hint: 'Survive deeper...',
+                check: (stats) => stats.highestLevel >= 4,
+                coreCost: 1000
+            },
+            titan: {
+                unlocked: false,
+                condition: 'Take 500 total damage',
+                hint: 'Endure the simulation...',
+                check: (stats) => stats.totalDamageTaken >= 500,
+                coreCost: 1000
+            },
+            phantom: {
+                unlocked: false,
+                condition: 'Kill 1,000 enemies',
+                hint: 'Prove your efficiency...',
+                check: (stats) => stats.totalKills >= 1000,
+                coreCost: 3000
+            },
+            sage: {
+                unlocked: false,
+                condition: 'Defeat 10 bosses',
+                hint: 'Master the guardians...',
+                check: (stats) => stats.totalBossKills >= 10,
+                coreCost: 3000
+            },
+            neon: {
+                unlocked: false,
+                condition: 'Collect 25,000 cycles',
+                hint: 'Harvest the data...',
+                check: (stats) => stats.totalCyclesCollected >= 25000,
+                coreCost: 3000
+            },
+            nova: {
+                unlocked: false,
+                condition: 'Beat the game',
+                hint: 'Break the loop...',
+                check: (stats) => stats.wins >= 1,
+                coreCost: 7500
+            },
+            chrome: {
+                unlocked: false,
+                condition: 'No damage in Levels 1-3',
+                hint: 'Achieve early perfection...',
+                check: (stats) => stats.flawlessEarlyGame >= 1,
+                coreCost: 7500
+            },
+            havoc: {
+                unlocked: false,
+                condition: '50 kill streak',
+                hint: 'Unleash the beast...',
+                check: (stats) => stats.highestKillStreak >= 50,
+                coreCost: 7500
+            },
+            void: {
+                unlocked: false,
+                condition: 'Beat the game 3 times',
+                hint: 'Become one with the void...',
+                check: (stats) => stats.wins >= 3,
+                coreCost: 15000
+            }
+        };
+
+        // Player stats for unlock tracking
+        this.stats = {
+            highestLevel: 0,
+            totalDamageTaken: 0,
+            totalKills: 0,
+            totalBossKills: 0,
+            totalCyclesCollected: 0,
+            wins: 0,
+            flawlessEarlyGame: 0,
+            highestKillStreak: 0
+        };
+
+        // Load unlock progress from storage
+        this.loadUnlockProgress();
+    }
+
+    /**
+     * Load unlock progress from localStorage
+     */
+    loadUnlockProgress() {
+        try {
+            const saved = localStorage.getItem('iteration_character_unlocks');
+            if (saved) {
+                const data = JSON.parse(saved);
+                // Restore unlock states
+                for (const [charId, state] of Object.entries(data.unlocks || {})) {
+                    if (this.unlockConditions[charId]) {
+                        this.unlockConditions[charId].unlocked = state;
+                    }
+                }
+                // Restore stats
+                this.stats = { ...this.stats, ...data.stats };
+            }
+        } catch (e) {
+            console.log('Could not load character unlock progress');
+        }
+    }
+
+    /**
+     * Save unlock progress to localStorage
+     */
+    saveUnlockProgress() {
+        try {
+            const unlocks = {};
+            for (const [charId, data] of Object.entries(this.unlockConditions)) {
+                unlocks[charId] = data.unlocked;
+            }
+            const data = {
+                unlocks,
+                stats: this.stats
+            };
+            localStorage.setItem('iteration_character_unlocks', JSON.stringify(data));
+        } catch (e) {
+            console.log('Could not save character unlock progress');
+        }
+    }
+
+    /**
+     * Check if a character is unlocked
+     */
+    isUnlocked(charId) {
+        return this.unlockConditions[charId]?.unlocked || false;
+    }
+
+    /**
+     * Get unlock info for a character
+     */
+    getUnlockInfo(charId) {
+        return this.unlockConditions[charId] || null;
+    }
+
+    /**
+     * Unlock a character directly (for god mode / purchase)
+     */
+    unlockCharacter(charId) {
+        if (this.unlockConditions[charId]) {
+            this.unlockConditions[charId].unlocked = true;
+            this.saveUnlockProgress();
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Unlock all characters (god mode)
+     */
+    unlockAllCharacters() {
+        for (const charId of Object.keys(this.unlockConditions)) {
+            this.unlockConditions[charId].unlocked = true;
+        }
+        this.saveUnlockProgress();
+    }
+
+    /**
+     * Lock all characters except ECHO (for testing)
+     */
+    resetUnlocks() {
+        for (const [charId, data] of Object.entries(this.unlockConditions)) {
+            data.unlocked = charId === 'echo';
+        }
+        this.stats = {
+            highestLevel: 0,
+            totalDamageTaken: 0,
+            totalKills: 0,
+            totalBossKills: 0,
+            totalCyclesCollected: 0,
+            wins: 0,
+            flawlessEarlyGame: 0,
+            highestKillStreak: 0
+        };
+        this.saveUnlockProgress();
+    }
+
+    /**
+     * Update stats and check for new unlocks
+     */
+    updateStats(newStats) {
+        // Update cumulative stats
+        if (newStats.level) {
+            this.stats.highestLevel = Math.max(this.stats.highestLevel, newStats.level);
+        }
+        if (newStats.damageTaken) {
+            this.stats.totalDamageTaken += newStats.damageTaken;
+        }
+        if (newStats.kills) {
+            this.stats.totalKills += newStats.kills;
+        }
+        if (newStats.bossKills) {
+            this.stats.totalBossKills += newStats.bossKills;
+        }
+        if (newStats.cyclesCollected) {
+            this.stats.totalCyclesCollected += newStats.cyclesCollected;
+        }
+        if (newStats.won) {
+            this.stats.wins += 1;
+        }
+        if (newStats.flawlessEarlyGame) {
+            this.stats.flawlessEarlyGame += 1;
+        }
+        if (newStats.killStreak) {
+            this.stats.highestKillStreak = Math.max(this.stats.highestKillStreak, newStats.killStreak);
+        }
+
+        // Check for new unlocks
+        const newUnlocks = [];
+        for (const [charId, data] of Object.entries(this.unlockConditions)) {
+            if (!data.unlocked && data.check && data.check(this.stats)) {
+                data.unlocked = true;
+                newUnlocks.push(this.getCharacter(charId));
+            }
+        }
+
+        this.saveUnlockProgress();
+        return newUnlocks;
+    }
+
+    /**
+     * Purchase a character unlock with data cores
+     */
+    purchaseUnlock(charId, metaProgression) {
+        const unlockInfo = this.unlockConditions[charId];
+        if (!unlockInfo || unlockInfo.unlocked) {
+            return { success: false, message: 'Already unlocked' };
+        }
+
+        if (metaProgression.dataCores < unlockInfo.coreCost) {
+            return { success: false, message: 'Not enough Data Cores' };
+        }
+
+        metaProgression.dataCores -= unlockInfo.coreCost;
+        metaProgression.saveToStorage();
+        unlockInfo.unlocked = true;
+        this.saveUnlockProgress();
+
+        return { success: true, message: `${this.getCharacter(charId).name} unlocked!` };
+    }
+
+    /**
+     * Get list of locked characters
+     */
+    getLockedCharacters() {
+        return this.characters.filter(c => !this.isUnlocked(c.id));
+    }
+
+    /**
+     * Get list of unlocked characters
+     */
+    getUnlockedCharacters() {
+        return this.characters.filter(c => this.isUnlocked(c.id));
     }
 
     /**

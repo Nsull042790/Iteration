@@ -2356,6 +2356,45 @@ body {
     box-shadow: 0 0 20px var(--char-color, #00f0ff);
 }
 
+/* Locked character styles */
+.character-card.locked {
+    opacity: 0.6;
+    cursor: not-allowed;
+    filter: grayscale(80%);
+}
+
+.character-card.locked:hover {
+    transform: none;
+    border-color: rgba(255, 255, 255, 0.2);
+    box-shadow: none;
+}
+
+.character-card.locked .lock-icon {
+    font-size: 24px;
+}
+
+.character-card.locked .locked-name {
+    color: #666;
+    font-style: italic;
+}
+
+.character-card.locked .unlock-condition {
+    color: #ff6b6b;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-top: 5px;
+}
+
+.character-card.locked .locked-special {
+    color: #888;
+}
+
+.character-card.locked .locked-avatar {
+    background: #333;
+    box-shadow: none;
+}
+
 .character-card::before {
     content: '';
     position: absolute;

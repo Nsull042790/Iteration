@@ -114,6 +114,9 @@ class Game {
         // God mode for testing
         this.godMode = false;
 
+        // All characters unlocked (for testing)
+        this.allUnlocked = false;
+
         // Initialize
         this.init();
     }
@@ -2077,6 +2080,12 @@ class Game {
         // God mode button
         godmodeBtn.onclick = () => this.toggleGodMode(godmodeBtn);
 
+        // Unlock all characters button
+        const unlockAllBtn = document.getElementById('unlock-all-btn');
+        if (unlockAllBtn) {
+            unlockAllBtn.onclick = () => this.toggleUnlockAll(unlockAllBtn);
+        }
+
         // Level select button
         levelselectBtn.onclick = () => this.showLevelSelectModal();
 
@@ -2679,6 +2688,45 @@ class Game {
     }
 
     /**
+     * Toggle unlock all characters
+     */
+    toggleUnlockAll(btn) {
+        this.allUnlocked = !this.allUnlocked;
+
+        if (this.allUnlocked) {
+            this.characterSystem.unlockAllCharacters();
+        } else {
+            this.characterSystem.resetUnlocks();
+        }
+
+        this.updateUnlockAllButton(btn);
+        this.audio.playUIClick();
+    }
+
+    /**
+     * Update unlock all button appearance
+     */
+    updateUnlockAllButton(btn) {
+        if (!btn) return;
+        const textEl = btn.querySelector('.btn-text');
+        const iconEl = btn.querySelector('.btn-icon');
+
+        if (this.allUnlocked) {
+            textEl.textContent = 'ALL UNLOCKED';
+            iconEl.textContent = '✓';
+            btn.style.background = 'rgba(0, 255, 136, 0.2)';
+            btn.style.borderColor = '#00ff88';
+            btn.style.color = '#00ff88';
+        } else {
+            textEl.textContent = 'UNLOCK ALL';
+            iconEl.textContent = '🔓';
+            btn.style.background = '';
+            btn.style.borderColor = '';
+            btn.style.color = '';
+        }
+    }
+
+    /**
      * Show character selection screen
      */
     showCharacterSelect() {
@@ -2704,53 +2752,86 @@ class Game {
         grid.innerHTML = '';
 
         let selectedIndex = 0;
+        // Find first unlocked character for default selection
+        const unlockedChars = this.characterSystem.characters.filter(c => this.characterSystem.isUnlocked(c.id));
 
         // Create character cards
         this.characterSystem.characters.forEach((char, index) => {
+            const isUnlocked = this.characterSystem.isUnlocked(char.id);
+            const unlockInfo = this.characterSystem.getUnlockInfo(char.id);
+            const isFirstUnlocked = unlockedChars[0]?.id === char.id;
+
             const card = document.createElement('div');
-            card.className = 'character-card' + (index === 0 ? ' selected' : '');
-            card.style.setProperty('--char-color', char.color);
-            card.style.setProperty('--eye-color', char.eyeColor);
+            card.className = 'character-card' + (isFirstUnlocked ? ' selected' : '') + (!isUnlocked ? ' locked' : '');
+            card.style.setProperty('--char-color', isUnlocked ? char.color : '#333333');
+            card.style.setProperty('--eye-color', isUnlocked ? char.eyeColor : '#666666');
             card.dataset.index = index;
+            card.dataset.charId = char.id;
+            card.dataset.unlocked = isUnlocked;
 
-            const statBars = this.characterSystem.getStatBars(char.id);
-
-            card.innerHTML = `
-                <div class="character-avatar">
-                    <div class="character-avatar-inner">
-                        <div class="character-avatar-eye"></div>
-                    </div>
-                </div>
-                <div class="character-name">${char.name}</div>
-                <div class="character-subtitle">${char.subtitle}</div>
-                <div class="character-description">${char.description}</div>
-                <div class="character-stats">
-                    ${statBars.map(stat => `
-                        <div class="stat-row">
-                            <span class="stat-name">${stat.name}</span>
-                            <div class="stat-bar-bg">
-                                <div class="stat-bar-fill" style="width: ${stat.value}%; background: ${stat.color}"></div>
-                            </div>
+            if (isUnlocked) {
+                const statBars = this.characterSystem.getStatBars(char.id);
+                card.innerHTML = `
+                    <div class="character-avatar">
+                        <div class="character-avatar-inner">
+                            <div class="character-avatar-eye"></div>
                         </div>
-                    `).join('')}
-                </div>
-                <div class="character-special">
-                    <div class="special-name">${char.special.name}</div>
-                    <div class="special-desc">${char.special.description}</div>
-                </div>
-            `;
+                    </div>
+                    <div class="character-name">${char.name}</div>
+                    <div class="character-subtitle">${char.subtitle}</div>
+                    <div class="character-description">${char.description}</div>
+                    <div class="character-stats">
+                        ${statBars.map(stat => `
+                            <div class="stat-row">
+                                <span class="stat-name">${stat.name}</span>
+                                <div class="stat-bar-bg">
+                                    <div class="stat-bar-fill" style="width: ${stat.value}%; background: ${stat.color}"></div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <div class="character-special">
+                        <div class="special-name">${char.special.name}</div>
+                        <div class="special-desc">${char.special.description}</div>
+                    </div>
+                `;
 
-            card.addEventListener('click', (e) => {
-                // Prevent accidental selection from double-clicks during cutscene skip
-                // Require at least 300ms since modal was shown
-                if (Date.now() - this.charSelectShownAt < 300) {
-                    console.log('Ignoring click - character select just appeared');
+                card.addEventListener('click', (e) => {
+                    // Prevent accidental selection from double-clicks during cutscene skip
+                    if (Date.now() - this.charSelectShownAt < 300) {
+                        console.log('Ignoring click - character select just appeared');
+                        e.preventDefault();
+                        e.stopPropagation();
+                        return;
+                    }
+                    this.selectCharacter(char.id);
+                });
+            } else {
+                // Locked character display
+                card.innerHTML = `
+                    <div class="character-avatar locked-avatar">
+                        <div class="character-avatar-inner">
+                            <div class="lock-icon">🔒</div>
+                        </div>
+                    </div>
+                    <div class="character-name locked-name">???</div>
+                    <div class="character-subtitle">${unlockInfo.hint || 'Unknown'}</div>
+                    <div class="character-description locked-desc">
+                        <div class="unlock-condition">${unlockInfo.condition}</div>
+                    </div>
+                    <div class="character-special locked-special">
+                        <div class="special-name">LOCKED</div>
+                        <div class="special-desc">Cost: ${unlockInfo.coreCost} cores</div>
+                    </div>
+                `;
+
+                card.addEventListener('click', (e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    return;
-                }
-                this.selectCharacter(char.id);
-            });
+                    // Could add purchase prompt here later
+                    this.hud.addMessage(`LOCKED: ${unlockInfo.condition}`, 'warning');
+                });
+            }
 
             grid.appendChild(card);
         });
@@ -2766,21 +2847,28 @@ class Game {
         };
         backBtn.addEventListener('click', this.charSelectBackHandler);
 
-        // Keyboard navigation
+        // Keyboard navigation - only navigate between unlocked characters
+        const unlockedIndices = this.characterSystem.characters
+            .map((c, i) => this.characterSystem.isUnlocked(c.id) ? i : -1)
+            .filter(i => i >= 0);
+        let unlockedSelIndex = 0;
+
         this.charSelectKeyHandler = (e) => {
             const cards = grid.querySelectorAll('.character-card');
 
             if (e.code === 'ArrowRight' || e.code === 'ArrowDown') {
-                cards[selectedIndex].classList.remove('selected');
-                selectedIndex = (selectedIndex + 1) % cards.length;
-                cards[selectedIndex].classList.add('selected');
+                cards[unlockedIndices[unlockedSelIndex]].classList.remove('selected');
+                unlockedSelIndex = (unlockedSelIndex + 1) % unlockedIndices.length;
+                cards[unlockedIndices[unlockedSelIndex]].classList.add('selected');
             } else if (e.code === 'ArrowLeft' || e.code === 'ArrowUp') {
-                cards[selectedIndex].classList.remove('selected');
-                selectedIndex = (selectedIndex - 1 + cards.length) % cards.length;
-                cards[selectedIndex].classList.add('selected');
+                cards[unlockedIndices[unlockedSelIndex]].classList.remove('selected');
+                unlockedSelIndex = (unlockedSelIndex - 1 + unlockedIndices.length) % unlockedIndices.length;
+                cards[unlockedIndices[unlockedSelIndex]].classList.add('selected');
             } else if (e.code === 'Enter' || e.code === 'Space') {
-                const charId = this.characterSystem.characters[selectedIndex].id;
-                this.selectCharacter(charId);
+                const charId = this.characterSystem.characters[unlockedIndices[unlockedSelIndex]].id;
+                if (this.characterSystem.isUnlocked(charId)) {
+                    this.selectCharacter(charId);
+                }
             } else if (e.code === 'Escape') {
                 this.hideCharacterSelect();
             }

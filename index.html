@@ -117,67 +117,85 @@
                 <span class="btn-glitch"></span>
             </button>
 
-            <div class="title-menu-grid">
-                <!-- PROGRESSION Column -->
-                <div class="menu-column">
-                    <div class="menu-column-header">PROGRESSION</div>
-                    <button id="char-store-btn" class="title-action-btn">
-                        <span class="btn-icon">👤</span>
-                        <span class="btn-text">OPERATIVES</span>
+            <div class="title-dropdown-row">
+                <!-- PROGRESSION Dropdown -->
+                <div class="menu-dropdown">
+                    <button class="dropdown-toggle" data-dropdown="progression">
+                        <span class="dropdown-text">PROGRESSION</span>
+                        <span class="dropdown-arrow">▼</span>
                     </button>
-                    <button id="upgrades-btn" class="title-action-btn">
-                        <span class="btn-icon">⚡</span>
-                        <span class="btn-text">UPGRADES</span>
-                    </button>
-                    <button id="achievements-btn" class="title-action-btn">
-                        <span class="btn-icon">🏅</span>
-                        <span class="btn-text">ACHIEVEMENTS</span>
-                    </button>
+                    <div class="dropdown-content" id="dropdown-progression">
+                        <button id="char-store-btn" class="dropdown-item">
+                            <span class="btn-icon">👤</span>
+                            <span class="btn-text">OPERATIVES</span>
+                        </button>
+                        <button id="upgrades-btn" class="dropdown-item">
+                            <span class="btn-icon">⚡</span>
+                            <span class="btn-text">UPGRADES</span>
+                        </button>
+                        <button id="achievements-btn" class="dropdown-item">
+                            <span class="btn-icon">🏅</span>
+                            <span class="btn-text">ACHIEVEMENTS</span>
+                        </button>
+                    </div>
                 </div>
 
-                <!-- INFO Column -->
-                <div class="menu-column">
-                    <div class="menu-column-header">INFO</div>
-                    <button id="codex-btn" class="title-action-btn">
-                        <span class="btn-icon">📖</span>
-                        <span class="btn-text">CODEX</span>
+                <!-- INFO Dropdown -->
+                <div class="menu-dropdown">
+                    <button class="dropdown-toggle" data-dropdown="info">
+                        <span class="dropdown-text">INFO</span>
+                        <span class="dropdown-arrow">▼</span>
                     </button>
-                    <button id="leaderboard-btn" class="title-action-btn">
-                        <span class="btn-icon">🏆</span>
-                        <span class="btn-text">SCORES</span>
-                    </button>
+                    <div class="dropdown-content" id="dropdown-info">
+                        <button id="codex-btn" class="dropdown-item">
+                            <span class="btn-icon">📖</span>
+                            <span class="btn-text">CODEX</span>
+                        </button>
+                        <button id="leaderboard-btn" class="dropdown-item">
+                            <span class="btn-icon">🏆</span>
+                            <span class="btn-text">SCORES</span>
+                        </button>
+                    </div>
                 </div>
 
-                <!-- CUSTOMIZE Column -->
-                <div class="menu-column">
-                    <div class="menu-column-header">CUSTOMIZE</div>
-                    <button id="loadout-btn" class="title-action-btn">
-                        <span class="btn-icon">🎨</span>
-                        <span class="btn-text">LOADOUT</span>
+                <!-- CUSTOMIZE Dropdown -->
+                <div class="menu-dropdown">
+                    <button class="dropdown-toggle" data-dropdown="customize">
+                        <span class="dropdown-text">CUSTOMIZE</span>
+                        <span class="dropdown-arrow">▼</span>
                     </button>
-                    <button id="audio-btn" class="title-action-btn">
-                        <span class="btn-icon">🔊</span>
-                        <span class="btn-text">AUDIO</span>
-                    </button>
+                    <div class="dropdown-content" id="dropdown-customize">
+                        <button id="loadout-btn" class="dropdown-item">
+                            <span class="btn-icon">🎨</span>
+                            <span class="btn-text">LOADOUT</span>
+                        </button>
+                        <button id="audio-btn" class="dropdown-item">
+                            <span class="btn-icon">🔊</span>
+                            <span class="btn-text">AUDIO</span>
+                        </button>
+                    </div>
                 </div>
-            </div>
 
-            <!-- DEV TOOLS Row -->
-            <div class="dev-tools-section">
-                <div class="dev-tools-header">─── DEV TOOLS ───</div>
-                <div class="dev-tools-buttons">
-                    <button id="godmode-btn" class="title-action-btn dev-btn">
-                        <span class="btn-icon">👁</span>
-                        <span class="btn-text">GOD MODE</span>
+                <!-- DEV TOOLS Dropdown -->
+                <div class="menu-dropdown dev-dropdown">
+                    <button class="dropdown-toggle" data-dropdown="devtools">
+                        <span class="dropdown-text">DEV</span>
+                        <span class="dropdown-arrow">▼</span>
                     </button>
-                    <button id="unlock-all-btn" class="title-action-btn dev-btn">
-                        <span class="btn-icon">🔓</span>
-                        <span class="btn-text">UNLOCK ALL</span>
-                    </button>
-                    <button id="levelselect-btn" class="title-action-btn dev-btn">
-                        <span class="btn-icon">🎮</span>
-                        <span class="btn-text">LEVELS</span>
-                    </button>
+                    <div class="dropdown-content" id="dropdown-devtools">
+                        <button id="godmode-btn" class="dropdown-item">
+                            <span class="btn-icon">👁</span>
+                            <span class="btn-text">GOD MODE</span>
+                        </button>
+                        <button id="unlock-all-btn" class="dropdown-item">
+                            <span class="btn-icon">🔓</span>
+                            <span class="btn-text">UNLOCK ALL</span>
+                        </button>
+                        <button id="levelselect-btn" class="dropdown-item">
+                            <span class="btn-icon">🎮</span>
+                            <span class="btn-text">LEVELS</span>
+                        </button>
+                    </div>
                 </div>
             </div>
 

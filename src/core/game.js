@@ -2175,6 +2175,47 @@ class Game {
 
         // Setup codex tabs
         this.setupCodexTabs();
+
+        // Setup dropdown menus
+        this.setupDropdownMenus();
+    }
+
+    /**
+     * Setup dropdown menu functionality
+     */
+    setupDropdownMenus() {
+        const dropdowns = document.querySelectorAll('.menu-dropdown');
+
+        dropdowns.forEach(dropdown => {
+            const toggle = dropdown.querySelector('.dropdown-toggle');
+
+            toggle.addEventListener('click', (e) => {
+                e.stopPropagation();
+
+                // Close all other dropdowns
+                dropdowns.forEach(d => {
+                    if (d !== dropdown) {
+                        d.classList.remove('open');
+                    }
+                });
+
+                // Toggle this dropdown
+                dropdown.classList.toggle('open');
+                this.audio.playUIClick();
+            });
+        });
+
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', () => {
+            dropdowns.forEach(d => d.classList.remove('open'));
+        });
+
+        // Close dropdowns when pressing Escape
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Escape') {
+                dropdowns.forEach(d => d.classList.remove('open'));
+            }
+        });
     }
 
     /**

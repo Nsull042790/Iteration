@@ -88,6 +88,11 @@ class CutsceneSystem {
      * Start the intro cutscene
      */
     playIntro(onComplete) {
+        // Prevent starting if already playing a cutscene
+        if (this.active) {
+            console.log('playIntro blocked - cutscene already active');
+            return;
+        }
         this.scenes = this.getIntroScenes();
         this.onComplete = onComplete;
         this.isVictoryCutscene = false;

@@ -206,7 +206,15 @@ class Game {
 
         splashScreen.classList.remove('hidden');
 
+        // Use flag to prevent double-fire from touch+click
+        let splashClickHandled = false;
         const handleSplashClick = () => {
+            if (splashClickHandled) {
+                console.log('Splash click already handled, ignoring');
+                return;
+            }
+            splashClickHandled = true;
+
             // Initialize audio on first user interaction
             this.audio.init();
             this.audio.resume();
@@ -221,6 +229,7 @@ class Game {
             // Clean up
             splashBtn.removeEventListener('click', handleSplashClick);
             splashBtn.removeEventListener('touchend', handleSplashClick);
+            window.removeEventListener('keydown', handleSplashKey);
         };
 
         splashBtn.addEventListener('click', handleSplashClick);
@@ -231,7 +240,6 @@ class Game {
             if (e.code === 'Space' || e.code === 'Enter') {
                 e.preventDefault();
                 handleSplashClick();
-                window.removeEventListener('keydown', handleSplashKey);
             }
         };
         window.addEventListener('keydown', handleSplashKey);
@@ -2021,9 +2029,19 @@ class Game {
         // Update god mode button appearance
         this.updateGodModeButton(godmodeBtn);
 
-        // Handle button click/touch
+        // Handle button click/touch - use flag to prevent double-fire from touch+click
+        let titleClickHandled = false;
         const handleTitleClick = (e) => {
+            // Prevent double-fire from touch and click events
+            if (titleClickHandled) {
+                console.log('Title click already handled, ignoring');
+                return;
+            }
+            titleClickHandled = true;
+
             e.preventDefault();
+            e.stopPropagation();
+
             // Audio already initialized by splash screen
             this.audio.playUIClick();
 

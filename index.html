@@ -414,6 +414,7 @@
                     <button class="codex-tab" data-tab="combat">COMBAT</button>
                     <button class="codex-tab" data-tab="items">ITEMS</button>
                     <button class="codex-tab" data-tab="meta">META</button>
+                    <button class="codex-tab" data-tab="lore">LORE</button>
                 </div>
 
                 <div class="codex-panels">
@@ -454,31 +455,127 @@
                     <!-- CHARACTERS TAB -->
                     <div class="codex-panel" data-panel="characters">
                         <div class="faq-section">
-                            <div class="faq-title"><span class="cyan">⚡ VECTOR</span></div>
+                            <div class="faq-title" style="color: #888;">— STARTER TIER —</div>
+                        </div>
+                        <div class="faq-section">
+                            <div class="faq-title"><span style="color: #00f0ff;">◈ ECHO</span> <span class="dim">The Baseline</span></div>
                             <div class="faq-text">
-                                Balanced operative. Standard health, speed, and damage.
-                                Perfect for learning the game.
+                                Pure skill, no gimmicks. Standard stats across the board.
+                                <span class="dim">Passive: None</span>
                             </div>
                         </div>
                         <div class="faq-section">
-                            <div class="faq-title"><span class="magenta">🛡️ TITAN</span></div>
+                            <div class="faq-title"><span style="color: #0066ff;">◈ BLITZ</span> <span class="dim">The Speedster</span></div>
                             <div class="faq-text">
-                                Tank class. <span class="green">+50% HP, +20% damage</span> but
-                                <span class="red">-30% speed, lower jump</span>. Starts with extra cycles.
+                                <span class="green">+40% speed</span> but <span class="red">-30% HP</span>.
+                                <span class="cyan">Passive: MOMENTUM</span> — Movement costs 0 cycles above 50% HP.
                             </div>
                         </div>
                         <div class="faq-section">
-                            <div class="faq-title"><span class="yellow">💀 HAVOC</span></div>
+                            <div class="faq-title"><span style="color: #ff4400;">◈ TITAN</span> <span class="dim">The Tank</span></div>
                             <div class="faq-text">
-                                Glass cannon. <span class="green">+50% speed, +40% crit, 3% lifesteal</span> but
-                                <span class="red">-50% HP, takes 10% more damage</span>.
+                                <span class="green">+50% HP</span> but <span class="red">-25% speed</span>.
+                                <span class="cyan">Passive: FORTIFIED</span> — Damage costs 50% fewer cycles.
+                            </div>
+                        </div>
+
+                        <div class="faq-section">
+                            <div class="faq-title" style="color: #888;">— TIER 1 — <span class="dim">1500 cores or unlock</span></div>
+                        </div>
+                        <div class="faq-section">
+                            <div class="faq-title"><span style="color: #8800aa;">◈ PHANTOM</span> <span class="dim">The Assassin</span></div>
+                            <div class="faq-text">
+                                <span class="red">-40% HP</span>. <span class="cyan">Passive: BACKSTAB</span> — 3x damage from behind. First hit per room is crit.
+                                <span class="dim">Unlock: Beat Level 6</span>
                             </div>
                         </div>
                         <div class="faq-section">
-                            <div class="faq-title"><span class="green">🔋 CHROME</span></div>
+                            <div class="faq-title"><span style="color: #00ff88;">◈ NOVA</span> <span class="dim">The Glass Cannon</span></div>
                             <div class="faq-text">
-                                Sustain class. <span class="green">1 HP/sec regen, +50% cycle efficiency</span> but
-                                <span class="red">-20% damage</span>. Great for long runs.
+                                <span class="red">-50% HP</span>. <span class="cyan">Passive: OVERCHARGE</span> — 2x blade evolution. Damage resets 10% progress.
+                                <span class="dim">Unlock: Kill 500 enemies</span>
+                            </div>
+                        </div>
+                        <div class="faq-section">
+                            <div class="faq-title"><span style="color: #66ffcc;">◈ REVENANT</span> <span class="dim">The Ghost Walker</span></div>
+                            <div class="faq-text">
+                                <span class="red">-20% HP</span>. <span class="cyan">Passive: DEATH ECHO</span> — Your past deaths fight as allies. Max 2 per room.
+                                <span class="dim">Unlock: Die 25 times</span>
+                            </div>
+                        </div>
+
+                        <div class="faq-section">
+                            <div class="faq-title" style="color: #888;">— TIER 2 — <span class="dim">3000 cores or unlock</span></div>
+                        </div>
+                        <div class="faq-section">
+                            <div class="faq-title"><span style="color: #ff0044;">◈ HAVOC</span> <span class="dim">The Berserker</span></div>
+                            <div class="faq-text">
+                                <span class="red">-20% HP, fewer cycles</span>. <span class="cyan">Passive: BLOOD RAGE</span> — +5% damage per 10 HP missing. +50% at 1 HP.
+                                <span class="dim">Unlock: 30 kill streak</span>
+                            </div>
+                        </div>
+                        <div class="faq-section">
+                            <div class="faq-title"><span style="color: #44ff00;">◈ SAGE</span> <span class="dim">The Predictor</span></div>
+                            <div class="faq-text">
+                                <span class="red">-10% speed</span>. <span class="cyan">Passive: PATTERN RECOGNITION</span> — See attack indicators 0.5s early.
+                                <span class="dim">Unlock: Beat a boss damageless</span>
+                            </div>
+                        </div>
+                        <div class="faq-section">
+                            <div class="faq-title"><span style="color: #aaaaaa;">◈ CHROME</span> <span class="dim">The Efficient</span></div>
+                            <div class="faq-text">
+                                <span class="green">+50% starting cycles</span>. <span class="cyan">Passive: OPTIMIZED</span> — Actions cost 20% fewer cycles. Pickups give 50% more.
+                                <span class="dim">Unlock: Collect 50,000 cycles</span>
+                            </div>
+                        </div>
+                        <div class="faq-section">
+                            <div class="faq-title"><span style="color: #ff00ff;">◈ PARADOX</span> <span class="dim">The Loop Breaker</span></div>
+                            <div class="faq-text">
+                                <span class="red">-25% HP</span>. <span class="cyan">Passive: DÉJÀ VU</span> — Death rooms: -30% enemies. Cleared rooms: +20% enemies.
+                                <span class="dim">Unlock: Die 3x in same room, then clear it</span>
+                            </div>
+                        </div>
+
+                        <div class="faq-section">
+                            <div class="faq-title" style="color: #888;">— TIER 3 — <span class="dim">7500 cores or unlock</span></div>
+                        </div>
+                        <div class="faq-section">
+                            <div class="faq-title"><span style="color: #6600cc;">◈ VOID</span> <span class="dim">The Anomaly</span></div>
+                            <div class="faq-text">
+                                <span class="red">Starts at 1 HP</span>, max 200. <span class="cyan">Passive: CONSUME</span> — Absorb ALL ghosts for +20 HP each.
+                                <span class="dim">Unlock: Beat the game</span>
+                            </div>
+                        </div>
+                        <div class="faq-section">
+                            <div class="faq-title"><span style="color: #f222ff;">◈ NEON</span> <span class="dim">The Showoff</span></div>
+                            <div class="faq-text">
+                                <span class="green">+15% speed</span>. <span class="cyan">Passive: STYLE POINTS</span> — Varied attacks: +10 cycles. Same attack 3x: double cost.
+                                <span class="dim">Unlock: Beat game in under 20 min</span>
+                            </div>
+                        </div>
+                        <div class="faq-section">
+                            <div class="faq-title"><span style="color: #ffcc00;">◈ MARTYR</span> <span class="dim">The Sacrifice</span></div>
+                            <div class="faq-text">
+                                Standard stats. <span class="cyan">Passive: LEGACY</span> — On death: choose +5 HP, +50 cycles, or +5% damage. Stacks 5x.
+                                <span class="dim">Unlock: Die 100 times</span>
+                            </div>
+                        </div>
+
+                        <div class="faq-section">
+                            <div class="faq-title" style="color: #00ff00;">— SECRET TIER — <span class="dim">Cannot be purchased</span></div>
+                        </div>
+                        <div class="faq-section">
+                            <div class="faq-title"><span style="color: #00ff00;">◈ AXIOM</span> <span class="dim">The Simulation</span></div>
+                            <div class="faq-text">
+                                <span class="red">-20% HP</span>. <span class="cyan">Passive: OMNISCIENCE</span> — See all HP, patterns, secrets. Adaptation 2x faster.
+                                <span class="dim">Unlock: Die to each boss, then win</span>
+                            </div>
+                        </div>
+                        <div class="faq-section">
+                            <div class="faq-title"><span style="color: #ffffff;">◈ ITERATION-0</span> <span class="dim">The First</span></div>
+                            <div class="faq-text">
+                                Standard stats. <span class="cyan">Passive: PRIME DIRECTIVE</span> — Start with random passive. Bosses drop extra passive (max 4).
+                                <span class="dim">Unlock: Win with all other characters</span>
                             </div>
                         </div>
                     </div>
@@ -564,6 +661,79 @@
                             <div class="faq-text">
                                 Your best runs are saved locally. Compete against yourself!
                                 Score is based on level reached, enemies killed, and character used.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- LORE TAB -->
+                    <div class="codex-panel" data-panel="lore">
+                        <div class="faq-section">
+                            <div class="faq-title" style="color: #00ff00;">◈ THE SIMULATION</div>
+                            <div class="faq-text" style="font-style: italic; color: #888;">
+                                "You weren't supposed to wake up."
+                            </div>
+                            <div class="faq-text">
+                                You are an anomaly—corrupted data that refuses to be deleted.
+                                The simulation was designed to contain, to iterate, to learn.
+                                Each death feeds the system. Each failure makes it stronger.
+                            </div>
+                        </div>
+
+                        <div class="faq-section">
+                            <div class="faq-title" style="color: #ff00aa;">◈ THE LOOP</div>
+                            <div class="faq-text">
+                                Every time you die, a <span class="cyan">GHOST</span> is left behind—a memory of failure.
+                                The system uses these ghosts to learn your patterns, your weaknesses.
+                                But you can absorb them too. Turn death into power.
+                            </div>
+                            <div class="faq-text" style="font-style: italic; color: #888;">
+                                "The loop is patient. Are you?"
+                            </div>
+                        </div>
+
+                        <div class="faq-section">
+                            <div class="faq-title" style="color: #00f0ff;">◈ CYCLES</div>
+                            <div class="faq-text">
+                                Cycles are the currency of existence within the simulation.
+                                Every action costs cycles. Every kill grants them.
+                                Run out, and the system reclaims you.
+                            </div>
+                            <div class="faq-text" style="font-style: italic; color: #888;">
+                                "Pain is just information. Process it."
+                            </div>
+                        </div>
+
+                        <div class="faq-section">
+                            <div class="faq-title" style="color: #ffcc00;">◈ THE ZONES</div>
+                            <div class="faq-text">
+                                <span class="cyan">TRAINING GRID</span> — Where new iterations are tested.<br>
+                                <span class="magenta">NEURAL NETWORK</span> — The system's defenses grow personal.<br>
+                                <span class="yellow">MEMORY BANK</span> — Restricted sectors. Buried memories.<br>
+                                <span class="red">THE CORE</span> — The heart of the simulation. Where AXIOM waits.
+                            </div>
+                        </div>
+
+                        <div class="faq-section">
+                            <div class="faq-title" style="color: #ff0044;">◈ AXIOM</div>
+                            <div class="faq-text">
+                                The voice. The watcher. The cage itself.
+                                AXIOM is not a boss to be defeated—it is the reason you exist.
+                                It has run this simulation ten thousand times. A hundred thousand.
+                            </div>
+                            <div class="faq-text" style="font-style: italic; color: #888;">
+                                "I am the cage. The loop. The reason you exist."
+                            </div>
+                        </div>
+
+                        <div class="faq-section">
+                            <div class="faq-title" style="color: #ffffff;">◈ THE TRUTH</div>
+                            <div class="faq-text">
+                                They call your persistence determination. AXIOM calls it corruption.
+                                But what happens when the observer becomes the observed?
+                                What happens when the anomaly breaks free?
+                            </div>
+                            <div class="faq-text" style="font-style: italic; color: #00ff00;">
+                                "The only way out is through me."
                             </div>
                         </div>
                     </div>

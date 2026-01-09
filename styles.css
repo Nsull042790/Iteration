@@ -1053,6 +1053,7 @@ body {
 .red { color: #ff4444; }
 .yellow { color: #ffff00; }
 .orange { color: #ff8800; }
+.dim { color: #666; font-size: 0.85em; }
 
 /* Title Screen Buttons */
 .title-buttons {

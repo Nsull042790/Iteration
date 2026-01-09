@@ -2661,9 +2661,12 @@ class Game {
      * Show character selection screen
      */
     showCharacterSelect() {
+        // Log who called this function for debugging
+        console.log('showCharacterSelect called, current state:', this.state, new Error().stack);
+
         // Prevent showing character select if already playing or in wrong state
         if (this.state === 'playing' || this.state === 'controls' || this.showingCharacterSelect) {
-            console.log('showCharacterSelect blocked - already in state:', this.state);
+            console.log('showCharacterSelect BLOCKED - already in state:', this.state);
             return;
         }
 
@@ -2768,6 +2771,12 @@ class Game {
      * Hide character select and return to main menu
      */
     hideCharacterSelect() {
+        // Don't hide if we're already playing or in wrong state
+        if (this.state === 'playing' || this.state === 'controls') {
+            console.log('hideCharacterSelect blocked - in state:', this.state);
+            return;
+        }
+
         const modal = document.getElementById('character-modal');
         modal.classList.add('hidden');
 
@@ -2914,6 +2923,21 @@ class Game {
         this.state = 'playing';
         this.runStartTime = Date.now();
         const char = this.characterSystem.getSelected();
+
+        // Defensive cleanup - ensure no stale handlers or callbacks
+        if (this.charSelectKeyHandler) {
+            window.removeEventListener('keydown', this.charSelectKeyHandler);
+            this.charSelectKeyHandler = null;
+        }
+        if (this.controlsKeyHandler) {
+            window.removeEventListener('keydown', this.controlsKeyHandler);
+            this.controlsKeyHandler = null;
+        }
+        // Clear cutscene callback to prevent any delayed calls
+        if (this.cutsceneSystem) {
+            this.cutsceneSystem.onComplete = null;
+        }
+        this.showingCharacterSelect = false;
 
         // Start run stats tracking
         if (this.runStats) {

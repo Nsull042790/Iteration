@@ -1125,7 +1125,7 @@ body {
     background: transparent;
     border: none;
     border-bottom: 1px solid rgba(0, 240, 255, 0.1);
-    color: rgba(255, 255, 255, 0.8);
+    color: #ffffff;
     font-family: 'Share Tech Mono', monospace;
     font-size: 11px;
     letter-spacing: 1px;

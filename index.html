@@ -117,39 +117,68 @@
                 <span class="btn-glitch"></span>
             </button>
 
-            <div class="title-buttons">
-                <button id="codex-btn" class="title-action-btn">
-                    <span class="btn-icon">📖</span>
-                    <span class="btn-text">CODEX</span>
-                </button>
-                <button id="leaderboard-btn" class="title-action-btn">
-                    <span class="btn-icon">🏆</span>
-                    <span class="btn-text">SCORES</span>
-                </button>
-                <button id="loadout-btn" class="title-action-btn">
-                    <span class="btn-icon">🎨</span>
-                    <span class="btn-text">LOADOUT</span>
-                </button>
-                <button id="upgrades-btn" class="title-action-btn">
-                    <span class="btn-icon">⚡</span>
-                    <span class="btn-text">UPGRADES</span>
-                </button>
-                <button id="char-store-btn" class="title-action-btn">
-                    <span class="btn-icon">👤</span>
-                    <span class="btn-text">OPERATIVES</span>
-                </button>
-                <button id="godmode-btn" class="title-action-btn">
-                    <span class="btn-icon">👁</span>
-                    <span class="btn-text">GOD MODE</span>
-                </button>
-                <button id="unlock-all-btn" class="title-action-btn">
-                    <span class="btn-icon">🔓</span>
-                    <span class="btn-text">UNLOCK ALL</span>
-                </button>
-                <button id="levelselect-btn" class="title-action-btn">
-                    <span class="btn-icon">🎮</span>
-                    <span class="btn-text">LEVELS</span>
-                </button>
+            <div class="title-menu-grid">
+                <!-- PROGRESSION Column -->
+                <div class="menu-column">
+                    <div class="menu-column-header">PROGRESSION</div>
+                    <button id="char-store-btn" class="title-action-btn">
+                        <span class="btn-icon">👤</span>
+                        <span class="btn-text">OPERATIVES</span>
+                    </button>
+                    <button id="upgrades-btn" class="title-action-btn">
+                        <span class="btn-icon">⚡</span>
+                        <span class="btn-text">UPGRADES</span>
+                    </button>
+                    <button id="achievements-btn" class="title-action-btn">
+                        <span class="btn-icon">🏅</span>
+                        <span class="btn-text">ACHIEVEMENTS</span>
+                    </button>
+                </div>
+
+                <!-- INFO Column -->
+                <div class="menu-column">
+                    <div class="menu-column-header">INFO</div>
+                    <button id="codex-btn" class="title-action-btn">
+                        <span class="btn-icon">📖</span>
+                        <span class="btn-text">CODEX</span>
+                    </button>
+                    <button id="leaderboard-btn" class="title-action-btn">
+                        <span class="btn-icon">🏆</span>
+                        <span class="btn-text">SCORES</span>
+                    </button>
+                </div>
+
+                <!-- CUSTOMIZE Column -->
+                <div class="menu-column">
+                    <div class="menu-column-header">CUSTOMIZE</div>
+                    <button id="loadout-btn" class="title-action-btn">
+                        <span class="btn-icon">🎨</span>
+                        <span class="btn-text">LOADOUT</span>
+                    </button>
+                    <button id="audio-btn" class="title-action-btn">
+                        <span class="btn-icon">🔊</span>
+                        <span class="btn-text">AUDIO</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- DEV TOOLS Row -->
+            <div class="dev-tools-section">
+                <div class="dev-tools-header">─── DEV TOOLS ───</div>
+                <div class="dev-tools-buttons">
+                    <button id="godmode-btn" class="title-action-btn dev-btn">
+                        <span class="btn-icon">👁</span>
+                        <span class="btn-text">GOD MODE</span>
+                    </button>
+                    <button id="unlock-all-btn" class="title-action-btn dev-btn">
+                        <span class="btn-icon">🔓</span>
+                        <span class="btn-text">UNLOCK ALL</span>
+                    </button>
+                    <button id="levelselect-btn" class="title-action-btn dev-btn">
+                        <span class="btn-icon">🎮</span>
+                        <span class="btn-text">LEVELS</span>
+                    </button>
+                </div>
             </div>
 
             <!-- Support/Donate Section -->
@@ -858,6 +887,112 @@
                         <span class="btn-text">CLOSE</span>
                     </button>
                 </div>
+            </div>
+        </div>
+
+        <!-- Achievements Modal -->
+        <div id="achievements-modal" class="screen hidden">
+            <div class="modal-content achievements-content">
+                <div class="modal-header">
+                    <div class="modal-title">ACHIEVEMENTS</div>
+                    <div class="modal-subtitle">// SYSTEM RECOGNITION PROTOCOLS</div>
+                </div>
+
+                <div class="achievements-stats">
+                    <div class="achievement-stat">
+                        <span class="stat-value" id="achievements-unlocked">0</span>
+                        <span class="stat-label">UNLOCKED</span>
+                    </div>
+                    <div class="achievement-stat">
+                        <span class="stat-value" id="achievements-total">20</span>
+                        <span class="stat-label">TOTAL</span>
+                    </div>
+                    <div class="achievement-stat">
+                        <span class="stat-value" id="achievements-percent">0%</span>
+                        <span class="stat-label">COMPLETE</span>
+                    </div>
+                </div>
+
+                <div class="achievements-grid" id="achievements-grid">
+                    <!-- Achievements will be generated here -->
+                </div>
+
+                <div class="modal-footer">
+                    <button id="achievements-close-btn" class="start-btn">
+                        <span class="btn-text">CLOSE</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Audio Settings Modal -->
+        <div id="audio-modal" class="screen hidden">
+            <div class="modal-content audio-content">
+                <div class="modal-header">
+                    <div class="modal-title">AUDIO SETTINGS</div>
+                    <div class="modal-subtitle">// CALIBRATE SOUND SYSTEMS</div>
+                </div>
+
+                <div class="audio-settings">
+                    <div class="audio-setting">
+                        <div class="setting-label">
+                            <span class="setting-icon">MUSIC</span>
+                        </div>
+                        <div class="slider-container">
+                            <input type="range" id="music-volume" class="audio-slider" min="0" max="100" value="70">
+                            <span class="slider-value" id="music-volume-value">70%</span>
+                        </div>
+                    </div>
+
+                    <div class="audio-setting">
+                        <div class="setting-label">
+                            <span class="setting-icon">SFX</span>
+                        </div>
+                        <div class="slider-container">
+                            <input type="range" id="sfx-volume" class="audio-slider" min="0" max="100" value="80">
+                            <span class="slider-value" id="sfx-volume-value">80%</span>
+                        </div>
+                    </div>
+
+                    <div class="audio-setting">
+                        <div class="setting-label">
+                            <span class="setting-icon">VOICE</span>
+                        </div>
+                        <div class="slider-container">
+                            <input type="range" id="voice-volume" class="audio-slider" min="0" max="100" value="80">
+                            <span class="slider-value" id="voice-volume-value">80%</span>
+                        </div>
+                    </div>
+
+                    <div class="audio-toggle">
+                        <label class="toggle-label">
+                            <input type="checkbox" id="mute-all" class="toggle-input">
+                            <span class="toggle-switch"></span>
+                            <span class="toggle-text">MUTE ALL AUDIO</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button id="audio-close-btn" class="start-btn">
+                        <span class="btn-text">CLOSE</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cosmetic Unlock Celebration Overlay -->
+        <div id="unlock-celebration" class="celebration-overlay hidden">
+            <div class="celebration-content">
+                <div class="celebration-burst"></div>
+                <div class="celebration-glow"></div>
+                <div class="celebration-title">NEW ITEM UNLOCKED!</div>
+                <div class="celebration-item">
+                    <div class="celebration-icon" id="celebration-icon"></div>
+                    <div class="celebration-name" id="celebration-name">MYSTERIOUS ITEM</div>
+                    <div class="celebration-rarity" id="celebration-rarity">RARE</div>
+                </div>
+                <div class="celebration-hint">CLICK TO CONTINUE</div>
             </div>
         </div>
     </div>

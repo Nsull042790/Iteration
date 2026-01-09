@@ -418,6 +418,26 @@ class AudioSystem {
         return this.muted;
     }
 
+    /**
+     * Mute all audio
+     */
+    mute() {
+        this.muted = true;
+        if (this.masterGain) {
+            this.masterGain.gain.value = 0;
+        }
+    }
+
+    /**
+     * Unmute all audio
+     */
+    unmute() {
+        this.muted = false;
+        if (this.masterGain) {
+            this.masterGain.gain.value = this.masterVolume;
+        }
+    }
+
     // ========================================
     // SOUND EFFECT GENERATORS
     // ========================================
@@ -677,7 +697,7 @@ class AudioSystem {
             const gain = this.context.createGain();
             gain.gain.setValueAtTime(0, now);
             gain.gain.setValueAtTime(0.2, now + i * 0.1);
-            gain.gain.exponentialDecayTo(0.01, now + i * 0.1 + 0.3);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + i * 0.1 + 0.3);
 
             osc.connect(gain);
             gain.connect(this.sfxGain);
@@ -685,6 +705,49 @@ class AudioSystem {
             osc.start(now + i * 0.1);
             osc.stop(now + i * 0.1 + 0.3);
         });
+    }
+
+    /**
+     * Play epic evolution/unlock sound for cosmetic celebrations
+     */
+    playEvolutionSound() {
+        if (!this.ensureReady()) return;
+
+        const now = this.context.currentTime;
+
+        // Grand ascending fanfare
+        const notes = [196, 247, 294, 370, 440, 554, 659, 880]; // G major scale
+        notes.forEach((freq, i) => {
+            const osc = this.context.createOscillator();
+            osc.type = 'sine';
+            osc.frequency.value = freq;
+
+            const gain = this.context.createGain();
+            gain.gain.setValueAtTime(0.25 - i * 0.02, now + i * 0.08);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + i * 0.08 + 0.5);
+
+            osc.connect(gain);
+            gain.connect(this.sfxGain);
+
+            osc.start(now + i * 0.08);
+            osc.stop(now + i * 0.08 + 0.5);
+        });
+
+        // Add shimmer effect
+        const shimmer = this.context.createOscillator();
+        shimmer.type = 'sine';
+        shimmer.frequency.setValueAtTime(1760, now + 0.5);
+        shimmer.frequency.exponentialRampToValueAtTime(880, now + 1.2);
+
+        const shimmerGain = this.context.createGain();
+        shimmerGain.gain.setValueAtTime(0.1, now + 0.5);
+        shimmerGain.gain.exponentialRampToValueAtTime(0.01, now + 1.2);
+
+        shimmer.connect(shimmerGain);
+        shimmerGain.connect(this.sfxGain);
+
+        shimmer.start(now + 0.5);
+        shimmer.stop(now + 1.2);
     }
 
     /**

@@ -2127,6 +2127,18 @@ class Game {
             charStoreBtn.onclick = () => this.showCharacterStoreModal();
         }
 
+        // Achievements button
+        const achievementsBtn = document.getElementById('achievements-btn');
+        if (achievementsBtn) {
+            achievementsBtn.onclick = () => this.showAchievementsModal();
+        }
+
+        // Audio settings button
+        const audioBtn = document.getElementById('audio-btn');
+        if (audioBtn) {
+            audioBtn.onclick = () => this.showAudioModal();
+        }
+
         // God mode button
         godmodeBtn.onclick = () => this.toggleGodMode(godmodeBtn);
 
@@ -2793,6 +2805,243 @@ class Game {
             }
         };
         window.addEventListener('keydown', handleEsc);
+    }
+
+    /**
+     * Show achievements modal
+     */
+    showAchievementsModal() {
+        const modal = document.getElementById('achievements-modal');
+        const grid = document.getElementById('achievements-grid');
+        const unlockedEl = document.getElementById('achievements-unlocked');
+        const totalEl = document.getElementById('achievements-total');
+        const percentEl = document.getElementById('achievements-percent');
+        const closeBtn = document.getElementById('achievements-close-btn');
+
+        // Achievement definitions
+        const achievements = [
+            { id: 'first_blood', name: 'FIRST BLOOD', desc: 'Kill your first enemy', icon: '⚔️' },
+            { id: 'kill_100', name: 'CENTURION', desc: 'Kill 100 enemies total', icon: '💀' },
+            { id: 'kill_1000', name: 'MASSACRE', desc: 'Kill 1000 enemies total', icon: '☠️' },
+            { id: 'streak_10', name: 'COMBO STARTER', desc: 'Get a 10 kill streak', icon: '🔥' },
+            { id: 'streak_50', name: 'UNSTOPPABLE', desc: 'Get a 50 kill streak', icon: '💥' },
+            { id: 'no_hit_zone', name: 'UNTOUCHABLE', desc: 'Clear a zone without taking damage', icon: '🛡️' },
+            { id: 'boss_kill', name: 'BOSS SLAYER', desc: 'Defeat a boss', icon: '👑' },
+            { id: 'boss_no_hit', name: 'PERFECT KILL', desc: 'Defeat a boss without taking damage', icon: '✨' },
+            { id: 'die_once', name: 'LEARNING CURVE', desc: 'Die for the first time', icon: '💔' },
+            { id: 'die_100', name: 'PERSISTENT', desc: 'Die 100 times', icon: '🔄' },
+            { id: 'reach_zone_2', name: 'DEEPER', desc: 'Reach Zone 2', icon: '📍' },
+            { id: 'reach_zone_3', name: 'RESTRICTED', desc: 'Reach Zone 3', icon: '🚫' },
+            { id: 'reach_zone_4', name: 'THE CORE', desc: 'Reach Zone 4', icon: '🌀' },
+            { id: 'unlock_char', name: 'RECRUITMENT', desc: 'Unlock a new operative', icon: '👤' },
+            { id: 'unlock_all_chars', name: 'FULL ROSTER', desc: 'Unlock all operatives', icon: '👥' },
+            { id: 'collect_hat', name: 'FASHIONISTA', desc: 'Collect a hat', icon: '🎩' },
+            { id: 'collect_suit', name: 'SUITED UP', desc: 'Collect a suit', icon: '👔' },
+            { id: 'speedrun_zone', name: 'SPEEDRUNNER', desc: 'Clear a zone in under 60 seconds', icon: '⚡' },
+            { id: 'victory', name: 'BREAK THE LOOP', desc: 'Complete the game', icon: '🏆' },
+            { id: 'secret_ending', name: 'TRUTH SEEKER', desc: 'Discover the secret ending', icon: '🔮' }
+        ];
+
+        // Load unlocked achievements from storage
+        const unlockedAchievements = this.getUnlockedAchievements();
+        const unlocked = unlockedAchievements.length;
+        const total = achievements.length;
+        const percent = Math.round((unlocked / total) * 100);
+
+        unlockedEl.textContent = unlocked;
+        totalEl.textContent = total;
+        percentEl.textContent = `${percent}%`;
+
+        grid.innerHTML = achievements.map(ach => {
+            const isUnlocked = unlockedAchievements.includes(ach.id);
+            return `
+                <div class="achievement-card ${isUnlocked ? 'unlocked' : 'locked'}">
+                    <div class="achievement-icon">${ach.icon}</div>
+                    <div class="achievement-info">
+                        <div class="achievement-name">${isUnlocked ? ach.name : '???'}</div>
+                        <div class="achievement-desc">${isUnlocked ? ach.desc : 'Achievement locked'}</div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        modal.classList.remove('hidden');
+        this.audio.playUIClick();
+
+        closeBtn.onclick = () => {
+            modal.classList.add('hidden');
+        };
+
+        const handleEsc = (e) => {
+            if (e.code === 'Escape' && !modal.classList.contains('hidden')) {
+                modal.classList.add('hidden');
+                window.removeEventListener('keydown', handleEsc);
+            }
+        };
+        window.addEventListener('keydown', handleEsc);
+    }
+
+    /**
+     * Get unlocked achievements from storage
+     */
+    getUnlockedAchievements() {
+        try {
+            return JSON.parse(localStorage.getItem('iteration_achievements') || '[]');
+        } catch (e) {
+            return [];
+        }
+    }
+
+    /**
+     * Unlock an achievement
+     */
+    unlockAchievement(id) {
+        const achievements = this.getUnlockedAchievements();
+        if (!achievements.includes(id)) {
+            achievements.push(id);
+            try {
+                localStorage.setItem('iteration_achievements', JSON.stringify(achievements));
+            } catch (e) {}
+            // Show notification
+            this.hud.addMessage('ACHIEVEMENT UNLOCKED!', 'evolution');
+        }
+    }
+
+    /**
+     * Show audio settings modal
+     */
+    showAudioModal() {
+        const modal = document.getElementById('audio-modal');
+        const closeBtn = document.getElementById('audio-close-btn');
+        const musicSlider = document.getElementById('music-volume');
+        const sfxSlider = document.getElementById('sfx-volume');
+        const voiceSlider = document.getElementById('voice-volume');
+        const musicValue = document.getElementById('music-volume-value');
+        const sfxValue = document.getElementById('sfx-volume-value');
+        const voiceValue = document.getElementById('voice-volume-value');
+        const muteToggle = document.getElementById('mute-all');
+
+        // Load current values
+        const audioSettings = this.getAudioSettings();
+        musicSlider.value = audioSettings.music;
+        sfxSlider.value = audioSettings.sfx;
+        voiceSlider.value = audioSettings.voice;
+        musicValue.textContent = `${audioSettings.music}%`;
+        sfxValue.textContent = `${audioSettings.sfx}%`;
+        voiceValue.textContent = `${audioSettings.voice}%`;
+        muteToggle.checked = this.audio.isMuted();
+
+        // Music volume handler
+        musicSlider.oninput = () => {
+            const val = musicSlider.value;
+            musicValue.textContent = `${val}%`;
+            this.audio.setMusicVolume(val / 100);
+            this.saveAudioSettings({ ...this.getAudioSettings(), music: parseInt(val) });
+        };
+
+        // SFX volume handler
+        sfxSlider.oninput = () => {
+            const val = sfxSlider.value;
+            sfxValue.textContent = `${val}%`;
+            this.audio.setSfxVolume(val / 100);
+            this.saveAudioSettings({ ...this.getAudioSettings(), sfx: parseInt(val) });
+        };
+
+        // Voice volume handler
+        voiceSlider.oninput = () => {
+            const val = voiceSlider.value;
+            voiceValue.textContent = `${val}%`;
+            if (this.voiceSystem) {
+                this.voiceSystem.setVolume(val / 100);
+            }
+            this.saveAudioSettings({ ...this.getAudioSettings(), voice: parseInt(val) });
+        };
+
+        // Mute toggle handler
+        muteToggle.onchange = () => {
+            if (muteToggle.checked) {
+                this.audio.mute();
+            } else {
+                this.audio.unmute();
+            }
+            // Update mute button on title screen
+            const muteBtn = document.getElementById('mute-btn');
+            if (muteBtn) this.updateMuteButton(muteBtn);
+        };
+
+        modal.classList.remove('hidden');
+        this.audio.playUIClick();
+
+        closeBtn.onclick = () => {
+            modal.classList.add('hidden');
+        };
+
+        const handleEsc = (e) => {
+            if (e.code === 'Escape' && !modal.classList.contains('hidden')) {
+                modal.classList.add('hidden');
+                window.removeEventListener('keydown', handleEsc);
+            }
+        };
+        window.addEventListener('keydown', handleEsc);
+    }
+
+    /**
+     * Get audio settings from storage
+     */
+    getAudioSettings() {
+        try {
+            return JSON.parse(localStorage.getItem('iteration_audio_settings') || '{"music":70,"sfx":80,"voice":80}');
+        } catch (e) {
+            return { music: 70, sfx: 80, voice: 80 };
+        }
+    }
+
+    /**
+     * Save audio settings to storage
+     */
+    saveAudioSettings(settings) {
+        try {
+            localStorage.setItem('iteration_audio_settings', JSON.stringify(settings));
+        } catch (e) {}
+    }
+
+    /**
+     * Show cosmetic unlock celebration
+     */
+    showCosmeticUnlockCelebration(item) {
+        const overlay = document.getElementById('unlock-celebration');
+        const iconEl = document.getElementById('celebration-icon');
+        const nameEl = document.getElementById('celebration-name');
+        const rarityEl = document.getElementById('celebration-rarity');
+
+        // Set item details
+        iconEl.textContent = item.icon || (item.type === 'hat' ? '🎩' : '👔');
+        nameEl.textContent = item.name.toUpperCase();
+
+        // Set rarity class and text
+        const rarity = item.rarity || 'common';
+        rarityEl.textContent = rarity.toUpperCase();
+        rarityEl.className = 'celebration-rarity ' + rarity;
+
+        // Play celebration sound
+        this.audio.playEvolutionSound();
+
+        // Show overlay
+        overlay.classList.remove('hidden');
+
+        // Click to dismiss
+        overlay.onclick = () => {
+            overlay.classList.add('hidden');
+            overlay.onclick = null;
+        };
+
+        // Also dismiss with any key
+        const handleKey = (e) => {
+            overlay.classList.add('hidden');
+            overlay.onclick = null;
+            window.removeEventListener('keydown', handleKey);
+        };
+        window.addEventListener('keydown', handleKey);
     }
 
     /**

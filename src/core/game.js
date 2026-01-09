@@ -58,6 +58,7 @@ class Game {
         this.runStats = new RunStatsSystem();
         this.ghostSystem = new GhostSystem();
         this.audio = window.audioSystem;
+        this.voiceSystem = new VoiceSystem(this.audio);
         this.cutsceneSystem = new CutsceneSystem(this.canvas, this); // Initialize cutscene system
 
         // Laser projectiles from weapons
@@ -422,6 +423,7 @@ class Game {
             this.bossStartTime = Date.now(); // Track when boss fight begins
             this.damageTakenDuringBoss = false; // Track for damageless boss kill
             this.hud.addMessage(`THREAT DETECTED: ${this.boss.name}`, 'warning');
+            this.voiceSystem.onBossSpawn(false);
         }, 2000);
     }
 
@@ -487,6 +489,9 @@ class Game {
                 this.boss.isFinalBoss = true;
                 this.bossStartTime = Date.now(); // Track when final boss fight begins
                 this.damageTakenDuringBoss = false; // Track for damageless boss kill
+
+                // Play final boss voice lines
+                this.voiceSystem.onBossSpawn(true);
 
                 // Boss descends from above
                 this.boss.isEntering = true;
@@ -766,6 +771,8 @@ class Game {
         if (this.currentLevel % 3 === 1 && this.currentLevel > 1) {
             this.currentZoneIndex = Math.min(this.currentZoneIndex + 1, this.zones.length - 1);
             this.currentZone = this.zones[this.currentZoneIndex];
+            // Voice line for entering new zone
+            this.voiceSystem.onZoneEnter(this.currentZoneIndex);
         }
 
         // Bonus cycles for completing level (tracked for summary, no HUD spam)
@@ -1117,6 +1124,10 @@ class Game {
         // Record win for character unlock tracking
         try {
             this.characterSystem.recordWin(char.id, totalTime);
+
+            // Play victory voice lines (secret ending if playing as AXIOM)
+            const isSecretEnding = char.id === 'axiom';
+            this.voiceSystem.onVictory(isSecretEnding);
 
             // Also update cumulative stats
             const newUnlocks = this.characterSystem.updateStats({
@@ -3084,6 +3095,11 @@ class Game {
         this.levelStartTime = Date.now();
         this.bossStartTime = null;
 
+        // Play spawn voice line
+        const isFirstRun = this.voiceSystem.runCount <= 1;
+        this.voiceSystem.onSpawn(isFirstRun);
+        this.voiceSystem.resetRun();
+
         // Show touch controls for mobile gameplay
         if (this.input.touchControls) {
             this.input.touchControls.show();
@@ -3510,6 +3526,7 @@ class Game {
             // Check for damageless boss kill (for SAGE unlock)
             if (!this.damageTakenDuringBoss) {
                 this.characterSystem.recordDamagelessBossKill();
+                this.voiceSystem.onDamagelessBoss();
                 this.hud.addMessage('PERFECT BOSS KILL!', 'evolution');
             }
 
@@ -3800,6 +3817,9 @@ class Game {
                     this.totalKills++;
                     this.currentKillStreak++;
                     this.highestKillStreak = Math.max(this.highestKillStreak, this.currentKillStreak);
+
+                    // Voice line for high kill streaks
+                    this.voiceSystem.onKillStreak(this.currentKillStreak);
 
                     // Track rewards for level summary
                     this.trackReward('cycles', { amount: cycleGain });
@@ -4790,6 +4810,9 @@ class Game {
         const roomId = `level_${this.currentLevel}_room_${this.roomNumber || 1}`;
         const bossId = (cause === 'boss' && this.boss) ? this.getBossId() : null;
         this.characterSystem.recordDeath(roomId, bossId);
+
+        // Play death voice line
+        this.voiceSystem.onDeath();
 
         console.log('DEATH TRIGGERED - ghost recorded');
 

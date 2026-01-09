@@ -2903,12 +2903,12 @@ class Game {
         }
 
         this.showingCharacterSelect = false;
-        this.state = 'menu';
+        this.state = 'title';
 
-        // Show main menu again
-        const menuModal = document.getElementById('menu-modal');
-        if (menuModal) {
-            menuModal.classList.remove('hidden');
+        // Show title screen again
+        const titleScreen = document.getElementById('title-screen');
+        if (titleScreen) {
+            titleScreen.classList.remove('hidden');
         }
     }
 

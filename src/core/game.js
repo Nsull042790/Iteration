@@ -109,6 +109,8 @@ class Game {
         this.showControls = true;
         this.killCount = 0;
         this.totalKills = 0;
+        this.currentKillStreak = 0;
+        this.highestKillStreak = 0;
         this.runStartTime = null;
 
         // God mode for testing
@@ -418,6 +420,7 @@ class Game {
             this.boss = new Boss(bossX, bossY, this.currentLevel);
             this.boss.name = bossName;
             this.bossStartTime = Date.now(); // Track when boss fight begins
+            this.damageTakenDuringBoss = false; // Track for damageless boss kill
             this.hud.addMessage(`THREAT DETECTED: ${this.boss.name}`, 'warning');
         }, 2000);
     }
@@ -483,6 +486,7 @@ class Game {
                 this.boss.name = bossName;
                 this.boss.isFinalBoss = true;
                 this.bossStartTime = Date.now(); // Track when final boss fight begins
+                this.damageTakenDuringBoss = false; // Track for damageless boss kill
 
                 // Boss descends from above
                 this.boss.isEntering = true;
@@ -730,6 +734,10 @@ class Game {
             this.runStats.recordLevelComplete(completedLevel, this.levelStartTime);
             this.levelStartTime = Date.now(); // Reset for next level
         }
+
+        // Record room clear for PARADOX unlock tracking
+        const roomId = `level_${completedLevel}_room_${this.roomNumber || 1}`;
+        this.characterSystem.recordRoomClear(roomId);
 
         // Check for game victory (beat level 12 - CORRUPTED CORE)
         const FINAL_LEVEL = 12;
@@ -1104,6 +1112,31 @@ class Game {
             console.log('[VICTORY] Leaderboard results:', leaderboardResults);
         } catch (e) {
             console.warn('Leaderboard submission failed:', e);
+        }
+
+        // Record win for character unlock tracking
+        try {
+            this.characterSystem.recordWin(char.id, totalTime);
+
+            // Also update cumulative stats
+            const newUnlocks = this.characterSystem.updateStats({
+                level: finalLevel,
+                kills: this.totalKills,
+                cyclesCollected: this.runStats?.totalCycles || 0,
+                killStreak: this.highestKillStreak,
+                bossKills: 4 // Beat all 4 bosses
+            });
+
+            // Notify about any new character unlocks
+            if (newUnlocks && newUnlocks.length > 0) {
+                setTimeout(() => {
+                    for (const newChar of newUnlocks) {
+                        this.hud.addMessage(`NEW CHARACTER UNLOCKED: ${newChar.name}!`, 'evolution');
+                    }
+                }, 2000);
+            }
+        } catch (e) {
+            console.warn('Character win recording failed:', e);
         }
 
         // Store stats for rendering
@@ -2903,13 +2936,9 @@ class Game {
         }
 
         this.showingCharacterSelect = false;
-        this.state = 'title';
 
-        // Show title screen again
-        const titleScreen = document.getElementById('title-screen');
-        if (titleScreen) {
-            titleScreen.classList.remove('hidden');
-        }
+        // Show title screen again with proper button handlers
+        this.showTitleScreen();
     }
 
     /**
@@ -3388,6 +3417,7 @@ class Game {
                         this.cycles.applyDamagePenalty();
                         this.camera.addShake(5, 10);
                         this.renderer.flash(GAME_CONFIG.COLORS.MAGENTA, 0.3);
+                        this.currentKillStreak = 0; // Reset kill streak on damage
                         // Check for death immediately after taking damage
                         if (this.player.health <= 0) {
                             this.handlePlayerDeath('enemy');
@@ -3433,6 +3463,8 @@ class Game {
                     this.cycles.applyDamagePenalty();
                     this.camera.addShake(8, 15);
                     this.renderer.flash(GAME_CONFIG.COLORS.MAGENTA, 0.4);
+                    this.damageTakenDuringBoss = true; // Track for damageless unlock
+                    this.currentKillStreak = 0; // Reset kill streak on damage
                     // Check for death immediately after taking damage
                     if (this.player.health <= 0) {
                         this.handlePlayerDeath('boss');
@@ -3451,6 +3483,8 @@ class Game {
                             this.audio.playPlayerHurt();
                             this.cycles.applyDamagePenalty();
                             this.camera.addShake(4, 8);
+                            this.damageTakenDuringBoss = true; // Track for damageless unlock
+                            this.currentKillStreak = 0; // Reset kill streak on damage
                             // Check for death immediately after taking damage
                             if (this.player.health <= 0) {
                                 this.handlePlayerDeath('boss');
@@ -3471,6 +3505,12 @@ class Game {
             if (this.runStats && this.bossStartTime) {
                 this.runStats.recordBossKill(this.boss.name || `Boss ${this.currentLevel}`, this.bossStartTime);
                 this.bossStartTime = null;
+            }
+
+            // Check for damageless boss kill (for SAGE unlock)
+            if (!this.damageTakenDuringBoss) {
+                this.characterSystem.recordDamagelessBossKill();
+                this.hud.addMessage('PERFECT BOSS KILL!', 'evolution');
             }
 
             // Track boss rewards
@@ -3758,6 +3798,8 @@ class Game {
                     this.cycles.gain(cycleGain);
                     this.killCount++;
                     this.totalKills++;
+                    this.currentKillStreak++;
+                    this.highestKillStreak = Math.max(this.highestKillStreak, this.currentKillStreak);
 
                     // Track rewards for level summary
                     this.trackReward('cycles', { amount: cycleGain });
@@ -4744,6 +4786,11 @@ class Game {
             this.runStats.recordDeath(cause, this.currentLevel);
         }
 
+        // Record death for character unlock tracking
+        const roomId = `level_${this.currentLevel}_room_${this.roomNumber || 1}`;
+        const bossId = (cause === 'boss' && this.boss) ? this.getBossId() : null;
+        this.characterSystem.recordDeath(roomId, bossId);
+
         console.log('DEATH TRIGGERED - ghost recorded');
 
         this.renderer.flash(GAME_CONFIG.COLORS.MAGENTA, 0.8);
@@ -4752,6 +4799,16 @@ class Game {
 
         // Show game over modal after a brief delay
         setTimeout(() => this.showGameOverModal(), 1000);
+    }
+
+    /**
+     * Get boss ID based on current level (for unlock tracking)
+     */
+    getBossId() {
+        // Bosses are at levels 3, 6, 9, 12
+        const bossNumber = Math.floor(this.currentLevel / 3);
+        if (bossNumber === 4) return 'finalBoss';
+        return `boss${bossNumber}`;
     }
 
     /**
@@ -4785,6 +4842,26 @@ class Game {
             }
         } catch (e) {
             console.warn('Stats/leaderboard error:', e);
+        }
+
+        // Update character system stats and check for new unlocks
+        try {
+            const newUnlocks = this.characterSystem.updateStats({
+                level: this.currentLevel,
+                kills: this.totalKills,
+                cyclesCollected: this.runStats?.totalCycles || 0,
+                killStreak: this.highestKillStreak,
+                bossKills: Math.floor(this.currentLevel / 3)
+            });
+
+            // Notify about any new character unlocks
+            if (newUnlocks && newUnlocks.length > 0) {
+                for (const char of newUnlocks) {
+                    this.hud.addMessage(`NEW CHARACTER UNLOCKED: ${char.name}!`, 'evolution');
+                }
+            }
+        } catch (e) {
+            console.warn('Character stats update error:', e);
         }
 
         // Update stats display
@@ -4869,6 +4946,8 @@ class Game {
         this.currentZone = this.zones[0];
         this.killCount = 0;
         this.totalKills = 0;
+        this.currentKillStreak = 0;
+        this.highestKillStreak = 0;
 
         // Reset player
         this.player.active = true;
@@ -4946,6 +5025,8 @@ class Game {
         this.currentZone = this.zones[0];
         this.killCount = 0;
         this.totalKills = 0;
+        this.currentKillStreak = 0;
+        this.highestKillStreak = 0;
 
         // Reset player
         this.player.active = true;

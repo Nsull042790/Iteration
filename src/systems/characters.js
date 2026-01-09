@@ -1,50 +1,52 @@
 /**
  * ITERATION - Character System
- * 90s video game inspired playable characters
+ * Unlockable operatives with unique passives
  */
 
 class CharacterSystem {
     constructor() {
         this.selectedCharacter = 'echo';  // Default
 
-        // All playable characters inspired by 90s games
+        // All playable characters
         this.characters = [
+            // ============================================
+            // STARTER TIER (Free from start)
+            // ============================================
             {
                 id: 'echo',
                 name: 'ECHO',
-                subtitle: 'The Original',
-                description: 'Balanced combat AI. Jack of all trades.',
-                inspiration: 'Original',
-                // Stats (base = 100)
+                subtitle: 'The Baseline',
+                description: 'The template. Pure skill, no gimmicks.',
+                tier: 'starter',
                 stats: {
                     health: 100,
                     damage: 100,
                     speed: 100,
-                    attackSpeed: 100
+                    attackSpeed: 100,
+                    startingCycles: 1000
                 },
-                // Visual
                 color: '#00f0ff',
                 secondaryColor: '#0088aa',
                 eyeColor: '#ffffff',
                 style: 'default',
-                // Special ability
                 special: {
-                    name: 'ADAPTIVE',
-                    description: '+10% XP gain',
-                    xpBonus: 0.10
+                    name: 'NONE',
+                    description: 'No passive — pure skill',
+                    passive: 'none'
                 }
             },
             {
                 id: 'blitz',
                 name: 'BLITZ',
-                subtitle: 'Speed Demon',
-                description: 'Blazing fast. Gotta go fast!',
-                inspiration: 'Sonic',
+                subtitle: 'The Speedster',
+                description: 'Speed is survival. Gotta go fast.',
+                tier: 'starter',
                 stats: {
                     health: 70,
-                    damage: 80,
-                    speed: 160,
-                    attackSpeed: 130
+                    damage: 100,
+                    speed: 140,
+                    attackSpeed: 100,
+                    startingCycles: 800
                 },
                 color: '#0066ff',
                 secondaryColor: '#0044aa',
@@ -52,257 +54,469 @@ class CharacterSystem {
                 style: 'round',
                 special: {
                     name: 'MOMENTUM',
-                    description: 'Damage scales with speed',
-                    speedDamageBonus: true
+                    description: 'Movement costs 0 cycles above 50% HP',
+                    passive: 'momentum'
                 }
             },
             {
                 id: 'titan',
                 name: 'TITAN',
-                subtitle: 'Heavy Hitter',
-                description: 'Slow but devastating. Tank mode.',
-                inspiration: 'Contra/Metal Slug',
+                subtitle: 'The Tank',
+                description: 'Slow but unstoppable. Outlast everything.',
+                tier: 'starter',
                 stats: {
-                    health: 180,
-                    damage: 140,
-                    speed: 65,
-                    attackSpeed: 70,
-                    jumpHeight: 85  // Lower jump due to weight (adjusted from 75)
+                    health: 150,
+                    damage: 100,
+                    speed: 75,
+                    attackSpeed: 100,
+                    startingCycles: 1200
                 },
                 color: '#ff4400',
                 secondaryColor: '#aa2200',
                 eyeColor: '#ffff00',
                 style: 'bulky',
                 special: {
-                    name: 'HEAVY ARMOR',
-                    description: '-20% damage taken, lower jump',
-                    damageReduction: 0.20
+                    name: 'FORTIFIED',
+                    description: 'Taking damage costs 50% fewer cycles',
+                    passive: 'fortified',
+                    cycleDamageReduction: 0.50
                 }
             },
+
+            // ============================================
+            // TIER 1 — Beat Zone 2 (Reach Level 6)
+            // ============================================
             {
                 id: 'phantom',
                 name: 'PHANTOM',
-                subtitle: 'Shadow Walker',
-                description: 'Swift and deadly. Strike from shadows.',
-                inspiration: 'Ninja Gaiden/Shinobi',
+                subtitle: 'The Assassin',
+                description: 'Strike from the shadows. First strike devastates.',
+                tier: 'tier1',
                 stats: {
-                    health: 80,
-                    damage: 120,
-                    speed: 130,
-                    attackSpeed: 140
+                    health: 60,
+                    damage: 100,
+                    speed: 100,
+                    attackSpeed: 100,
+                    startingCycles: 900
                 },
                 color: '#8800aa',
                 secondaryColor: '#440066',
                 eyeColor: '#ff00ff',
                 style: 'slim',
                 special: {
-                    name: 'ASSASSIN',
-                    description: '25% crit chance',
-                    critChance: 0.25
+                    name: 'BACKSTAB PROTOCOL',
+                    description: '3x damage from behind. First hit per room is crit.',
+                    passive: 'backstab',
+                    backstabMultiplier: 3.0,
+                    firstHitCrit: true
                 }
             },
             {
                 id: 'nova',
                 name: 'NOVA',
-                subtitle: 'Beam Warrior',
-                description: 'Charged attacks. Arm cannon specialist.',
-                inspiration: 'Mega Man/Metroid',
+                subtitle: 'The Glass Cannon',
+                description: 'Evolve fast, but mistakes cost progress.',
+                tier: 'tier1',
                 stats: {
-                    health: 90,
-                    damage: 110,
-                    speed: 95,
-                    attackSpeed: 85
+                    health: 50,
+                    damage: 100,
+                    speed: 100,
+                    attackSpeed: 100,
+                    startingCycles: 1000
                 },
                 color: '#00ff88',
                 secondaryColor: '#00aa55',
                 eyeColor: '#ffffff',
                 style: 'armored',
                 special: {
-                    name: 'CHARGE SHOT',
-                    description: 'Blade waves deal +50% damage',
-                    waveBonus: 0.50
+                    name: 'OVERCHARGE',
+                    description: '2x blade evolution. Damage resets 10% progress.',
+                    passive: 'overcharge',
+                    evolutionMultiplier: 2.0,
+                    damageEvolutionPenalty: 0.10
                 }
             },
             {
+                id: 'revenant',
+                name: 'REVENANT',
+                subtitle: 'The Ghost Walker',
+                description: 'Your past deaths fight alongside you.',
+                tier: 'tier1',
+                stats: {
+                    health: 80,
+                    damage: 100,
+                    speed: 100,
+                    attackSpeed: 100,
+                    startingCycles: 900
+                },
+                color: '#66ffcc',
+                secondaryColor: '#339988',
+                eyeColor: '#00ff99',
+                style: 'ethereal',
+                special: {
+                    name: 'DEATH ECHO',
+                    description: 'Ghosts fight for you. Max 2 allies per room.',
+                    passive: 'deathEcho',
+                    maxGhostAllies: 2
+                }
+            },
+
+            // ============================================
+            // TIER 2 — Beat Zone 3 (Reach Level 9)
+            // ============================================
+            {
                 id: 'havoc',
                 name: 'HAVOC',
-                subtitle: 'Berserker',
-                description: 'Glass cannon. High risk, high reward.',
-                inspiration: 'Doom Guy/Duke Nukem',
+                subtitle: 'The Berserker',
+                description: 'Pain is power. Low HP = high damage.',
+                tier: 'tier2',
                 stats: {
-                    health: 50,      // Reduced from 60 - true glass cannon
-                    damage: 170,
-                    speed: 110,
-                    attackSpeed: 120
+                    health: 80,
+                    damage: 100,
+                    speed: 100,
+                    attackSpeed: 100,
+                    startingCycles: 700
                 },
                 color: '#ff0044',
                 secondaryColor: '#aa0022',
                 eyeColor: '#ffff00',
                 style: 'aggressive',
                 special: {
-                    name: 'BLOODLUST',
-                    description: '+5% lifesteal, +10% damage taken',
-                    lifesteal: 0.05,         // Buffed from 3% to 5%
-                    damageAmplify: 0.10      // Takes 10% more damage
+                    name: 'BLOOD RAGE',
+                    description: '+5% damage per 10 HP missing. +50% at 1 HP.',
+                    passive: 'bloodRage',
+                    damagePerMissingHP: 0.05,
+                    maxBonusDamage: 0.50
                 }
             },
             {
                 id: 'sage',
                 name: 'SAGE',
-                subtitle: 'Mystic Blade',
-                description: 'Ancient power. Magic enhanced.',
-                inspiration: 'Link/Castlevania',
+                subtitle: 'The Predictor',
+                description: 'See attacks before they happen.',
+                tier: 'tier2',
                 stats: {
-                    health: 95,
-                    damage: 95,
-                    speed: 100,
-                    attackSpeed: 100
+                    health: 90,
+                    damage: 100,
+                    speed: 90,
+                    attackSpeed: 100,
+                    startingCycles: 1100
                 },
                 color: '#44ff00',
                 secondaryColor: '#228800',
                 eyeColor: '#ffffff',
                 style: 'cloaked',
                 special: {
-                    name: 'AURA',
-                    description: 'Explosions are 30% larger',
-                    explosionBonus: 0.30
+                    name: 'PATTERN RECOGNITION',
+                    description: 'See attack indicators 0.5s early. Slower adaptation.',
+                    passive: 'patternRecognition',
+                    indicatorBonus: 0.5,
+                    adaptationDelay: 0.20
                 }
             },
             {
                 id: 'chrome',
                 name: 'CHROME',
-                subtitle: 'Metal Warrior',
-                description: 'Cybernetic enhancement. Balanced power.',
-                inspiration: 'Terminator/RoboCop',
+                subtitle: 'The Efficient',
+                description: 'Maximum efficiency. Every cycle counts more.',
+                tier: 'tier2',
                 stats: {
-                    health: 120,
-                    damage: 105,
-                    speed: 90,
-                    attackSpeed: 95
+                    health: 100,
+                    damage: 100,
+                    speed: 100,
+                    attackSpeed: 100,
+                    startingCycles: 1500
                 },
                 color: '#aaaaaa',
                 secondaryColor: '#666666',
                 eyeColor: '#ff0000',
                 style: 'robotic',
                 special: {
-                    name: 'REGENERATE',
-                    description: 'Heal 1 HP per second',
-                    regenRate: 1.0  // HP per second (buffed from 0.5)
+                    name: 'OPTIMIZED',
+                    description: 'Actions cost 20% fewer cycles. Pickups give 50% more.',
+                    passive: 'optimized',
+                    cycleCostReduction: 0.20,
+                    cyclePickupBonus: 0.50
                 }
             },
             {
+                id: 'paradox',
+                name: 'PARADOX',
+                subtitle: 'The Loop Breaker',
+                description: 'Time bends around you. Death has memory.',
+                tier: 'tier2',
+                stats: {
+                    health: 75,
+                    damage: 100,
+                    speed: 100,
+                    attackSpeed: 100,
+                    startingCycles: 1000
+                },
+                color: '#ff00ff',
+                secondaryColor: '#8800ff',
+                eyeColor: '#00ffff',
+                style: 'glitched',
+                special: {
+                    name: 'DÉJÀ VU',
+                    description: 'Death rooms: -30% enemies. Cleared rooms: +20% enemies.',
+                    passive: 'dejaVu',
+                    deathRoomDebuff: 0.30,
+                    clearedRoomBuff: 0.20
+                }
+            },
+
+            // ============================================
+            // TIER 3 — Beat the Game
+            // ============================================
+            {
                 id: 'void',
                 name: 'VOID',
-                subtitle: 'Hollow One',
-                description: 'Ancient vessel. Empty but powerful.',
-                inspiration: 'Hollow Knight',
+                subtitle: 'The Anomaly',
+                description: 'Start at 1 HP. Consume ghosts to survive.',
+                tier: 'tier3',
                 stats: {
-                    health: 85,
+                    health: 1,  // Starts at 1, max 200
+                    maxHealth: 200,
                     damage: 100,
-                    speed: 115,
-                    attackSpeed: 110
+                    speed: 100,
+                    attackSpeed: 100,
+                    startingCycles: 600
                 },
-                color: '#ff71ce',      // Vaporwave pink
-                secondaryColor: '#01cdfe', // Vaporwave cyan
-                eyeColor: '#000000',   // Hollow black eyes
-                accentColor: '#b967ff', // Vaporwave purple
-                style: 'hollow',
+                color: '#1a0033',
+                secondaryColor: '#330066',
+                eyeColor: '#ff0000',
+                accentColor: '#6600cc',
+                style: 'void',
                 special: {
-                    name: 'SOUL',
-                    description: 'Kills restore 3 HP',
-                    killHeal: 3
+                    name: 'CONSUME',
+                    description: 'No natural HP. Absorb ALL ghosts for +20 HP each.',
+                    passive: 'consume',
+                    ghostAbsorbHP: 20,
+                    forcedAbsorption: true
                 }
             },
             {
                 id: 'neon',
                 name: 'NEON',
-                subtitle: 'Sunset Runner',
-                description: 'Pure aesthetic. Retro future warrior.',
-                inspiration: 'Vaporwave/Synthwave',
+                subtitle: 'The Showoff',
+                description: 'Style over substance. Variety is rewarded.',
+                tier: 'tier3',
                 stats: {
                     health: 90,
-                    damage: 90,
-                    speed: 120,
-                    attackSpeed: 105
+                    damage: 100,
+                    speed: 115,
+                    attackSpeed: 100,
+                    startingCycles: 900
                 },
-                color: '#f222ff',       // Hot pink
-                secondaryColor: '#ffb347', // Sunset orange
-                eyeColor: '#00ffff',    // Cyan eyes
-                accentColor: '#ff6b6b', // Coral
+                color: '#f222ff',
+                secondaryColor: '#ffb347',
+                eyeColor: '#00ffff',
+                accentColor: '#ff6b6b',
                 style: 'vapor',
                 special: {
-                    name: 'AESTHETIC',
-                    description: '+15% cycle gain',
-                    cycleBonus: 0.15
+                    name: 'STYLE POINTS',
+                    description: 'Varied attacks: +10 cycles. Same attack 3x: double cost.',
+                    passive: 'stylePoints',
+                    varietyBonus: 10,
+                    repetitionPenalty: 2.0
+                }
+            },
+            {
+                id: 'martyr',
+                name: 'MARTYR',
+                subtitle: 'The Sacrifice',
+                description: 'Death makes the next run stronger.',
+                tier: 'tier3',
+                stats: {
+                    health: 100,
+                    damage: 100,
+                    speed: 100,
+                    attackSpeed: 100,
+                    startingCycles: 1000
+                },
+                color: '#ffcc00',
+                secondaryColor: '#cc9900',
+                eyeColor: '#ffffff',
+                style: 'radiant',
+                special: {
+                    name: 'LEGACY',
+                    description: 'On death: choose +5 HP, +50 cycles, or +5% damage. Stacks 5x.',
+                    passive: 'legacy',
+                    maxStacks: 5,
+                    hpBonus: 5,
+                    cycleBonus: 50,
+                    damageBonus: 0.05
+                }
+            },
+
+            // ============================================
+            // SECRET TIER — True Mastery
+            // ============================================
+            {
+                id: 'axiom',
+                name: 'AXIOM',
+                subtitle: 'The Simulation',
+                description: 'See everything. The simulation adapts faster.',
+                tier: 'secret',
+                stats: {
+                    health: 80,
+                    damage: 100,
+                    speed: 100,
+                    attackSpeed: 100,
+                    startingCycles: 800
+                },
+                color: '#00ff00',
+                secondaryColor: '#008800',
+                eyeColor: '#00ff00',
+                style: 'matrix',
+                special: {
+                    name: 'OMNISCIENCE',
+                    description: 'See all HP, patterns, secrets. Adaptation 2x faster.',
+                    passive: 'omniscience',
+                    showEnemyHP: true,
+                    showPatterns: true,
+                    showSecrets: true,
+                    adaptationMultiplier: 2.0
+                }
+            },
+            {
+                id: 'iteration0',
+                name: 'ITERATION-0',
+                subtitle: 'The First',
+                description: 'The prototype. Collects passives from bosses.',
+                tier: 'secret',
+                stats: {
+                    health: 100,
+                    damage: 100,
+                    speed: 100,
+                    attackSpeed: 100,
+                    startingCycles: 1000
+                },
+                color: '#ffffff',
+                secondaryColor: '#cccccc',
+                eyeColor: '#ffcc00',
+                accentColor: '#ff0000',
+                style: 'prime',
+                special: {
+                    name: 'PRIME DIRECTIVE',
+                    description: 'Start with random passive. Bosses drop extra passive (max 4).',
+                    passive: 'primeDirective',
+                    startingPassive: true,
+                    bossPassiveDrop: true,
+                    maxPassives: 4
                 }
             }
         ];
 
         // Character unlock conditions
         this.unlockConditions = {
-            echo: { unlocked: true, condition: 'Starter character' },
-            blitz: {
-                unlocked: false,
-                condition: 'Reach Level 4',
-                hint: 'Survive deeper...',
-                check: (stats) => stats.highestLevel >= 4,
-                coreCost: 1000
-            },
-            titan: {
-                unlocked: false,
-                condition: 'Take 500 total damage',
-                hint: 'Endure the simulation...',
-                check: (stats) => stats.totalDamageTaken >= 500,
-                coreCost: 1000
-            },
+            // STARTER TIER - Free
+            echo: { unlocked: true, tier: 'starter', condition: 'Starter character' },
+            blitz: { unlocked: true, tier: 'starter', condition: 'Starter character' },
+            titan: { unlocked: true, tier: 'starter', condition: 'Starter character' },
+
+            // TIER 1 - Beat Zone 2 (Level 6)
             phantom: {
                 unlocked: false,
-                condition: 'Kill 1,000 enemies',
+                tier: 'tier1',
+                condition: 'Beat Level 6',
+                hint: 'Survive deeper...',
+                check: (stats) => stats.highestLevel >= 6,
+                coreCost: 1500
+            },
+            nova: {
+                unlocked: false,
+                tier: 'tier1',
+                condition: 'Kill 500 enemies',
                 hint: 'Prove your efficiency...',
-                check: (stats) => stats.totalKills >= 1000,
+                check: (stats) => stats.totalKills >= 500,
+                coreCost: 1500
+            },
+            revenant: {
+                unlocked: false,
+                tier: 'tier1',
+                condition: 'Die 25 times',
+                hint: 'Embrace the cycle...',
+                check: (stats) => stats.totalDeaths >= 25,
+                coreCost: 1500
+            },
+
+            // TIER 2 - Beat Zone 3 (Level 9)
+            havoc: {
+                unlocked: false,
+                tier: 'tier2',
+                condition: '30 kill streak',
+                hint: 'Unleash the beast...',
+                check: (stats) => stats.highestKillStreak >= 30,
                 coreCost: 3000
             },
             sage: {
                 unlocked: false,
-                condition: 'Defeat 10 bosses',
-                hint: 'Master the guardians...',
-                check: (stats) => stats.totalBossKills >= 10,
+                tier: 'tier2',
+                condition: 'Beat a boss damageless',
+                hint: 'Master the patterns...',
+                check: (stats) => stats.damagelessBossKills >= 1,
                 coreCost: 3000
             },
-            neon: {
+            chrome: {
                 unlocked: false,
-                condition: 'Collect 25,000 cycles',
+                tier: 'tier2',
+                condition: 'Collect 50,000 cycles',
                 hint: 'Harvest the data...',
-                check: (stats) => stats.totalCyclesCollected >= 25000,
+                check: (stats) => stats.totalCyclesCollected >= 50000,
                 coreCost: 3000
             },
-            nova: {
+            paradox: {
                 unlocked: false,
+                tier: 'tier2',
+                condition: 'Die 3x in same room, then clear it',
+                hint: 'Break the pattern...',
+                check: (stats) => stats.paradoxUnlockAchieved >= 1,
+                coreCost: 3000
+            },
+
+            // TIER 3 - Beat the Game
+            void: {
+                unlocked: false,
+                tier: 'tier3',
                 condition: 'Beat the game',
                 hint: 'Break the loop...',
                 check: (stats) => stats.wins >= 1,
                 coreCost: 7500
             },
-            chrome: {
+            neon: {
                 unlocked: false,
-                condition: 'No damage in Levels 1-3',
-                hint: 'Achieve early perfection...',
-                check: (stats) => stats.flawlessEarlyGame >= 1,
+                tier: 'tier3',
+                condition: 'Beat game in under 20 min',
+                hint: 'Speed is style...',
+                check: (stats) => stats.fastestWin <= 1200, // 20 minutes in seconds
                 coreCost: 7500
             },
-            havoc: {
+            martyr: {
                 unlocked: false,
-                condition: '50 kill streak',
-                hint: 'Unleash the beast...',
-                check: (stats) => stats.highestKillStreak >= 50,
+                tier: 'tier3',
+                condition: 'Die 100 times',
+                hint: 'Embrace sacrifice...',
+                check: (stats) => stats.totalDeaths >= 100,
                 coreCost: 7500
             },
-            void: {
+
+            // SECRET TIER - No purchase option
+            axiom: {
                 unlocked: false,
-                condition: 'Beat the game 3 times',
-                hint: 'Become one with the void...',
-                check: (stats) => stats.wins >= 3,
-                coreCost: 15000
+                tier: 'secret',
+                condition: 'Die to each boss, then win',
+                hint: 'Learn from every guardian...',
+                check: (stats) => stats.diedToAllBosses && stats.wins >= 1,
+                coreCost: null  // Cannot be purchased
+            },
+            iteration0: {
+                unlocked: false,
+                tier: 'secret',
+                condition: 'Win with all other characters',
+                hint: 'Master every form...',
+                check: (stats) => stats.characterWins >= 14, // All except iteration0
+                coreCost: null  // Cannot be purchased
             }
         };
 
@@ -311,11 +525,19 @@ class CharacterSystem {
             highestLevel: 0,
             totalDamageTaken: 0,
             totalKills: 0,
+            totalDeaths: 0,
             totalBossKills: 0,
             totalCyclesCollected: 0,
             wins: 0,
-            flawlessEarlyGame: 0,
-            highestKillStreak: 0
+            fastestWin: Infinity,
+            highestKillStreak: 0,
+            damagelessBossKills: 0,
+            paradoxUnlockAchieved: 0,
+            diedToAllBosses: false,
+            bossDeaths: {},  // Track which bosses killed you
+            characterWins: 0,
+            characterWinList: {},  // Track wins per character
+            roomDeaths: {}  // Track deaths per room for PARADOX unlock
         };
 
         // Load unlock progress from storage
@@ -400,22 +622,90 @@ class CharacterSystem {
     }
 
     /**
-     * Lock all characters except ECHO (for testing)
+     * Lock all characters except starters (for testing)
      */
     resetUnlocks() {
         for (const [charId, data] of Object.entries(this.unlockConditions)) {
-            data.unlocked = charId === 'echo';
+            data.unlocked = data.tier === 'starter';
         }
         this.stats = {
             highestLevel: 0,
             totalDamageTaken: 0,
             totalKills: 0,
+            totalDeaths: 0,
             totalBossKills: 0,
             totalCyclesCollected: 0,
             wins: 0,
-            flawlessEarlyGame: 0,
-            highestKillStreak: 0
+            fastestWin: Infinity,
+            highestKillStreak: 0,
+            damagelessBossKills: 0,
+            paradoxUnlockAchieved: 0,
+            diedToAllBosses: false,
+            bossDeaths: {},
+            characterWins: 0,
+            characterWinList: {},
+            roomDeaths: {}
         };
+        this.saveUnlockProgress();
+    }
+
+    /**
+     * Record a death for tracking
+     */
+    recordDeath(roomId, bossId = null) {
+        this.stats.totalDeaths++;
+
+        // Track room deaths for PARADOX unlock
+        if (roomId) {
+            this.stats.roomDeaths[roomId] = (this.stats.roomDeaths[roomId] || 0) + 1;
+        }
+
+        // Track boss deaths for AXIOM unlock
+        if (bossId) {
+            this.stats.bossDeaths[bossId] = true;
+            // Check if died to all bosses (assuming 4 boss types)
+            const requiredBosses = ['boss1', 'boss2', 'boss3', 'finalBoss'];
+            this.stats.diedToAllBosses = requiredBosses.every(b => this.stats.bossDeaths[b]);
+        }
+
+        this.saveUnlockProgress();
+    }
+
+    /**
+     * Record room clear for PARADOX unlock
+     */
+    recordRoomClear(roomId) {
+        if (this.stats.roomDeaths[roomId] >= 3) {
+            this.stats.paradoxUnlockAchieved = 1;
+            this.saveUnlockProgress();
+        }
+    }
+
+    /**
+     * Record a damageless boss kill
+     */
+    recordDamagelessBossKill() {
+        this.stats.damagelessBossKills++;
+        this.saveUnlockProgress();
+    }
+
+    /**
+     * Record a win
+     */
+    recordWin(characterId, timeInSeconds) {
+        this.stats.wins++;
+
+        // Track fastest win for NEON unlock
+        if (timeInSeconds < this.stats.fastestWin) {
+            this.stats.fastestWin = timeInSeconds;
+        }
+
+        // Track character wins for ITERATION-0 unlock
+        if (!this.stats.characterWinList[characterId]) {
+            this.stats.characterWinList[characterId] = true;
+            this.stats.characterWins = Object.keys(this.stats.characterWinList).length;
+        }
+
         this.saveUnlockProgress();
     }
 
@@ -438,12 +728,6 @@ class CharacterSystem {
         }
         if (newStats.cyclesCollected) {
             this.stats.totalCyclesCollected += newStats.cyclesCollected;
-        }
-        if (newStats.won) {
-            this.stats.wins += 1;
-        }
-        if (newStats.flawlessEarlyGame) {
-            this.stats.flawlessEarlyGame += 1;
         }
         if (newStats.killStreak) {
             this.stats.highestKillStreak = Math.max(this.stats.highestKillStreak, newStats.killStreak);
@@ -469,6 +753,11 @@ class CharacterSystem {
         const unlockInfo = this.unlockConditions[charId];
         if (!unlockInfo || unlockInfo.unlocked) {
             return { success: false, message: 'Already unlocked' };
+        }
+
+        // Secret characters cannot be purchased
+        if (unlockInfo.coreCost === null) {
+            return { success: false, message: 'Cannot be purchased — must be earned' };
         }
 
         if (metaProgression.dataCores < unlockInfo.coreCost) {
@@ -532,11 +821,11 @@ class CharacterSystem {
         player.baseSpeedMultiplier = char.stats.speed / 100;
         player.baseAttackSpeedMultiplier = char.stats.attackSpeed / 100;
 
-        // Apply jump height modifier (Titan has lower jump)
-        player.jumpMultiplier = (char.stats.jumpHeight || 100) / 100;
-
-        // Apply damage amplification (Havoc takes more damage)
-        player.damageAmplify = char.special.damageAmplify || 0;
+        // Special case for VOID - starts at 1 HP
+        if (char.id === 'void') {
+            player.health = 1;
+            player.maxHealth = char.stats.maxHealth || 200;
+        }
 
         // Apply visual style
         player.characterColor = char.color;
@@ -548,6 +837,9 @@ class CharacterSystem {
 
         // Store special ability reference
         player.characterSpecial = char.special;
+
+        // Store starting cycles preference
+        player.startingCycles = char.stats.startingCycles || 1000;
     }
 
     /**
@@ -556,10 +848,9 @@ class CharacterSystem {
     getStatBars(charId) {
         const char = this.getCharacter(charId);
         return [
-            { name: 'HP', value: char.stats.health, color: '#ff4444' },
-            { name: 'DMG', value: char.stats.damage, color: '#ff8800' },
+            { name: 'HP', value: Math.min(char.stats.health, 150), color: '#ff4444' },
             { name: 'SPD', value: char.stats.speed, color: '#00ff88' },
-            { name: 'ATK', value: char.stats.attackSpeed, color: '#00f0ff' }
+            { name: 'CYC', value: Math.min(char.stats.startingCycles / 15, 100), color: '#ffcc00' }
         ];
     }
 }

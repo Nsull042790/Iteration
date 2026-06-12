@@ -54,6 +54,66 @@ class Enemy extends Entity {
         // Random hop/dodge behavior
         this.hopCooldown = Utils.randomInt(60, 180);
         this.hopTimer = 0;
+
+        // Archetype-specific setup (drone, wasp, arc, aegis)
+        this.flying = false;
+        this.shieldHealth = 0;
+        this.shieldMax = 0;
+        this.projectiles = [];
+        this.setupArchetype();
+    }
+
+    /**
+     * Configure stats and behavior per archetype:
+     *  - drone: baseline melee patroller
+     *  - wasp:  fast flyer that hovers above and dive-bombs
+     *  - arc:   ranged sniper that keeps distance and fires plasma bolts
+     *  - aegis: slow heavy with an energy shield that must be broken first
+     */
+    setupArchetype() {
+        switch (this.type) {
+            case 'wasp':
+                this.width = 34;
+                this.height = 28;
+                this.health = 30;
+                this.maxHealth = 30;
+                this.damage = 8;
+                this.speed = 2.6;
+                this.flying = true;
+                this.detectionRange = 300;
+                this.attackRange = 44;
+                this.hoverPhase = Math.random() * Math.PI * 2;
+                this.hoverBaseY = this.y;
+                this.swoopCooldown = Utils.randomInt(90, 150);
+                this.swoopTimer = 0;
+                this.isSwooping = false;
+                this.swoopTarget = null;
+                break;
+            case 'arc':
+                this.width = 32;
+                this.height = 40;
+                this.health = 40;
+                this.maxHealth = 40;
+                this.damage = 9;
+                this.speed = 1.2;
+                this.detectionRange = 380;
+                this.attackRange = 300; // Fires from range
+                this.fireCooldown = Utils.randomInt(60, 120);
+                this.fireTimer = 0;
+                this.chargeUpFrames = 0; // Telegraph before firing
+                break;
+            case 'aegis':
+                this.width = 44;
+                this.height = 44;
+                this.health = 70;
+                this.maxHealth = 70;
+                this.damage = 14;
+                this.speed = 0.9;
+                this.shieldHealth = 40;
+                this.shieldMax = 40;
+                this.attackRange = 56;
+                break;
+        }
     }
 
     /**
@@ -112,6 +172,9 @@ class Enemy extends Entity {
         // Update particles
         this.updateParticles();
 
+        // Update plasma bolts (arc archetype)
+        this.updateProjectiles();
+
         // Update status effects (DoT)
         this.updateStatusEffects();
 
@@ -158,8 +221,21 @@ class Enemy extends Entity {
             this.aiState = 'patrol';
         }
 
-        // Random hop behavior (makes enemies less predictable)
-        this.updateHopBehavior();
+        // Archetype-specific behavior
+        if (this.type === 'wasp') {
+            this.updateWasp(player, distToPlayer);
+            return;
+        }
+        if (this.type === 'arc') {
+            this.updateArc(player, distToPlayer);
+            return;
+        }
+
+        // Random hop behavior (makes enemies less predictable).
+        // Aegis units are too heavy to hop.
+        if (this.type !== 'aegis') {
+            this.updateHopBehavior();
+        }
 
         // Execute behavior
         switch (this.aiState) {
@@ -172,6 +248,132 @@ class Enemy extends Entity {
             case 'attack':
                 this.attack(player);
                 break;
+        }
+    }
+
+    /**
+     * Wasp: hovers in a sine wave, stays above the player, periodically
+     * dive-bombs toward their position
+     */
+    updateWasp(player, distToPlayer) {
+        this.hoverPhase += 0.08;
+        this.swoopTimer++;
+
+        const px = player.x + player.width / 2;
+        const py = player.y + player.height / 2;
+        const cx = this.x + this.width / 2;
+        const cy = this.y + this.height / 2;
+
+        if (this.isSwooping) {
+            // Committed dive toward the locked target point
+            const dx = this.swoopTarget.x - cx;
+            const dy = this.swoopTarget.y - cy;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < 18 || this.swoopFrames <= 0) {
+                this.isSwooping = false;
+                this.swoopTimer = 0;
+                this.swoopCooldown = Utils.randomInt(110, 180);
+            } else {
+                const sp = 7 * this.slowMultiplier;
+                this.velocityX = (dx / dist) * sp;
+                this.velocityY = (dy / dist) * sp;
+                this.swoopFrames--;
+            }
+        } else if (this.aiState !== 'patrol') {
+            // Hover toward a point above the player
+            const targetX = px + Math.sin(this.hoverPhase * 0.6) * 70;
+            const targetY = py - 110 + Math.sin(this.hoverPhase) * 16;
+            this.velocityX = Utils.clamp((targetX - cx) * 0.05, -this.speed, this.speed) * this.slowMultiplier;
+            this.velocityY = Utils.clamp((targetY - cy) * 0.05, -this.speed, this.speed) * this.slowMultiplier;
+            this.facingRight = px > cx;
+
+            // Begin a swoop when ready and roughly above the player
+            if (this.swoopTimer >= this.swoopCooldown && distToPlayer < 260) {
+                this.isSwooping = true;
+                this.swoopTarget = { x: px, y: py };
+                this.swoopFrames = 40;
+            }
+        } else {
+            // Idle drift
+            this.velocityX = Math.sin(this.hoverPhase * 0.5) * 0.8;
+            this.velocityY = Math.cos(this.hoverPhase) * 0.6;
+        }
+    }
+
+    /**
+     * Arc: keeps its distance and snipes with plasma bolts after a
+     * visible charge-up telegraph
+     */
+    updateArc(player, distToPlayer) {
+        const px = player.x + player.width / 2;
+        const cx = this.x + this.width / 2;
+        this.facingRight = px > cx;
+        this.fireTimer++;
+
+        if (this.aiState === 'patrol') {
+            this.patrol();
+            this.chargeUpFrames = 0;
+            return;
+        }
+
+        // Maintain standoff distance
+        if (distToPlayer < 150) {
+            this.velocityX = -Math.sign(px - cx) * this.speed * 1.4 * this.slowMultiplier;
+        } else if (distToPlayer > 340) {
+            this.velocityX = Math.sign(px - cx) * this.speed * this.slowMultiplier;
+        } else {
+            this.velocityX *= 0.8;
+        }
+
+        // Fire sequence: charge telegraph, then shoot
+        if (this.fireTimer >= this.fireCooldown && distToPlayer < 360) {
+            this.chargeUpFrames++;
+            if (this.chargeUpFrames >= 35) {
+                this.fireBolt(player);
+                this.fireTimer = 0;
+                this.chargeUpFrames = 0;
+                this.fireCooldown = Utils.randomInt(120, 180);
+            }
+        } else {
+            this.chargeUpFrames = 0;
+        }
+    }
+
+    /**
+     * Fire a plasma bolt at the player
+     */
+    fireBolt(player) {
+        const cx = this.x + this.width / 2;
+        const cy = this.y + this.height / 3;
+        const dx = (player.x + player.width / 2) - cx;
+        const dy = (player.y + player.height / 2) - cy;
+        const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+        const speed = 5;
+        this.projectiles.push({
+            x: cx,
+            y: cy,
+            vx: (dx / dist) * speed,
+            vy: (dy / dist) * speed,
+            size: 6,
+            life: 240,
+            damage: this.damage,
+            color: this.colorVariant.main,
+            active: true
+        });
+    }
+
+    /**
+     * Update plasma bolts in flight
+     */
+    updateProjectiles() {
+        for (let i = this.projectiles.length - 1; i >= 0; i--) {
+            const p = this.projectiles[i];
+            p.x += p.vx;
+            p.y += p.vy;
+            p.life--;
+            if (p.life <= 0 || !p.active) {
+                this.projectiles.splice(i, 1);
+            }
         }
     }
 
@@ -238,6 +440,23 @@ class Enemy extends Entity {
      */
     takeDamage(amount, isCrit = false) {
         if (this.invincibilityFrames > 0) return false;
+
+        // Aegis: the energy shield absorbs hits until it shatters
+        if (this.shieldHealth > 0) {
+            this.shieldHealth -= amount;
+            this.invincibilityFrames = 12;
+            this.hitFlash = 6;
+            const knockDir = this.target ? Math.sign(this.x - this.target.x) : 1;
+            this.velocityX = knockDir * 3;
+            if (this.shieldHealth <= 0) {
+                this.shieldHealth = 0;
+                this.spawnShieldBreakParticles();
+                // Brief stagger once the shield pops
+                this.velocityX = knockDir * 10;
+                this.velocityY = -4;
+            }
+            return false;
+        }
 
         this.health -= amount;
         this.invincibilityFrames = 20;
@@ -445,6 +664,34 @@ class Enemy extends Entity {
     }
 
     /**
+     * Shield shatter burst (aegis)
+     */
+    spawnShieldBreakParticles() {
+        const centerX = this.x + this.width / 2;
+        const centerY = this.y + this.height / 2;
+        for (let i = 0; i < 16; i++) {
+            const angle = (i / 16) * Math.PI * 2;
+            const speed = Utils.random(4, 8);
+            this.particles.push({
+                x: centerX + Math.cos(angle) * 24,
+                y: centerY + Math.sin(angle) * 24,
+                vx: Math.cos(angle) * speed,
+                vy: Math.sin(angle) * speed - 2,
+                life: Utils.randomInt(25, 45),
+                maxLife: 45,
+                size: Utils.random(3, 7),
+                color: i % 2 === 0 ? '#88ddff' : '#ffffff',
+                type: 'burst'
+            });
+        }
+        this.particles.push({
+            x: centerX, y: centerY, vx: 0, vy: 0,
+            life: 18, maxLife: 18, size: 36,
+            color: '#88ddff', type: 'ring'
+        });
+    }
+
+    /**
      * Update particles
      */
     updateParticles() {
@@ -472,6 +719,9 @@ class Enemy extends Entity {
         // Render particles
         this.renderParticles(ctx, camera);
 
+        // Render plasma bolts in flight
+        this.renderProjectiles(ctx, camera);
+
         if (!this.active) return;
 
         // Flash white when hit
@@ -487,8 +737,20 @@ class Enemy extends Entity {
 
         ctx.save();
 
-        // Draw based on type
-        this.renderDrone(ctx, screenPos);
+        // Draw based on archetype
+        switch (this.type) {
+            case 'wasp':
+                this.renderWasp(ctx, screenPos);
+                break;
+            case 'arc':
+                this.renderArc(ctx, screenPos);
+                break;
+            case 'aegis':
+                this.renderAegis(ctx, screenPos);
+                break;
+            default:
+                this.renderDrone(ctx, screenPos);
+        }
 
         // Health bar
         this.renderHealthBar(ctx, screenPos);
@@ -497,6 +759,184 @@ class Enemy extends Entity {
         this.renderStatusEffects(ctx, screenPos);
 
         ctx.restore();
+    }
+
+    /**
+     * Render projectiles (called even while inactive so bolts finish)
+     */
+    renderProjectiles(ctx, camera) {
+        for (const p of this.projectiles) {
+            const sp = camera.worldToScreen(p.x, p.y);
+            ctx.save();
+            ctx.shadowColor = p.color;
+            ctx.shadowBlur = 12;
+            ctx.fillStyle = p.color;
+            ctx.beginPath();
+            ctx.arc(sp.x, sp.y, p.size, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(sp.x, sp.y, p.size * 0.45, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        }
+    }
+
+    /**
+     * Wasp: winged dart with beating wings
+     */
+    renderWasp(ctx, screenPos) {
+        const centerX = screenPos.x + this.width / 2;
+        const centerY = screenPos.y + this.height / 2;
+        const colors = this.colorVariant;
+        const wingFlap = Math.sin(this.pulsePhase * 4) * 0.6;
+
+        ctx.shadowColor = colors.main;
+        ctx.shadowBlur = 12;
+
+        // Wings (two beating triangles)
+        ctx.fillStyle = colors.accent;
+        ctx.globalAlpha = 0.7;
+        for (const side of [-1, 1]) {
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY - 2);
+            ctx.lineTo(centerX + side * 16, centerY - 12 - wingFlap * 8);
+            ctx.lineTo(centerX + side * 8, centerY + 2);
+            ctx.closePath();
+            ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+
+        // Dart body pointing at travel direction
+        ctx.fillStyle = colors.main;
+        const dir = this.facingRight ? 1 : -1;
+        ctx.beginPath();
+        ctx.moveTo(centerX + dir * 14, centerY);
+        ctx.lineTo(centerX - dir * 10, centerY - 7);
+        ctx.lineTo(centerX - dir * 6, centerY);
+        ctx.lineTo(centerX - dir * 10, centerY + 7);
+        ctx.closePath();
+        ctx.fill();
+
+        // Eye
+        ctx.fillStyle = colors.core;
+        ctx.shadowBlur = 16;
+        ctx.beginPath();
+        ctx.arc(centerX + dir * 6, centerY, 3, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Swoop warning glow
+        if (this.isSwooping) {
+            ctx.strokeStyle = '#ff4444';
+            ctx.lineWidth = 2;
+            ctx.shadowColor = '#ff4444';
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, 18, 0, Math.PI * 2);
+            ctx.stroke();
+        }
+    }
+
+    /**
+     * Arc: tall sniper unit with a charge-up telegraph
+     */
+    renderArc(ctx, screenPos) {
+        const centerX = screenPos.x + this.width / 2;
+        const centerY = screenPos.y + this.height / 2;
+        const colors = this.colorVariant;
+        const pulse = Math.sin(this.pulsePhase) * 0.2 + 0.8;
+
+        ctx.shadowColor = colors.main;
+        ctx.shadowBlur = 14 * pulse;
+
+        // Tall diamond body
+        ctx.fillStyle = colors.main;
+        ctx.beginPath();
+        ctx.moveTo(centerX, screenPos.y + 2);
+        ctx.lineTo(screenPos.x + this.width - 4, centerY);
+        ctx.lineTo(centerX, screenPos.y + this.height - 2);
+        ctx.lineTo(screenPos.x + 4, centerY);
+        ctx.closePath();
+        ctx.fill();
+
+        // Cannon barrel toward the player
+        const dir = this.facingRight ? 1 : -1;
+        ctx.strokeStyle = colors.accent;
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(centerX, centerY - 4);
+        ctx.lineTo(centerX + dir * 18, centerY - 4);
+        ctx.stroke();
+
+        // Charge-up telegraph: growing orb at the muzzle
+        if (this.chargeUpFrames > 0) {
+            const chargeSize = (this.chargeUpFrames / 35) * 8;
+            ctx.fillStyle = '#ffffff';
+            ctx.shadowColor = colors.core;
+            ctx.shadowBlur = 20;
+            ctx.beginPath();
+            ctx.arc(centerX + dir * 20, centerY - 4, chargeSize, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // Eye
+        ctx.fillStyle = colors.core;
+        ctx.beginPath();
+        ctx.arc(centerX + dir * 4, centerY - 8, 3.5, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    /**
+     * Aegis: heavy hexagon with a visible energy shield
+     */
+    renderAegis(ctx, screenPos) {
+        const centerX = screenPos.x + this.width / 2;
+        const centerY = screenPos.y + this.height / 2;
+        const colors = this.colorVariant;
+        const pulse = Math.sin(this.pulsePhase) * 0.2 + 0.8;
+
+        ctx.shadowColor = colors.main;
+        ctx.shadowBlur = 12 * pulse;
+
+        // Heavy hex body
+        ctx.fillStyle = colors.main;
+        ctx.beginPath();
+        for (let i = 0; i < 6; i++) {
+            const angle = (i / 6) * Math.PI * 2 - Math.PI / 2;
+            const px = centerX + Math.cos(angle) * 19;
+            const py = centerY + Math.sin(angle) * 19;
+            if (i === 0) ctx.moveTo(px, py);
+            else ctx.lineTo(px, py);
+        }
+        ctx.closePath();
+        ctx.fill();
+
+        // Core
+        ctx.fillStyle = colors.core;
+        ctx.shadowBlur = 18;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, 6, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Energy shield bubble while it holds
+        if (this.shieldHealth > 0) {
+            const shieldAlpha = 0.25 + (this.shieldHealth / this.shieldMax) * 0.35;
+            ctx.strokeStyle = `rgba(136, 221, 255, ${shieldAlpha + 0.3})`;
+            ctx.fillStyle = `rgba(136, 221, 255, ${shieldAlpha * 0.3})`;
+            ctx.lineWidth = 2.5;
+            ctx.shadowColor = '#88ddff';
+            ctx.shadowBlur = 14;
+            ctx.beginPath();
+            for (let i = 0; i < 6; i++) {
+                const angle = (i / 6) * Math.PI * 2 - Math.PI / 2 + this.pulsePhase * 0.2;
+                const px = centerX + Math.cos(angle) * 28;
+                const py = centerY + Math.sin(angle) * 28;
+                if (i === 0) ctx.moveTo(px, py);
+                else ctx.lineTo(px, py);
+            }
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+        }
     }
 
     /**

@@ -109,6 +109,11 @@ class HUD {
             this.renderBossWarning(ctx);
         }
 
+        // Render combo counter (right side, above weapon slots area)
+        if (gameState.comboCount >= 2) {
+            this.renderCombo(ctx, gameState);
+        }
+
         // Render messages (center)
         this.renderMessages(ctx);
 
@@ -116,6 +121,52 @@ class HUD {
         if (gameState.showControls) {
             this.renderControlsHint(ctx);
         }
+
+        ctx.restore();
+    }
+
+    /**
+     * Render the kill combo counter with its decay bar.
+     * Escalates in size and color as the chain grows.
+     */
+    renderCombo(ctx, gameState) {
+        const combo = gameState.comboCount;
+        const ratio = gameState.comboTimer / gameState.comboWindow;
+        const x = this.width - this.padding - 60;
+        const y = 150;
+
+        // Color tiers: cyan -> green -> yellow -> magenta -> white-hot
+        let color = '#00f0ff';
+        if (combo >= 30) color = '#ffffff';
+        else if (combo >= 20) color = '#ff00aa';
+        else if (combo >= 10) color = '#ffdd00';
+        else if (combo >= 5) color = '#00ff88';
+
+        const scale = 1 + Math.min(combo, 30) * 0.02;
+        const shake = combo >= 20 ? (Math.random() - 0.5) * 2 : 0;
+
+        ctx.save();
+        ctx.textAlign = 'center';
+
+        // Combo number
+        ctx.font = `bold ${Math.floor(26 * scale)}px "Share Tech Mono", monospace`;
+        ctx.fillStyle = color;
+        ctx.shadowColor = color;
+        ctx.shadowBlur = 14;
+        ctx.fillText(`${combo}x`, x + shake, y);
+
+        // Label + multiplier
+        ctx.font = '11px "Share Tech Mono", monospace';
+        ctx.shadowBlur = 6;
+        ctx.fillText(`COMBO  +${Math.round(Math.min(combo, 50) * 2)}%`, x, y + 16);
+
+        // Decay bar
+        const barWidth = 70;
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+        ctx.fillRect(x - barWidth / 2, y + 22, barWidth, 4);
+        ctx.fillStyle = color;
+        ctx.fillRect(x - barWidth / 2, y + 22, barWidth * ratio, 4);
 
         ctx.restore();
     }

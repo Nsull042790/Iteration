@@ -32,7 +32,7 @@
             </div>
             <div class="splash-content">
                 <div class="splash-glitch" data-text="ITERATION">ITERATION</div>
-                <div class="splash-subtitle">SIMULATION v4.0.0</div>
+                <div class="splash-subtitle">SIMULATION v4.1.0</div>
                 <button id="splash-enter-btn" class="splash-btn">
                     <span class="splash-btn-text">[ ENTER THE AXIOM ]</span>
                 </button>
@@ -81,7 +81,7 @@
                             <div class="logo-glitch-wrapper">
                                 <div class="logo-text" data-text="ITERATION">ITERATION</div>
                             </div>
-                            <div class="logo-version">v4.0.0</div>
+                            <div class="logo-version">v4.1.0</div>
                             <div class="logo-subtitle glitch-text">// BREAK THE LOOP</div>
                         </div>
                         <div class="logo-decoration">
@@ -106,7 +106,7 @@
                         <div class="footer-item">STATUS: <span class="status-ready">▶ READY</span></div>
                         <div class="footer-item">GHOSTS: <span class="cyan">0</span></div>
                         <div class="footer-item">BLADE: <span class="magenta">◆ STANDARD</span></div>
-                        <div class="footer-item version">v4.0.0</div>
+                        <div class="footer-item version">v4.1.0</div>
                     </div>
                 </div>
             </div>
@@ -490,6 +490,24 @@
                             <div class="faq-text">
                                 Gain XP by killing enemies. Your blade evolves through tiers:
                                 <span class="magenta">BASIC → CHARGED → PLASMA → QUANTUM → SINGULARITY</span>
+                            </div>
+                        </div>
+                        <div class="faq-section">
+                            <div class="faq-title">🔗 COMBO CHAIN</div>
+                            <div class="faq-text">
+                                Chain kills within 4 seconds to build a combo. Every link adds
+                                <span class="cyan">+2% cycles and blade XP</span> (up to 2x at 50).
+                                Taking damage <span class="magenta">breaks the chain</span>.
+                                Every 5th link... <span class="dim">something acknowledges you.</span>
+                            </div>
+                        </div>
+                        <div class="faq-section">
+                            <div class="faq-title">⚔ HOSTILE ARCHETYPES</div>
+                            <div class="faq-text">
+                                <span class="cyan">DRONE</span> - standard melee patroller<br>
+                                <span class="cyan">WASP</span> - flies above you and dive-bombs (lv 3+)<br>
+                                <span class="cyan">ARC</span> - ranged sniper; watch the charge-up glow (lv 4+)<br>
+                                <span class="cyan">AEGIS</span> - heavy unit; shatter the shield first (lv 6+)
                             </div>
                         </div>
                         <div class="faq-section">
@@ -1021,11 +1039,11 @@
     <script src="src/core/constants.js?v=20260107a"></script>
     <script src="src/core/touch-controls.js?v=20260107a"></script>
     <script src="src/core/input.js?v=20260107a"></script>
-    <script src="src/core/physics.js?v=20260107a"></script>
+    <script src="src/core/physics.js?v=20260612a"></script>
     <script src="src/core/camera.js?v=20260107a"></script>
     <script src="src/entities/entity.js?v=20260107a"></script>
-    <script src="src/entities/player.js?v=20260107a"></script>
-    <script src="src/entities/enemy.js?v=20260107a"></script>
+    <script src="src/entities/player.js?v=20260612a"></script>
+    <script src="src/entities/enemy.js?v=20260612a"></script>
     <script src="src/entities/boss.js?v=20260107a"></script>
     <script src="src/entities/interactable.js?v=20260107a"></script>
     <script src="src/levels/platform.js?v=20260107a"></script>
@@ -1044,7 +1062,7 @@
     <script src="src/systems/voice.js?v=20260109a"></script>
     <script src="src/systems/ghosts.js?v=20260108a"></script>
     <script src="src/systems/cutscene.js?v=20260108a"></script>
-    <script src="src/ui/hud.js?v=20260108a"></script>
+    <script src="src/ui/hud.js?v=20260612a"></script>
     <script src="src/core/renderer.js?v=20260611a"></script>
     <!-- Three.js (vendored r147) + post-processing for the 3D renderer -->
     <script src="vendor/three/three.min.js"></script>
@@ -1055,8 +1073,8 @@
     <script src="vendor/three/RenderPass.js"></script>
     <script src="vendor/three/ShaderPass.js"></script>
     <script src="vendor/three/UnrealBloomPass.js"></script>
-    <script src="src/core/renderer3d.js?v=20260611a"></script>
-    <script src="src/core/game.js?v=20260611a"></script>
+    <script src="src/core/renderer3d.js?v=20260612a"></script>
+    <script src="src/core/game.js?v=20260612a"></script>
     <script src="main.js?v=20260611a"></script>
 </body>
 </html>

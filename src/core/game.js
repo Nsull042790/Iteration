@@ -140,6 +140,14 @@ class Game {
         this.highestKillStreak = 0;
         this.runStartTime = null;
 
+        // Combo system: chained kills inside the window build a
+        // multiplier on cycles and blade XP; taking damage breaks it
+        this.comboCount = 0;
+        this.comboTimer = 0;
+        this.comboWindow = 240; // 4 seconds between kills to keep the chain
+        this.comboBest = 0;
+        this.comboMilestone = 0;
+
         // God mode for testing
         this.godMode = false;
 
@@ -316,7 +324,23 @@ class Game {
                 y = Utils.random(480, 520);
             }
 
-            const enemy = new Enemy(x, y);
+            // Pick archetype: drones are the backbone, specialists mix in
+            // as the simulation adapts (wasp lv3+, arc lv4+, aegis lv6+)
+            const unlocked = [];
+            if (this.currentLevel >= 3) unlocked.push('wasp');
+            if (this.currentLevel >= 4) unlocked.push('arc');
+            if (this.currentLevel >= 6) unlocked.push('aegis');
+            let archetype = 'drone';
+            if (unlocked.length > 0 && Math.random() < 0.45) {
+                archetype = unlocked[Utils.randomInt(0, unlocked.length - 1)];
+            }
+
+            // Wasps spawn airborne
+            if (archetype === 'wasp') {
+                y = Utils.random(180, 380);
+            }
+
+            const enemy = new Enemy(x, y, archetype);
 
             // Scale enemy stats with level
             const levelMultiplier = 1 + (this.currentLevel - 1) * 0.2;
@@ -324,6 +348,10 @@ class Game {
             enemy.maxHealth = enemy.health;
             enemy.damage = Math.floor(enemy.damage * levelMultiplier);
             enemy.speed = enemy.speed * (1 + (this.currentLevel - 1) * 0.1);
+            if (enemy.shieldMax > 0) {
+                enemy.shieldHealth = Math.floor(enemy.shieldHealth * levelMultiplier);
+                enemy.shieldMax = enemy.shieldHealth;
+            }
 
             this.enemies.push(enemy);
         }
@@ -3650,6 +3678,62 @@ class Game {
     }
 
     /**
+     * Register a kill for the combo chain
+     */
+    registerComboKill() {
+        this.comboCount++;
+        this.comboTimer = this.comboWindow;
+        this.comboBest = Math.max(this.comboBest, this.comboCount);
+
+        // OVERSEER milestones: every 5 combo, AXIOM acknowledges you
+        if (this.comboCount % 5 === 0 && this.comboCount > this.comboMilestone) {
+            this.comboMilestone = this.comboCount;
+            const reward = this.comboCount * 10;
+            this.cycles.gain(reward);
+            this.hud.addMessage(`◉ OVERSEER ACKNOWLEDGES: ${this.comboCount}x COMBO +${reward} CYCLES`, 'warning');
+            if (this.renderer3d) {
+                this.renderer3d.overseerEvent('approval');
+            }
+            this.audio.playLevelUp?.();
+        }
+    }
+
+    /**
+     * Current combo reward multiplier (up to 2x at 50 combo)
+     */
+    getComboMultiplier() {
+        return 1 + Math.min(this.comboCount, 50) * 0.02;
+    }
+
+    /**
+     * Break the combo (player took damage)
+     */
+    breakCombo() {
+        if (this.comboCount >= 5) {
+            this.hud.addMessage(`COMBO BROKEN [${this.comboCount}x]`, 'warning');
+            if (this.renderer3d) {
+                this.renderer3d.overseerEvent('disappointment');
+            }
+        }
+        this.comboCount = 0;
+        this.comboTimer = 0;
+        this.comboMilestone = 0;
+    }
+
+    /**
+     * Tick the combo window down; the chain fades if no kill lands in time
+     */
+    updateCombo() {
+        if (this.comboTimer > 0) {
+            this.comboTimer--;
+            if (this.comboTimer === 0) {
+                this.comboCount = 0;
+                this.comboMilestone = 0;
+            }
+        }
+    }
+
+    /**
      * Main game loop
      */
     loop(currentTime) {
@@ -3844,15 +3928,47 @@ class Game {
             if (enemy.active) {
                 enemy.update(deltaTime, this.player);
 
-                // Apply gravity to enemies
-                this.physics.applyGravity(enemy);
+                // Flying enemies ignore gravity and platforms; just keep
+                // them inside the room
+                if (enemy.flying) {
+                    if (this.currentRoom) {
+                        enemy.x = Utils.clamp(enemy.x, 0, this.currentRoom.width - enemy.width);
+                        enemy.y = Utils.clamp(enemy.y, 40, this.currentRoom.height - 80);
+                    }
+                } else {
+                    // Apply gravity to enemies
+                    this.physics.applyGravity(enemy);
 
-                // Resolve enemy collisions with platforms
-                if (this.currentRoom) {
-                    this.physics.resolveCollisions(
-                        enemy,
-                        this.currentRoom.getActivePlatforms()
-                    );
+                    // Resolve enemy collisions with platforms
+                    if (this.currentRoom) {
+                        this.physics.resolveCollisions(
+                            enemy,
+                            this.currentRoom.getActivePlatforms()
+                        );
+                    }
+                }
+
+                // Enemy plasma bolts hitting the player (arc archetype)
+                for (const bolt of enemy.projectiles) {
+                    if (!bolt.active || !this.player.active) continue;
+                    const boltBounds = { x: bolt.x - bolt.size, y: bolt.y - bolt.size, width: bolt.size * 2, height: bolt.size * 2 };
+                    if (Utils.rectsOverlap(boltBounds, this.player.getBounds())) {
+                        bolt.active = false;
+                        const actualDamage = this.calculateDamageTaken(bolt.damage);
+                        if (actualDamage > 0 && this.player.takeDamage(actualDamage)) {
+                            this.audio.playPlayerHurt();
+                            this.triggerHitStop(4);
+                            this.audio.onPlayerDamage();
+                            this.cycles.applyDamagePenalty();
+                            this.camera.addShake(4, 8);
+                            this.renderer.flash(GAME_CONFIG.COLORS.MAGENTA, 0.3);
+                            this.breakCombo();
+                            this.currentKillStreak = 0;
+                            if (this.player.health <= 0) {
+                                this.handlePlayerDeath('enemy');
+                            }
+                        }
+                    }
                 }
 
                 // Check if enemy hits player
@@ -3869,6 +3985,7 @@ class Game {
                         this.camera.addShake(5, 10);
                         this.renderer.flash(GAME_CONFIG.COLORS.MAGENTA, 0.3);
                         this.currentKillStreak = 0; // Reset kill streak on damage
+                        this.breakCombo();
                         // Check for death immediately after taking damage
                         if (this.player.health <= 0) {
                             this.handlePlayerDeath('enemy');
@@ -3917,6 +4034,7 @@ class Game {
                     this.renderer.flash(GAME_CONFIG.COLORS.MAGENTA, 0.4);
                     this.damageTakenDuringBoss = true; // Track for damageless unlock
                     this.currentKillStreak = 0; // Reset kill streak on damage
+                        this.breakCombo();
                     // Check for death immediately after taking damage
                     if (this.player.health <= 0) {
                         this.handlePlayerDeath('boss');
@@ -3938,6 +4056,7 @@ class Game {
                             this.camera.addShake(4, 8);
                             this.damageTakenDuringBoss = true; // Track for damageless unlock
                             this.currentKillStreak = 0; // Reset kill streak on damage
+                        this.breakCombo();
                             // Check for death immediately after taking damage
                             if (this.player.health <= 0) {
                                 this.handlePlayerDeath('boss');
@@ -4077,6 +4196,9 @@ class Game {
 
         // Update cycles
         this.cycles.update();
+
+        // Tick the combo window
+        this.updateCombo();
 
         // Update blade evolution
         this.bladeEvolution.update();
@@ -4264,10 +4386,14 @@ class Game {
                         this.spawnTeleportParticles(enemy.x, enemy.y);
                     }
 
-                    // Gain cycles from kill (with upgrade multiplier + meta bonus + character bonus)
+                    // Combo: chain the kill before computing rewards
+                    this.registerComboKill();
+                    const comboMultiplier = this.getComboMultiplier();
+
+                    // Gain cycles from kill (with upgrade multiplier + meta bonus + character bonus + combo)
                     const metaCycleBonus = 1 + (this.player.metaBonuses?.cycleBonus || 0);
                     const charCycleBonus = 1 + (this.player.characterSpecial?.cycleBonus || 0);
-                    const cycleGain = Math.floor(50 * this.upgradeSystem.modifiers.cycleGainMultiplier * metaCycleBonus * charCycleBonus);
+                    const cycleGain = Math.floor(50 * this.upgradeSystem.modifiers.cycleGainMultiplier * metaCycleBonus * charCycleBonus * comboMultiplier);
                     this.cycles.gain(cycleGain);
                     this.killCount++;
                     this.totalKills++;
@@ -4297,6 +4423,7 @@ class Game {
                     }
                     xpMultiplier *= this.tempBuffs.xpMultiplier;
                     xpMultiplier *= (1 + (this.player.metaBonuses?.xpBonus || 0));
+                    xpMultiplier *= comboMultiplier;
                     const xpGain = Math.floor(10 * xpMultiplier);
                     this.addBladeXP(xpGain);
                     this.trackReward('xp', { amount: xpGain });
@@ -5095,7 +5222,10 @@ class Game {
             levelComplete: this.levelComplete,
             showControls: this.showControls,
             ghostCount: this.ghostSystem.getGhostCount(),
-            totalDeaths: this.ghostSystem.getTotalDeaths()
+            totalDeaths: this.ghostSystem.getTotalDeaths(),
+            comboCount: this.comboCount,
+            comboTimer: this.comboTimer,
+            comboWindow: this.comboWindow
         });
 
         // Render active buff indicators
@@ -5263,6 +5393,14 @@ class Game {
 
         this.player.active = false;
         this.state = 'gameover';
+
+        // The Overseer closes its eye on you
+        if (this.renderer3d) {
+            this.renderer3d.overseerEvent('death');
+        }
+        this.comboCount = 0;
+        this.comboTimer = 0;
+        this.comboMilestone = 0;
 
         // Hide touch controls during game over
         if (this.input.touchControls) {
@@ -5455,6 +5593,9 @@ class Game {
         this.totalKills = 0;
         this.currentKillStreak = 0;
         this.highestKillStreak = 0;
+        this.comboCount = 0;
+        this.comboTimer = 0;
+        this.comboMilestone = 0;
 
         // Reset player
         this.player.active = true;
@@ -5534,6 +5675,9 @@ class Game {
         this.totalKills = 0;
         this.currentKillStreak = 0;
         this.highestKillStreak = 0;
+        this.comboCount = 0;
+        this.comboTimer = 0;
+        this.comboMilestone = 0;
 
         // Reset player
         this.player.active = true;

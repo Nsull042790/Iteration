@@ -86,9 +86,276 @@ class Renderer3D {
 
         this.setupLights();
         this.setupParticlePool();
+        this.buildOverseer();
         this.setupPostProcessing();
         this.resize();
         this.setEnabled(this.enabled);
+    }
+
+    /* ============================================================
+       THE OVERSEER
+       AXIOM's manifestation: a colossal mechanical eye that lives in
+       the deep background and literally watches every move you make.
+       It tracks the player, blinks, dilates with your combo, narrows
+       when you disappoint it, turns red for boss fights, and closes
+       in silence when you die.
+       ============================================================ */
+
+    buildOverseer() {
+        const g = new THREE.Group();
+
+        // Sclera: dark armored eyeball
+        const sclera = new THREE.Mesh(
+            new THREE.SphereGeometry(150, 32, 32),
+            new THREE.MeshStandardMaterial({
+                color: this.color('#0a0a14'),
+                roughness: 0.3,
+                metalness: 0.8
+            })
+        );
+        sclera.scale.z = 0.55;
+        g.add(sclera);
+
+        // Iris: emissive disc (the part that judges you)
+        const iris = new THREE.Mesh(
+            new THREE.CircleGeometry(62, 40),
+            new THREE.MeshBasicMaterial({
+                color: this.color('#00f0ff'),
+                transparent: true,
+                opacity: 0.95,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false
+            })
+        );
+        iris.position.z = 86;
+        g.add(iris);
+
+        // Iris ring detail
+        const irisRing = new THREE.Mesh(
+            new THREE.RingGeometry(62, 72, 40),
+            new THREE.MeshBasicMaterial({
+                color: this.color('#ffffff'),
+                transparent: true,
+                opacity: 0.4,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false,
+                side: THREE.DoubleSide
+            })
+        );
+        irisRing.position.z = 86.5;
+        g.add(irisRing);
+
+        // Pupil: the void at the center
+        const pupil = new THREE.Mesh(
+            new THREE.CircleGeometry(26, 32),
+            new THREE.MeshBasicMaterial({ color: 0x000000 })
+        );
+        pupil.position.z = 87;
+        g.add(pupil);
+
+        // Mechanical eyelids: armored shutters above and below
+        const lidMat = new THREE.MeshStandardMaterial({
+            color: this.color('#05070d'),
+            roughness: 0.35,
+            metalness: 0.9
+        });
+        const lidTop = new THREE.Mesh(new THREE.BoxGeometry(310, 130, 26), lidMat);
+        lidTop.position.set(0, 160, 60);
+        g.add(lidTop);
+        const lidBottom = new THREE.Mesh(new THREE.BoxGeometry(310, 130, 26), lidMat.clone());
+        lidBottom.position.set(0, -160, 60);
+        g.add(lidBottom);
+
+        // Thin emissive trim along each shutter edge
+        for (const [lid, edgeY] of [[lidTop, -66], [lidBottom, 66]]) {
+            const trim = new THREE.Mesh(
+                new THREE.BoxGeometry(312, 3, 28),
+                new THREE.MeshBasicMaterial({
+                    color: this.color('#00f0ff'),
+                    transparent: true,
+                    opacity: 0.7
+                })
+            );
+            trim.position.y = edgeY;
+            lid.add(trim);
+        }
+
+        // Orbital ring assemblies, counter-rotating
+        const rings = [];
+        for (let i = 0; i < 3; i++) {
+            const ringMesh = new THREE.Mesh(
+                new THREE.TorusGeometry(210 + i * 46, 3 - i * 0.6, 8, 64),
+                new THREE.MeshBasicMaterial({
+                    color: this.color('#00f0ff'),
+                    transparent: true,
+                    opacity: 0.35 - i * 0.08,
+                    blending: THREE.AdditiveBlending,
+                    depthWrite: false
+                })
+            );
+            ringMesh.userData.speed = (i % 2 === 0 ? 1 : -1) * (0.002 + i * 0.0012);
+            ringMesh.userData.tilt = i * 0.35;
+            rings.push(ringMesh);
+            g.add(ringMesh);
+        }
+
+        // Angular armor plates around the eye
+        const plates = [];
+        for (let i = 0; i < 6; i++) {
+            const plate = new THREE.Mesh(
+                new THREE.BoxGeometry(60, 18, 14),
+                new THREE.MeshStandardMaterial({
+                    color: this.color('#10131f'),
+                    emissive: this.color('#00f0ff'),
+                    emissiveIntensity: 0.3,
+                    roughness: 0.5,
+                    metalness: 0.7
+                })
+            );
+            plate.userData.angle = (i / 6) * Math.PI * 2;
+            plates.push(plate);
+            g.add(plate);
+        }
+
+        g.position.set(640, 120, -1500);
+        g.scale.setScalar(1.45);
+        this.scene.add(g);
+
+        // The Overseer is not subject to the simulation's atmosphere:
+        // its glow cuts through the zone fog
+        g.traverse((node) => {
+            if (node.material) node.material.fog = false;
+        });
+
+        this.overseer = {
+            group: g,
+            sclera, iris, irisRing, pupil,
+            lidTop, lidBottom,
+            rings, plates,
+            baseColor: this.color('#00f0ff'),
+            aperture: 1,            // iris scale (dilation)
+            lidOpen: 1,             // 1 = fully open, 0 = closed
+            blinkTimer: 240,
+            blinking: 0,
+            event: null,
+            eventTimer: 0,
+            lookX: 0,
+            lookY: 0
+        };
+    }
+
+    /**
+     * External hook: notify the Overseer of a judgement-worthy event
+     */
+    overseerEvent(type) {
+        if (!this.overseer) return;
+        this.overseer.event = type;
+        this.overseer.eventTimer =
+            type === 'death' ? 240 :
+            type === 'approval' ? 80 :
+            type === 'disappointment' ? 140 : 60;
+    }
+
+    updateOverseer(game) {
+        const o = this.overseer;
+        if (!o) return;
+
+        // Only manifest inside the simulation proper
+        o.group.visible = !!game.currentRoom;
+        if (!o.group.visible) return;
+
+        const zc = GAME_CONFIG.ZONE_COLORS[game.currentZoneIndex] || GAME_CONFIG.ZONE_COLORS[0];
+        const bossActive = !!(game.boss && game.boss.active);
+
+        // Drift with the camera for parallax, always looming high behind
+        const camX = game.camera.x + this.width / 2;
+        const roomCx = game.currentRoom.width / 2;
+        o.group.position.x += ((camX * 0.7 + roomCx * 0.3) - o.group.position.x) * 0.02;
+        o.group.position.y = 140 + Math.sin(this.time * 0.006) * 18;
+
+        // Track the player: iris and pupil slide toward their position
+        if (game.player) {
+            const dx = (game.player.x + game.player.width / 2) - o.group.position.x;
+            const dy = -(game.player.y + game.player.height / 2) - o.group.position.y;
+            o.lookX += (THREE.MathUtils.clamp(dx * 0.018, -34, 34) - o.lookX) * 0.04;
+            o.lookY += (THREE.MathUtils.clamp(dy * 0.02, -28, 12) - o.lookY) * 0.04;
+        }
+        o.iris.position.x = o.lookX;
+        o.iris.position.y = o.lookY;
+        o.irisRing.position.x = o.lookX;
+        o.irisRing.position.y = o.lookY;
+        o.pupil.position.x = o.lookX * 1.12;
+        o.pupil.position.y = o.lookY * 1.12;
+
+        // Mood: target color and dilation
+        let targetColor = this.color(zc.accent || zc.primary);
+        let targetAperture = 1;
+        let lidTarget = 1;
+
+        if (bossActive) {
+            targetColor = this.color('#ff0044');
+            targetAperture = 1.25;
+        }
+
+        // Event overrides
+        if (o.eventTimer > 0) {
+            o.eventTimer--;
+            switch (o.event) {
+                case 'approval':
+                    targetColor = this.color('#ffd700');
+                    targetAperture = 1.5;
+                    if (o.eventTimer === 70) {
+                        // Ring pulse on acknowledgement
+                        for (const r of o.rings) r.scale.setScalar(1.25);
+                    }
+                    break;
+                case 'disappointment':
+                    targetAperture = 0.45;
+                    targetColor = this.color(zc.secondary || zc.primary).multiplyScalar(0.6);
+                    break;
+                case 'death':
+                    lidTarget = 0.05; // The eye closes on you
+                    targetAperture = 0.3;
+                    break;
+            }
+            if (o.eventTimer === 0) o.event = null;
+        }
+
+        // Blink cycle (mechanical shutter)
+        o.blinkTimer--;
+        if (o.blinkTimer <= 0 && o.blinking === 0 && lidTarget > 0.5) {
+            o.blinking = 24;
+            o.blinkTimer = 240 + Math.floor(Math.random() * 420);
+        }
+        if (o.blinking > 0) {
+            o.blinking--;
+            const phase = o.blinking / 24;
+            lidTarget = Math.abs(phase - 0.5) * 2; // close then open
+        }
+
+        // Apply smoothed state
+        o.aperture += (targetAperture - o.aperture) * 0.06;
+        o.lidOpen += (lidTarget - o.lidOpen) * 0.12;
+        o.iris.scale.setScalar(o.aperture);
+        o.pupil.scale.setScalar(o.aperture * (bossActive ? 0.75 : 1));
+        o.iris.material.color.lerp(targetColor, 0.05);
+        for (const r of o.rings) {
+            r.material.color.lerp(targetColor, 0.04);
+            r.rotation.z += r.userData.speed * (bossActive ? 2.2 : 1);
+            r.rotation.x = Math.sin(this.time * 0.004 + r.userData.tilt) * 0.4;
+            r.scale.lerp(new THREE.Vector3(1, 1, 1), 0.05);
+        }
+        for (let i = 0; i < o.plates.length; i++) {
+            const plate = o.plates[i];
+            const a = plate.userData.angle + this.time * 0.0015;
+            plate.position.set(Math.cos(a) * 195, Math.sin(a) * 195, 30);
+            plate.rotation.z = a;
+            plate.material.emissive.lerp(targetColor, 0.04);
+        }
+
+        // Eyelids slide with lidOpen
+        o.lidTop.position.y = 65 + o.lidOpen * 110;
+        o.lidBottom.position.y = -65 - o.lidOpen * 110;
     }
 
     /* ============================================================
@@ -896,50 +1163,110 @@ class Renderer3D {
     buildEnemyMesh(enemy) {
         const g = new THREE.Group();
         const variant = enemy.colorVariant || { main: '#ff00aa', core: '#ffffff', accent: '#ff71ce' };
+        const coreMat = new THREE.MeshStandardMaterial({
+            color: this.color('#141020'),
+            emissive: this.color(variant.main),
+            emissiveIntensity: 0.55,
+            roughness: 0.4,
+            metalness: 0.6
+        });
+        let core, shell, eye, ring, wings, shield, barrel;
 
-        // Core: rotating octahedron drone body
-        const core = new THREE.Mesh(
-            new THREE.OctahedronGeometry(enemy.width * 0.42),
-            new THREE.MeshStandardMaterial({
-                color: this.color('#141020'),
-                emissive: this.color(variant.main),
-                emissiveIntensity: 0.55,
-                roughness: 0.4,
-                metalness: 0.6
-            })
-        );
-        g.add(core);
+        switch (enemy.type) {
+            case 'wasp': {
+                // Sleek dart with beating wing planes
+                core = new THREE.Mesh(new THREE.ConeGeometry(enemy.width * 0.3, enemy.width * 0.9, 6), coreMat);
+                core.rotation.z = -Math.PI / 2;
+                g.add(core);
+                wings = [];
+                for (const side of [-1, 1]) {
+                    const wing = new THREE.Mesh(
+                        new THREE.PlaneGeometry(enemy.width * 0.7, enemy.width * 0.45),
+                        new THREE.MeshBasicMaterial({
+                            color: this.color(variant.accent),
+                            transparent: true,
+                            opacity: 0.45,
+                            side: THREE.DoubleSide,
+                            blending: THREE.AdditiveBlending,
+                            depthWrite: false
+                        })
+                    );
+                    wing.position.set(0, 4, side * enemy.width * 0.3);
+                    wing.userData.side = side;
+                    wings.push(wing);
+                    g.add(wing);
+                }
+                eye = new THREE.Mesh(new THREE.SphereGeometry(3.5, 8, 8), this.glowMaterial(variant.core, 2.6));
+                eye.position.set(enemy.width * 0.4, 0, 0);
+                g.add(eye);
+                break;
+            }
+            case 'arc': {
+                // Tall sniper crystal with a cannon barrel
+                core = new THREE.Mesh(new THREE.OctahedronGeometry(enemy.width * 0.42), coreMat);
+                core.scale.y = 1.6;
+                g.add(core);
+                barrel = new THREE.Mesh(
+                    new THREE.CylinderGeometry(2.2, 3, enemy.width * 0.9, 8),
+                    this.glowMaterial(variant.accent, 1.2)
+                );
+                barrel.rotation.z = Math.PI / 2;
+                barrel.position.set(enemy.width * 0.45, 4, 0);
+                g.add(barrel);
+                eye = new THREE.Mesh(new THREE.SphereGeometry(4, 10, 10), this.glowMaterial(variant.core, 2.4));
+                eye.position.set(0, enemy.height * 0.25, enemy.width * 0.3);
+                g.add(eye);
+                break;
+            }
+            case 'aegis': {
+                // Heavy icosahedron behind a hex energy shield
+                core = new THREE.Mesh(new THREE.IcosahedronGeometry(enemy.width * 0.42, 0), coreMat);
+                g.add(core);
+                shield = new THREE.Mesh(
+                    new THREE.IcosahedronGeometry(enemy.width * 0.68, 1),
+                    new THREE.MeshBasicMaterial({
+                        color: this.color('#88ddff'),
+                        wireframe: true,
+                        transparent: true,
+                        opacity: 0.6,
+                        blending: THREE.AdditiveBlending,
+                        depthWrite: false
+                    })
+                );
+                g.add(shield);
+                eye = new THREE.Mesh(new THREE.SphereGeometry(5, 10, 10), this.glowMaterial(variant.core, 2.4));
+                eye.position.set(0, 2, enemy.width * 0.36);
+                g.add(eye);
+                break;
+            }
+            default: {
+                // Drone: rotating octahedron with wireframe shell
+                core = new THREE.Mesh(new THREE.OctahedronGeometry(enemy.width * 0.42), coreMat);
+                g.add(core);
+                shell = new THREE.Mesh(
+                    new THREE.OctahedronGeometry(enemy.width * 0.58),
+                    new THREE.MeshBasicMaterial({
+                        color: this.color(variant.main),
+                        wireframe: true,
+                        transparent: true,
+                        opacity: 0.55
+                    })
+                );
+                g.add(shell);
+                eye = new THREE.Mesh(new THREE.SphereGeometry(4.5, 10, 10), this.glowMaterial(variant.core, 2.4));
+                eye.position.set(0, 2, enemy.width * 0.34);
+                g.add(eye);
+                ring = new THREE.Mesh(
+                    new THREE.TorusGeometry(enemy.width * 0.55, 1.4, 8, 24),
+                    this.glowMaterial(variant.accent, 1.2)
+                );
+                ring.rotation.x = Math.PI / 2;
+                ring.position.y = -enemy.height * 0.45;
+                g.add(ring);
+            }
+        }
 
-        // Wireframe shell
-        const shell = new THREE.Mesh(
-            new THREE.OctahedronGeometry(enemy.width * 0.58),
-            new THREE.MeshBasicMaterial({
-                color: this.color(variant.main),
-                wireframe: true,
-                transparent: true,
-                opacity: 0.55
-            })
-        );
-        g.add(shell);
-
-        // Glowing eye
-        const eye = new THREE.Mesh(
-            new THREE.SphereGeometry(4.5, 10, 10),
-            this.glowMaterial(variant.core, 2.4)
-        );
-        eye.position.set(0, 2, enemy.width * 0.34);
-        g.add(eye);
-
-        // Hover ring
-        const ring = new THREE.Mesh(
-            new THREE.TorusGeometry(enemy.width * 0.55, 1.4, 8, 24),
-            this.glowMaterial(variant.accent, 1.2)
-        );
-        ring.rotation.x = Math.PI / 2;
-        ring.position.y = -enemy.height * 0.45;
-        g.add(ring);
-
-        g.userData = { core, shell, eye, ring, variant };
+        g.userData = { core, shell, eye, ring, wings, shield, barrel, variant };
         return g;
     }
 
@@ -960,10 +1287,50 @@ class Renderer3D {
                 -(enemy.y + enemy.height / 2) + Math.sin(enemy.pulsePhase) * 2,
                 0
             );
-            u.core.rotation.y += 0.04;
-            u.core.rotation.x = Math.sin(enemy.pulsePhase * 0.7) * 0.3;
-            u.shell.rotation.y -= 0.02;
-            u.ring.rotation.z += 0.03;
+
+            // Archetype animation
+            if (u.wings) {
+                // Wasp: face travel direction, beat wings, swoop glow
+                mesh.rotation.y = enemy.facingRight ? 0 : Math.PI;
+                const flap = Math.sin(enemy.pulsePhase * 4) * 0.8;
+                for (const wing of u.wings) {
+                    wing.rotation.x = wing.userData.side * (0.5 + flap * 0.5);
+                }
+                u.core.rotation.x += 0.02;
+                if (enemy.isSwooping && this.time % 2 === 0) {
+                    this.spawnBurst(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, u.variant.accent, 1, 2);
+                }
+            } else if (u.barrel) {
+                // Arc: aim toward the player, show charge telegraph
+                mesh.rotation.y = enemy.facingRight ? 0 : Math.PI;
+                u.core.rotation.y += 0.02;
+                const charging = enemy.chargeUpFrames > 0;
+                u.barrel.material.emissiveIntensity = charging
+                    ? 1.2 + (enemy.chargeUpFrames / 35) * 3
+                    : 1.2;
+                if (charging && this.time % 3 === 0) {
+                    const muzzleX = enemy.x + enemy.width / 2 + (enemy.facingRight ? 18 : -18);
+                    this.spawnBurst(muzzleX, enemy.y + enemy.height / 3, u.variant.core, 1, 1.5);
+                }
+            } else if (u.shield) {
+                // Aegis: shield shrinks and fades as it takes hits
+                u.core.rotation.y += 0.015;
+                u.shield.rotation.y -= 0.02;
+                u.shield.rotation.x += 0.008;
+                if (enemy.shieldHealth > 0) {
+                    u.shield.visible = true;
+                    const strength = enemy.shieldHealth / (enemy.shieldMax || 1);
+                    u.shield.material.opacity = 0.25 + strength * 0.5;
+                    u.shield.scale.setScalar(0.92 + strength * 0.12 + Math.sin(this.time * 0.1) * 0.02);
+                } else {
+                    u.shield.visible = false;
+                }
+            } else {
+                u.core.rotation.y += 0.04;
+                u.core.rotation.x = Math.sin(enemy.pulsePhase * 0.7) * 0.3;
+                if (u.shell) u.shell.rotation.y -= 0.02;
+                if (u.ring) u.ring.rotation.z += 0.03;
+            }
 
             // State-driven glow
             let intensity = 0.55;
@@ -1209,7 +1576,6 @@ class Renderer3D {
         this.bossLight.intensity += (targetIntensity - this.bossLight.intensity) * 0.15;
 
         this.syncDangerZones(boss);
-        this.syncBossProjectiles(boss);
     }
 
     clearDangerZones() {
@@ -1246,8 +1612,23 @@ class Renderer3D {
         }
     }
 
-    syncBossProjectiles(boss) {
-        this.syncProjectileList(boss.projectiles || [], '#ff3366');
+    /**
+     * Gather every hostile projectile (boss + arc enemies) into one pool
+     */
+    syncAllProjectiles(game) {
+        const list = [];
+        if (game.boss && game.boss.active && game.boss.projectiles) {
+            for (const p of game.boss.projectiles) {
+                if (p.active !== false && p.life > 0) list.push(p);
+            }
+        }
+        for (const enemy of game.enemies) {
+            if (!enemy.projectiles) continue;
+            for (const p of enemy.projectiles) {
+                if (p.active && p.life > 0) list.push(p);
+            }
+        }
+        this.syncProjectileList(list, '#ff3366');
     }
 
     syncProjectileList(list, fallbackColor) {
@@ -1269,6 +1650,9 @@ class Renderer3D {
                 const s = p.size || 8;
                 mesh.scale.setScalar(s);
                 mesh.rotation.y += 0.1;
+                if (p.color) {
+                    mesh.material.emissive = this.color(p.color);
+                }
             } else {
                 mesh.visible = false;
             }
@@ -1650,11 +2034,13 @@ class Renderer3D {
         this.syncPlayer(game);
         this.syncEnemies(game);
         this.syncBoss(game);
+        this.syncAllProjectiles(game);
         this.syncDrops(game);
         this.syncInteractables(game);
         this.syncBladeWaves(game);
         this.updateTrails();
         this.updateParticles(game);
+        this.updateOverseer(game);
         this.syncCamera(game);
 
         // Drive the GPU glitch from the 2D renderer's glitch state so

@@ -32,7 +32,7 @@
             </div>
             <div class="splash-content">
                 <div class="splash-glitch" data-text="ITERATION">ITERATION</div>
-                <div class="splash-subtitle">SIMULATION v3.2.1</div>
+                <div class="splash-subtitle">SIMULATION v4.0.0</div>
                 <button id="splash-enter-btn" class="splash-btn">
                     <span class="splash-btn-text">[ ENTER THE AXIOM ]</span>
                 </button>
@@ -81,7 +81,7 @@
                             <div class="logo-glitch-wrapper">
                                 <div class="logo-text" data-text="ITERATION">ITERATION</div>
                             </div>
-                            <div class="logo-version">v3.2.1</div>
+                            <div class="logo-version">v4.0.0</div>
                             <div class="logo-subtitle glitch-text">// BREAK THE LOOP</div>
                         </div>
                         <div class="logo-decoration">
@@ -106,7 +106,7 @@
                         <div class="footer-item">STATUS: <span class="status-ready">▶ READY</span></div>
                         <div class="footer-item">GHOSTS: <span class="cyan">0</span></div>
                         <div class="footer-item">BLADE: <span class="magenta">◆ STANDARD</span></div>
-                        <div class="footer-item version">v3.2.1</div>
+                        <div class="footer-item version">v4.0.0</div>
                     </div>
                 </div>
             </div>
@@ -498,7 +498,8 @@
                                 <span class="key-inline">A/D</span> Move | <span class="key-inline">SPACE</span> Jump |
                                 <span class="key-inline">CLICK</span> Attack | <span class="key-inline">SHIFT</span> Dash<br>
                                 <span class="key-inline">1-3</span> Switch Weapons | <span class="key-inline">ESC</span> Pause |
-                                <span class="key-inline">H</span> Help
+                                <span class="key-inline">H</span> Help | <span class="key-inline">V</span> 2D/3D Renderer<br>
+                                <span class="magenta">WALL JUMP:</span> hold toward a wall while falling to slide, then press <span class="key-inline">SPACE</span> to kick off
                             </div>
                         </div>
                     </div>
@@ -1044,8 +1045,18 @@
     <script src="src/systems/ghosts.js?v=20260108a"></script>
     <script src="src/systems/cutscene.js?v=20260108a"></script>
     <script src="src/ui/hud.js?v=20260108a"></script>
-    <script src="src/core/renderer.js?v=20260107a"></script>
-    <script src="src/core/game.js?v=20260108a"></script>
-    <script src="main.js?v=20260107a"></script>
+    <script src="src/core/renderer.js?v=20260611a"></script>
+    <!-- Three.js (vendored r147) + post-processing for the 3D renderer -->
+    <script src="vendor/three/three.min.js"></script>
+    <script src="vendor/three/CopyShader.js"></script>
+    <script src="vendor/three/LuminosityHighPassShader.js"></script>
+    <script src="vendor/three/EffectComposer.js"></script>
+    <script src="vendor/three/MaskPass.js"></script>
+    <script src="vendor/three/RenderPass.js"></script>
+    <script src="vendor/three/ShaderPass.js"></script>
+    <script src="vendor/three/UnrealBloomPass.js"></script>
+    <script src="src/core/renderer3d.js?v=20260611a"></script>
+    <script src="src/core/game.js?v=20260611a"></script>
+    <script src="main.js?v=20260611a"></script>
 </body>
 </html>

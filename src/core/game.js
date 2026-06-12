@@ -9,6 +9,29 @@ class Game {
 
         // Core systems
         this.renderer = new Renderer(canvas);
+
+        // 3D world renderer (WebGL behind the 2D HUD overlay).
+        // Falls back to the classic 2D renderer if WebGL is unavailable.
+        this.renderer3d = null;
+        try {
+            if (typeof Renderer3D !== 'undefined' && Renderer3D.isSupported()) {
+                this.renderer3d = new Renderer3D(canvas);
+            }
+        } catch (e) {
+            console.warn('3D renderer unavailable, using 2D renderer:', e);
+            this.renderer3d = null;
+        }
+
+        // Toggle render mode with V
+        window.addEventListener('keydown', (e) => {
+            if (e.code === 'KeyV' && this.renderer3d && this.state === 'playing') {
+                this.renderer3d.setEnabled(!this.renderer3d.enabled);
+                this.hud.addMessage(
+                    this.renderer3d.enabled ? 'RENDER MODE: 3D' : 'RENDER MODE: CLASSIC 2D',
+                    'info'
+                );
+            }
+        });
         this.input = new InputHandler();
         this.input.initTouchControls(); // Initialize mobile touch controls
         // Hide touch controls initially - only show during gameplay
@@ -39,6 +62,9 @@ class Game {
         this.fps = 0;
         this.fpsCounter = 0;
         this.fpsTime = 0;
+
+        // Hit-stop (impact freeze frames)
+        this.hitStopFrames = 0;
 
         // Game objects
         this.player = null;
@@ -3522,6 +3548,9 @@ class Game {
     handleResize() {
         this.renderer.resize();
         this.hud.resize(this.canvas.width, this.canvas.height);
+        if (this.renderer3d) {
+            this.renderer3d.resize();
+        }
     }
 
     /**
@@ -3610,6 +3639,14 @@ class Game {
             this.isPaused = false;
             this.showingFAQ = false;
         }
+    }
+
+    /**
+     * Trigger hit-stop: freeze the simulation for a few frames on big
+     * impacts (kills, crits, taking damage) while rendering continues
+     */
+    triggerHitStop(frames) {
+        this.hitStopFrames = Math.max(this.hitStopFrames, frames);
     }
 
     /**
@@ -3706,6 +3743,13 @@ class Game {
 
         // Don't update game logic if paused or not playing
         if (this.isPaused || this.state !== 'playing') {
+            return;
+        }
+
+        // Hit-stop: hold the simulation for a few frames after big impacts
+        // while rendering continues. Sells the weight of every hit.
+        if (this.hitStopFrames > 0) {
+            this.hitStopFrames--;
             return;
         }
 
@@ -3816,6 +3860,7 @@ class Game {
                     const actualDamage = this.calculateDamageTaken(enemy.damage);
                     if (actualDamage > 0 && this.player.takeDamage(actualDamage)) {
                         this.audio.playPlayerHurt();
+                    this.triggerHitStop(5);
                         this.audio.onPlayerDamage();
                         if (this.voiceSystem) {
                             this.voiceSystem.onPlayerDamage();
@@ -3866,6 +3911,7 @@ class Game {
                 const actualDamage = this.calculateDamageTaken(this.boss.damage);
                 if (actualDamage > 0 && this.player.takeDamage(actualDamage)) {
                     this.audio.playPlayerHurt();
+                    this.triggerHitStop(5);
                     this.cycles.applyDamagePenalty();
                     this.camera.addShake(8, 15);
                     this.renderer.flash(GAME_CONFIG.COLORS.MAGENTA, 0.4);
@@ -3887,6 +3933,7 @@ class Game {
                         const actualDamage = this.calculateDamageTaken(this.boss.damage * 0.5);
                         if (actualDamage > 0 && this.player.takeDamage(actualDamage)) {
                             this.audio.playPlayerHurt();
+                    this.triggerHitStop(5);
                             this.cycles.applyDamagePenalty();
                             this.camera.addShake(4, 8);
                             this.damageTakenDuringBoss = true; // Track for damageless unlock
@@ -4144,6 +4191,9 @@ class Game {
                 totalDamageDealt += damage;
                 hitEnemies.push({ enemy, x: enemy.x, y: enemy.y, killed });
 
+                // Hit-stop: brief freeze frames sell the impact
+                this.triggerHitStop(killed ? 5 : (isCrit ? 4 : 2));
+
                 // Play hit sound
                 this.audio.playHit(isCrit);
 
@@ -4298,6 +4348,9 @@ class Game {
                 // Hit the boss with blade damage + upgrade multipliers
                 const bossDamage = Math.floor(20 * bladeMultiplier * upgradeMultiplier);
                 const killed = this.boss.takeDamage(bossDamage);
+
+                // Hit-stop: long freeze on a boss kill, tap on a normal hit
+                this.triggerHitStop(killed ? 18 : 2);
 
                 // Weapon ability: Razor bleed on boss (DoT that inherits crit!)
                 const bossWeaponTier = this.weaponSystem.getActiveTierData();
@@ -4735,11 +4788,11 @@ class Game {
     /**
      * Render blade ability effects
      */
-    renderBladeEffects(ctx) {
+    renderBladeEffects(ctx, skipWaves = false) {
         const camPos = this.camera.getFinalPosition();
 
-        // Render blade waves
-        if (this.bladeWaves) {
+        // Render blade waves (skipped when the 3D renderer draws them)
+        if (this.bladeWaves && !skipWaves) {
             for (const wave of this.bladeWaves) {
                 if (!wave.active) continue;
                 const sx = wave.x - camPos.x;
@@ -4960,40 +5013,65 @@ class Game {
     render() {
         const ctx = this.renderer.getContext();
 
+        // 3D mode: the WebGL canvas renders the world; this canvas becomes
+        // a transparent overlay for the HUD and screen-space effects
+        const use3D = !!(this.renderer3d && this.renderer3d.enabled);
+        this.renderer.overlayMode = use3D;
+
         // Begin frame
         this.renderer.beginFrame();
 
-        // Render room
-        if (this.currentRoom) {
-            this.currentRoom.render(ctx, this.camera);
+        if (use3D) {
+            // Render the full 3D world (room, entities, boss, drops, effects)
+            this.renderer3d.render(this);
+
+            // Interaction prompts still draw on the overlay canvas
+            for (const interactable of this.interactables) {
+                if (interactable.active && !interactable.used && !interactable.autoCollect &&
+                    (interactable.playerNearby || interactable.mouseHover)) {
+                    const screenPos = this.camera.worldToScreen(interactable.x, interactable.y);
+                    ctx.save();
+                    interactable.renderPrompt(ctx, screenPos, interactable.mouseHover);
+                    ctx.restore();
+                }
+            }
+        } else {
+            // Classic 2D world rendering
+            // Render room
+            if (this.currentRoom) {
+                this.currentRoom.render(ctx, this.camera);
+            }
+
+            // Render interactables
+            for (const interactable of this.interactables) {
+                interactable.render(ctx, this.camera);
+            }
+
+            // Render enemies
+            for (const enemy of this.enemies) {
+                enemy.render(ctx, this.camera);
+            }
+
+            // Render boss
+            if (this.boss) {
+                this.boss.render(ctx, this.camera);
+            }
         }
 
-        // Render interactables
-        for (const interactable of this.interactables) {
-            interactable.render(ctx, this.camera);
+        // Render blade ability effects (explosions, lightning, lasers;
+        // waves are drawn by the 3D renderer in 3D mode)
+        this.renderBladeEffects(ctx, use3D);
+
+        // Render drops (3D mode draws them as meshes)
+        if (!use3D) {
+            this.dropSystem.render(ctx, this.camera);
         }
 
-        // Render enemies
-        for (const enemy of this.enemies) {
-            enemy.render(ctx, this.camera);
-        }
-
-        // Render boss
-        if (this.boss) {
-            this.boss.render(ctx, this.camera);
-        }
-
-        // Render blade ability effects (waves, explosions, lightning)
-        this.renderBladeEffects(ctx);
-
-        // Render drops
-        this.dropSystem.render(ctx, this.camera);
-
-        // Render ghosts
+        // Render ghosts (screen-space holograms work in both modes)
         this.ghostSystem.render(ctx, this.camera);
 
-        // Render player
-        if (this.player) {
+        // Render player (2D mode only; 3D mode has the full character rig)
+        if (this.player && !use3D) {
             this.player.render(ctx, this.camera);
         }
 

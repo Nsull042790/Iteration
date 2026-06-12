@@ -14,6 +14,10 @@ class Renderer {
         this.offsetX = 0;
         this.offsetY = 0;
 
+        // Overlay mode: when the 3D renderer draws the world, this canvas
+        // becomes a transparent HUD/effects layer on top of it
+        this.overlayMode = false;
+
         // Effect intensities (adjustable)
         this.effects = {
             scanlines: true,
@@ -195,6 +199,11 @@ class Renderer {
      */
     beginFrame() {
         this.time++;
+        if (this.overlayMode) {
+            // Transparent overlay: the WebGL canvas below renders the world
+            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+            return;
+        }
         this.clear();
         this.renderBackgroundLayers();
     }
@@ -365,6 +374,20 @@ class Renderer {
      * End frame rendering with post-processing effects
      */
     endFrame() {
+        if (this.overlayMode) {
+            // GPU post-processing handles scanlines/bloom/grain/glitch.
+            // Keep only the screen-space text/flash effects on the overlay.
+            this.renderBossKanjiRain();
+            this.renderFlash();
+            this.renderScreenBorder();
+            // Tick down glitch so the GPU glitch (driven by these fields) ends
+            if (this.glitchTimer > 0) {
+                this.glitchTimer--;
+                if (this.glitchTimer === 0) this.glitchIntensity = 0;
+            }
+            return;
+        }
+
         // Render boss kanji rain effect (on top of game, before post-processing)
         this.renderBossKanjiRain();
 

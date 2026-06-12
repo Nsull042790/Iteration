@@ -26,6 +26,9 @@ class Physics {
         // Reset grounded state
         entity.isGrounded = false;
 
+        // Wall contact: 0 = none, 1 = wall on right, -1 = wall on left
+        entity.wallContact = 0;
+
         // Get entity bounds
         const bounds = entity.getBounds();
 
@@ -52,6 +55,8 @@ class Physics {
                     // Horizontal collision
                     entity.x += minOverlapX;
                     entity.velocityX = 0;
+                    // Pushed left means the wall is on the right, and vice versa
+                    entity.wallContact = minOverlapX < 0 ? 1 : -1;
                 } else {
                     // Vertical collision
                     entity.y += minOverlapY;

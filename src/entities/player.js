@@ -17,6 +17,14 @@ class Player extends Entity {
         this.jumpHeld = false;
         this.variableJumpMultiplier = 0.5; // For variable jump height
 
+        // Wall mechanics
+        this.wallContact = 0;        // Set by physics: 1 = wall right, -1 = wall left
+        this.isWallSliding = false;
+        this.wallSlideSpeed = 2.2;   // Max fall speed while sliding
+        this.wallCoyoteTime = 0;     // Grace frames to wall jump after leaving a wall
+        this.wallCoyoteDir = 0;      // Which side the last wall was on
+        this.wallJumpPush = 1.55;    // Horizontal kick strength (x speed)
+
         // Combat
         this.health = GAME_CONFIG.PLAYER.MAX_HEALTH;
         this.maxHealth = GAME_CONFIG.PLAYER.MAX_HEALTH;
@@ -184,6 +192,20 @@ class Player extends Entity {
             this.jumpHeld = true;
             this.coyoteTime = 0;
             input.consumeJumpBuffer();
+        } else if (wantsJump && !this.isGrounded && this.wallCoyoteTime > 0) {
+            // Wall jump: kick up and away from the wall
+            const jumpMult = this.jumpMultiplier || 1.0;
+            this.velocityY = this.jumpForce * 0.95 * jumpMult;
+            this.velocityX = -this.wallCoyoteDir * this.speed * this.wallJumpPush;
+            this.facingRight = this.wallCoyoteDir < 0;
+            this.isJumping = true;
+            this.jumpHeld = true;
+            this.isWallSliding = false;
+            this.wallCoyoteTime = 0;
+            input.consumeJumpBuffer();
+            if (window.game && window.game.audio) {
+                window.game.audio.playJump?.();
+            }
         }
 
         // Variable jump height (release early = lower jump)
@@ -195,6 +217,38 @@ class Player extends Entity {
         // Reset jumping state when landing
         if (this.isGrounded) {
             this.isJumping = false;
+        }
+    }
+
+    /**
+     * Wall slide: slows the fall while pressing into a wall, and keeps a
+     * short grace window (wall coyote time) for wall jumps after letting go
+     */
+    updateWallSlide(input) {
+        const horizontal = input.getHorizontal();
+        const pressingIntoWall = this.wallContact !== 0 &&
+            Math.sign(horizontal) === this.wallContact;
+
+        this.isWallSliding = !this.isGrounded &&
+            this.velocityY > 0 &&
+            pressingIntoWall &&
+            !this.isDashing;
+
+        if (this.isWallSliding) {
+            this.velocityY = Math.min(this.velocityY, this.wallSlideSpeed);
+            // Face away from the wall (ready to jump off it)
+            this.facingRight = this.wallContact < 0;
+        }
+
+        // Refresh / decay the wall jump grace window
+        if (!this.isGrounded && this.wallContact !== 0) {
+            this.wallCoyoteTime = 8;
+            this.wallCoyoteDir = this.wallContact;
+        } else if (this.wallCoyoteTime > 0) {
+            this.wallCoyoteTime--;
+        }
+        if (this.isGrounded) {
+            this.wallCoyoteTime = 0;
         }
     }
 
@@ -272,6 +326,9 @@ class Player extends Entity {
 
         // Handle input
         this.handleInput(input);
+
+        // Wall slide: airborne, falling, holding into a wall
+        this.updateWallSlide(input);
 
         // Update dash
         this.updateDash();
@@ -353,6 +410,8 @@ class Player extends Entity {
             this.state = 'attack';
         } else if (this.isCharging) {
             this.state = 'charge';
+        } else if (this.isWallSliding) {
+            this.state = 'wallslide';
         } else if (!this.isGrounded) {
             this.state = this.velocityY < 0 ? 'jump' : 'fall';
         } else if (Math.abs(this.velocityX) > 0.5) {

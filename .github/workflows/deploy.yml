@@ -1,0 +1,47 @@
+# Auto-deploy the ITERATION game to GitHub Pages on every push to main.
+# Uses the official GitHub Pages Actions pipeline (no "deploy from branch"),
+# so the live site always reflects the latest commit on main.
+name: Deploy ITERATION to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+# Permissions the GITHUB_TOKEN needs to publish to Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Only one deploy at a time; newest push wins
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure GitHub Pages
+        # enablement:true switches the Pages source to "GitHub Actions"
+        # automatically on the first run, so no manual settings toggle is needed.
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - name: Upload site artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          # The game is a static site served from the repo root
+          path: '.'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

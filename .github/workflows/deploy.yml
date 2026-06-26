@@ -5,7 +5,13 @@ name: Deploy ITERATION to GitHub Pages
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
+      # Transitional: lets the first Actions deploy run from the current
+      # default branch (which the github-pages environment already permits),
+      # so configure-pages can switch Pages into "GitHub Actions" mode.
+      # Removed once main is the sole branch.
+      - claude/build-iteration-game-012t1HSa5ktYPNK6Fu4aEvda
   workflow_dispatch: {}
 
 # Permissions the GITHUB_TOKEN needs to publish to Pages

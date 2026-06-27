@@ -1591,6 +1591,58 @@ body {
     cursor: default;
 }
 
+/* Affordable upgrades stand out and gently pulse so it's obvious you can buy */
+.meta-upgrade-card {
+    position: relative;
+}
+
+.meta-upgrade-card.affordable {
+    border-color: #00ff88;
+    box-shadow: 0 0 12px rgba(0, 255, 136, 0.35), inset 0 0 12px rgba(0, 255, 136, 0.08);
+    animation: upgrade-pulse 1.8s ease-in-out infinite;
+}
+
+.meta-upgrade-card.affordable:hover {
+    background: rgba(0, 255, 136, 0.12);
+    border-color: #00ff88;
+}
+
+@keyframes upgrade-pulse {
+    0%, 100% { box-shadow: 0 0 10px rgba(0, 255, 136, 0.3), inset 0 0 10px rgba(0, 255, 136, 0.06); }
+    50%      { box-shadow: 0 0 18px rgba(0, 255, 136, 0.55), inset 0 0 14px rgba(0, 255, 136, 0.12); }
+}
+
+.meta-upgrade-badge {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    font-size: 9px;
+    font-weight: bold;
+    letter-spacing: 1px;
+    color: #001a0d;
+    background: #00ff88;
+    padding: 2px 6px;
+    border-radius: 2px;
+    box-shadow: 0 0 8px rgba(0, 255, 136, 0.6);
+}
+
+/* Notification dot on the PROGRESSION / UPGRADES menu when a buy is available */
+.notify-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    margin-left: 6px;
+    border-radius: 50%;
+    background: #00ff88;
+    box-shadow: 0 0 8px rgba(0, 255, 136, 0.9);
+    vertical-align: middle;
+    animation: upgrade-pulse 1.4s ease-in-out infinite;
+}
+
+.notify-dot.hidden {
+    display: none;
+}
+
 .meta-upgrade-name {
     font-size: 13px;
     color: #00f0ff;

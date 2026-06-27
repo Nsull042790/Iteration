@@ -114,6 +114,12 @@ class HUD {
             this.renderCombo(ctx, gameState);
         }
 
+        // Dash readiness + render-mode indicators
+        this.renderDashIndicator(ctx, gameState.player);
+        if (gameState.renderMode) {
+            this.renderModeTag(ctx, gameState.renderMode);
+        }
+
         // Render messages (center)
         this.renderMessages(ctx);
 
@@ -122,6 +128,59 @@ class HUD {
             this.renderControlsHint(ctx);
         }
 
+        ctx.restore();
+    }
+
+    /**
+     * Dash availability indicator with a cooldown bar and key hint.
+     * Cyan + glowing when ready, dimmed with a refilling bar on cooldown.
+     */
+    renderDashIndicator(ctx, player) {
+        if (!player) return;
+        const ready = (player.dashCooldown || 0) <= 0;
+        const x = 24;
+        const y = this.height - 104;
+        const barW = 60;
+        const color = ready ? '#00f0ff' : 'rgba(120,140,160,0.75)';
+
+        ctx.save();
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'alphabetic';
+        ctx.font = 'bold 13px "Share Tech Mono", monospace';
+        ctx.fillStyle = color;
+        if (ready) {
+            ctx.shadowColor = '#00f0ff';
+            ctx.shadowBlur = 8;
+        }
+        ctx.fillText('⟫ DASH', x, y);
+        ctx.shadowBlur = 0;
+
+        // Cooldown bar (full when ready)
+        const max = player.dashCooldownMax || 45;
+        const ratio = ready ? 1 : 1 - (player.dashCooldown / max);
+        ctx.fillStyle = 'rgba(0,0,0,0.5)';
+        ctx.fillRect(x, y + 6, barW, 4);
+        ctx.fillStyle = color;
+        ctx.fillRect(x, y + 6, barW * ratio, 4);
+
+        // Key hint
+        ctx.fillStyle = 'rgba(200,220,240,0.55)';
+        ctx.font = '10px "Share Tech Mono", monospace';
+        ctx.fillText('[SHIFT]', x + barW + 8, y);
+        ctx.restore();
+    }
+
+    /**
+     * Small corner tag showing the active render mode (3D / classic 2D)
+     * so the V toggle is never a mystery.
+     */
+    renderModeTag(ctx, mode) {
+        ctx.save();
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'alphabetic';
+        ctx.font = '10px "Share Tech Mono", monospace';
+        ctx.fillStyle = mode === '3D' ? 'rgba(0,240,255,0.55)' : 'rgba(255,170,0,0.65)';
+        ctx.fillText(`RENDER ${mode}  [V]`, this.width - 16, this.height - 14);
         ctx.restore();
     }
 

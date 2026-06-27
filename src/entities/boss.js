@@ -866,6 +866,8 @@ class Boss extends Entity {
         if (existing) {
             existing.duration = Math.max(existing.duration, duration);
             existing.damage = Math.max(existing.damage, damage);
+            existing.baseDamage = Math.max(existing.baseDamage || existing.damage, damage);
+            existing.ticks = 0; // a fresh hit restores full DoT potency
             existing.isCrit = existing.isCrit || isCrit;
             return;
         }
@@ -873,6 +875,8 @@ class Boss extends Entity {
         this.statusEffects.push({
             type: type,
             damage: damage,
+            baseDamage: damage,
+            ticks: 0,          // ticks since the last refreshing hit
             duration: duration,
             maxDuration: duration,
             tickRate: 30, // Damage every 30 frames
@@ -897,8 +901,12 @@ class Boss extends Entity {
             if (effect.tickTimer >= effect.tickRate) {
                 effect.tickTimer = 0;
 
-                // Calculate tick damage (crit applies to DoT ticks!)
-                let tickDamage = effect.damage;
+                // Effectiveness decays the longer the DoT runs without a fresh
+                // hit (−12% per tick, floored at 30%). Landing a new hit resets
+                // effect.ticks (see applyStatusEffect), restoring full potency.
+                const decay = Math.max(0.3, 1 - (effect.ticks || 0) * 0.12);
+                effect.ticks = (effect.ticks || 0) + 1;
+                let tickDamage = Math.max(1, Math.floor((effect.baseDamage || effect.damage) * decay));
                 if (effect.isCrit) {
                     tickDamage = Math.floor(tickDamage * 1.5);
                 }

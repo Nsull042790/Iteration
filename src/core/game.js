@@ -2109,6 +2109,38 @@ class Game {
     /**
      * Show title screen
      */
+    /**
+     * Returns true if the player can currently afford at least one
+     * non-maxed meta upgrade with their Data Cores.
+     */
+    hasAffordableMetaUpgrade() {
+        const cores = this.metaProgression.dataCores;
+        return this.metaProgression.upgrades.some(u => {
+            const lvl = this.metaProgression.getUpgradeLevel(u.id);
+            if (lvl >= u.maxLevel) return false;
+            return cores >= u.cost[lvl];
+        });
+    }
+
+    /**
+     * Refresh the title-screen Data Cores / deaths / ghosts counters and the
+     * "upgrade available" notification dots on the PROGRESSION menu.
+     */
+    updateTitleProgression() {
+        const coresEl = document.getElementById('title-cores');
+        if (coresEl) coresEl.textContent = this.metaProgression.dataCores;
+        const deathsEl = document.getElementById('title-deaths');
+        if (deathsEl) deathsEl.textContent = this.ghostSystem.getTotalDeaths();
+        const ghostsEl = document.getElementById('title-ghosts');
+        if (ghostsEl) ghostsEl.textContent = this.ghostSystem.getGhostCount();
+
+        const canUpgrade = this.hasAffordableMetaUpgrade();
+        const upgDot = document.getElementById('upgrades-dot');
+        const progDot = document.getElementById('progression-dot');
+        if (upgDot) upgDot.classList.toggle('hidden', !canUpgrade);
+        if (progDot) progDot.classList.toggle('hidden', !canUpgrade);
+    }
+
     showTitleScreen() {
         this.state = 'title';
 
@@ -2126,6 +2158,9 @@ class Game {
         const levelselectBtn = document.getElementById('levelselect-btn');
 
         titleScreen.classList.remove('hidden');
+
+        // Update live counters + "upgrade available" indicators
+        this.updateTitleProgression();
 
         // Update god mode button appearance
         this.updateGodModeButton(godmodeBtn);
@@ -2775,6 +2810,7 @@ class Game {
                 return `
                     <div class="meta-upgrade-card ${isMaxed ? 'maxed' : ''} ${canAfford && !isMaxed ? 'affordable' : ''}"
                          data-upgrade="${upgrade.id}">
+                        ${canAfford && !isMaxed ? '<div class="meta-upgrade-badge">▲ UPGRADE</div>' : ''}
                         <div class="meta-upgrade-name">${upgrade.name}</div>
                         <div class="meta-upgrade-level">Level ${currentLevel}/${upgrade.maxLevel}</div>
                         <div class="meta-upgrade-effect">${upgrade.description}</div>
@@ -2801,11 +2837,13 @@ class Game {
 
         closeBtn.onclick = () => {
             modal.classList.add('hidden');
+            this.updateTitleProgression();
         };
 
         const handleEsc = (e) => {
             if (e.code === 'Escape' && !modal.classList.contains('hidden')) {
                 modal.classList.add('hidden');
+                this.updateTitleProgression();
                 window.removeEventListener('keydown', handleEsc);
             }
         };
@@ -4277,8 +4315,11 @@ class Game {
         // Charged attack multiplier
         const chargeMultiplier = this.player.getChargeDamageMultiplier ? this.player.getChargeDamageMultiplier() : 1.0;
 
-        // Special ability (limit break) multiplier - 2x damage when active
-        const specialMultiplier = this.player.isUsingSpecial ? 2.0 : 1.0;
+        // Special ability (limit break) multiplier — scales with level so the
+        // limit break stays impactful late-game (+0.35x per level, capped 6x).
+        const specialMultiplier = this.player.isUsingSpecial
+            ? Math.min(6.0, 2.0 + (this.currentLevel - 1) * 0.35)
+            : 1.0;
 
         // Calculate damage with potential crit
         let rawDamage = baseDamage * weaponMultiplier * bladeMultiplier * upgradeMultiplier * tempDamageBoost * permDamageBoost * speedBonus * metaDamageBoost * chargeMultiplier * specialMultiplier;
@@ -5149,8 +5190,23 @@ class Game {
         this.renderer.beginFrame();
 
         if (use3D) {
-            // Render the full 3D world (room, entities, boss, drops, effects)
-            this.renderer3d.render(this);
+            // Render the full 3D world. Wrapped so a transient WebGL/3D error
+            // self-heals to classic 2D for THIS session only (not persisted —
+            // a page reload retries 3D) instead of freezing the screen.
+            try {
+                this.renderer3d.render(this);
+                this._render3dErrors = 0;
+            } catch (e) {
+                console.error('3D render error:', e);
+                this._render3dErrors = (this._render3dErrors || 0) + 1;
+                if (this._render3dErrors >= 3) {
+                    // Session-only fallback: bypass setEnabled so it is NOT
+                    // written to localStorage; pressing V re-enables 3D.
+                    this.renderer3d.enabled = false;
+                    this.hud.addMessage('3D RENDERER ERROR — FALLBACK TO 2D (press V to retry)', 'warning');
+                }
+                return; // skip this frame; next frame renders 2D cleanly
+            }
 
             // Interaction prompts still draw on the overlay canvas
             for (const interactable of this.interactables) {
@@ -5225,7 +5281,8 @@ class Game {
             totalDeaths: this.ghostSystem.getTotalDeaths(),
             comboCount: this.comboCount,
             comboTimer: this.comboTimer,
-            comboWindow: this.comboWindow
+            comboWindow: this.comboWindow,
+            renderMode: use3D ? '3D' : '2D'
         });
 
         // Render active buff indicators

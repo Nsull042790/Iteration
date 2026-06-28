@@ -1096,7 +1096,17 @@
     <script src="src/systems/cosmetics.js?v=20260107a"></script>
     <script src="src/systems/meta-progression.js?v=20260107a"></script>
     <script src="src/systems/stats.js?v=20260108a"></script>
-    <script src="src/systems/leaderboard.js?v=20260108a"></script>
+    <!-- Global leaderboard config. Leave url/anonKey empty for local-only
+         scores. Fill in to enable a shared online board (see leaderboard-remote.js). -->
+    <script>
+        window.ITERATION_LEADERBOARD = {
+            url: "",        // e.g. "https://YOURPROJECT.supabase.co"
+            anonKey: "",    // Supabase anon public key
+            table: "scores"
+        };
+    </script>
+    <script src="src/systems/leaderboard-remote.js?v=20260612b"></script>
+    <script src="src/systems/leaderboard.js?v=20260612b"></script>
     <script src="src/systems/audio.js?v=20260107a"></script>
     <script src="src/systems/voice.js?v=20260109a"></script>
     <script src="src/systems/ghosts.js?v=20260108a"></script>

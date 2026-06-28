@@ -184,8 +184,26 @@ class LeaderboardSystem {
         this.boards = {};
         this.loadAllBoards();
 
+        // Optional global backend (no-op until configured in index.html)
+        this.remote = (typeof RemoteLeaderboard !== 'undefined') ? new RemoteLeaderboard() : null;
+
         // Current weekly challenge ID
         this.currentWeekId = this.getWeekId();
+    }
+
+    /** True when a global leaderboard backend is configured. */
+    isRemoteEnabled() {
+        return !!(this.remote && this.remote.isEnabled());
+    }
+
+    /**
+     * Fetch the global top-N for a board (async). Returns [] when no remote
+     * backend is configured or on any error, so callers fall back to local.
+     */
+    async getRemoteBoard(boardId, count = 20) {
+        if (!this.isRemoteEnabled()) return [];
+        const def = this.boardDefinitions[boardId];
+        return this.remote.fetchTop(boardId, count, def ? def.sortOrder : 'desc');
     }
 
     /**
@@ -351,6 +369,12 @@ class LeaderboardSystem {
         // Submit to Steam if available
         if (this.steamEnabled) {
             this.submitToSteam(definition.steamName, score);
+        }
+
+        // Mirror to the global backend if configured (fire-and-forget;
+        // never blocks gameplay and swallows its own errors).
+        if (this.remote && this.remote.isEnabled()) {
+            this.remote.submit(boardId, entry);
         }
 
         return {

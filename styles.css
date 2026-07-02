@@ -1880,6 +1880,12 @@ body {
     background-color: rgba(5, 5, 8, 0.95);
 }
 
+/* The techniques section makes this modal tall — scroll on short screens */
+#controls-modal .modal-content {
+    max-height: 94vh;
+    overflow-y: auto;
+}
+
 .modal-content {
     background: linear-gradient(135deg, #0a0a0f 0%, #0f0f1a 100%);
     border: 2px solid #00f0ff;
@@ -1971,6 +1977,56 @@ body {
     flex-direction: column;
     align-items: center;
     gap: 10px;
+}
+
+/* Techniques cheat-sheet under the two-hand layout */
+.techniques-section {
+    margin: 0 auto 24px;
+    max-width: 760px;
+    text-align: center;
+}
+
+.tech-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 24px;
+    text-align: left;
+}
+
+.tech-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.75);
+    line-height: 1.4;
+}
+
+.tech-item .key {
+    min-width: 64px;
+    height: 26px;
+    font-size: 10px;
+    flex-shrink: 0;
+    padding: 0 6px;
+}
+
+.tech-item strong {
+    color: #00f0ff;
+}
+
+.key-mini {
+    display: inline-block;
+    padding: 0 5px;
+    border: 1px solid rgba(0, 240, 255, 0.5);
+    border-radius: 3px;
+    color: #00f0ff;
+    font-size: 10px;
+}
+
+@media (max-width: 720px) {
+    .tech-grid {
+        grid-template-columns: 1fr;
+    }
 }
 
 /* Key Styling */

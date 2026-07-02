@@ -27,8 +27,12 @@ class Renderer3D {
     constructor(overlayCanvas) {
         this.overlayCanvas = overlayCanvas;
 
-        // Persisted toggle (default: on)
-        this.enabled = localStorage.getItem('iteration_renderer3d') !== '0';
+        // 3D is the game's canonical renderer: always start enabled.
+        // The V key remains as a session-only fallback (perf/debug) and is
+        // deliberately NOT persisted, so nobody gets stranded in 2D across
+        // sessions by a stray keypress. Clear any legacy persisted value.
+        this.enabled = true;
+        try { localStorage.removeItem('iteration_renderer3d'); } catch (e) {}
 
         this.width = GAME_CONFIG.CANVAS_WIDTH;
         this.height = GAME_CONFIG.CANVAS_HEIGHT;
@@ -2057,8 +2061,8 @@ class Renderer3D {
        ============================================================ */
 
     setEnabled(enabled) {
+        // Session-only: never persisted, so every launch starts in 3D.
         this.enabled = enabled;
-        localStorage.setItem('iteration_renderer3d', enabled ? '1' : '0');
         this.canvas.style.display = enabled ? '' : 'none';
         // The 2D canvas needs a transparent CSS background in 3D mode
         this.overlayCanvas.classList.toggle('overlay-3d', enabled);

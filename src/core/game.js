@@ -27,7 +27,9 @@ class Game {
             if (e.code === 'KeyV' && this.renderer3d && this.state === 'playing') {
                 this.renderer3d.setEnabled(!this.renderer3d.enabled);
                 this.hud.addMessage(
-                    this.renderer3d.enabled ? 'RENDER MODE: 3D' : 'RENDER MODE: CLASSIC 2D',
+                    this.renderer3d.enabled
+                        ? 'RENDER MODE: 3D'
+                        : 'RENDER MODE: CLASSIC 2D (this session only)',
                     'info'
                 );
             }
@@ -5386,7 +5388,7 @@ class Game {
         ctx.save();
 
         // Darken screen
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.78)';
         ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
         const centerX = this.canvas.width / 2;
@@ -5394,22 +5396,59 @@ class Game {
 
         // Pause text
         ctx.textAlign = 'center';
-        ctx.font = 'bold 64px "Courier New", monospace';
+        ctx.font = 'bold 56px "Courier New", monospace';
         ctx.fillStyle = GAME_CONFIG.COLORS.CYAN;
         ctx.shadowColor = GAME_CONFIG.COLORS.CYAN;
         ctx.shadowBlur = 30;
-        ctx.fillText('PAUSED', centerX, centerY - 20);
-
-        // Controls reminder
+        ctx.fillText('PAUSED', centerX, centerY - 130);
         ctx.shadowBlur = 0;
-        ctx.font = '16px "Courier New", monospace';
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
-        ctx.fillText('Press ESC or P to resume', centerX, centerY + 30);
-        ctx.fillText('Press H for help', centerX, centerY + 55);
 
-        // Main menu option
+        // Controls cheat-sheet: two columns of key -> action
+        const leftCol = [
+            ['A / D', 'Move'],
+            ['SPACE / W', 'Jump (hold = higher)'],
+            ['SHIFT', 'Dash (i-frames)'],
+            ['WALL + SPACE', 'Wall jump'],
+            ['E / ←', 'Interact']
+        ];
+        const rightCol = [
+            ['→ ↑ / CLICK', 'Attack (hold = charge)'],
+            ['↓', 'Limit break (full meter)'],
+            ['1 / 2 / 3', 'Swap weapon'],
+            ['V', '2D fallback (this session)'],
+            ['H', 'Help / codex']
+        ];
+
+        const drawColumn = (rows, colX) => {
+            rows.forEach(([key, label], i) => {
+                const y = centerY - 70 + i * 30;
+                ctx.textAlign = 'right';
+                ctx.font = 'bold 15px "Courier New", monospace';
+                ctx.fillStyle = GAME_CONFIG.COLORS.CYAN;
+                ctx.fillText(key, colX - 10, y);
+                ctx.textAlign = 'left';
+                ctx.font = '15px "Courier New", monospace';
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
+                ctx.fillText(label, colX + 10, y);
+            });
+        };
+        drawColumn(leftCol, centerX - 200);
+        drawColumn(rightCol, centerX + 210);
+
+        // Divider
+        ctx.strokeStyle = 'rgba(0, 240, 255, 0.25)';
+        ctx.beginPath();
+        ctx.moveTo(centerX, centerY - 90);
+        ctx.lineTo(centerX, centerY + 60);
+        ctx.stroke();
+
+        // Resume / menu options
+        ctx.textAlign = 'center';
+        ctx.font = '16px "Courier New", monospace';
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+        ctx.fillText('ESC or P to resume', centerX, centerY + 110);
         ctx.fillStyle = GAME_CONFIG.COLORS.MAGENTA;
-        ctx.fillText('Press M for Main Menu', centerX, centerY + 85);
+        ctx.fillText('M for Main Menu', centerX, centerY + 138);
 
         ctx.restore();
     }

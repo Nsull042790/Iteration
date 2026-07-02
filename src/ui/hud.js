@@ -752,7 +752,7 @@ class HUD {
         ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
 
         ctx.fillText(
-            '[WASD] MOVE   [SPACE] JUMP   [↑→] ATTACK   [↓] SPECIAL   [←] INTERACT',
+            '[A/D] MOVE   [SPACE] JUMP   [↑→/CLICK] ATTACK (HOLD=CHARGE)   [SHIFT] DASH   [↓] LIMIT BREAK   [E/←] INTERACT   [ESC] PAUSE',
             this.width / 2,
             y
         );

@@ -120,6 +120,19 @@ class HUD {
             this.renderModeTag(ctx, gameState.renderMode);
         }
 
+        // Achievement unlock toast (queued by the achievement system)
+        if (gameState.achievementToast) {
+            this.renderAchievementToast(ctx, gameState.achievementToast);
+        }
+
+        // Boss Rush progress + timer
+        if (gameState.bossRush && gameState.bossRush.active) {
+            this.renderBossRushStatus(ctx, gameState.bossRush);
+        }
+
+        // One-time tutorial hint banner
+        this.updateAndRenderHint(ctx);
+
         // Render messages (center)
         this.renderMessages(ctx);
 
@@ -128,6 +141,104 @@ class HUD {
             this.renderControlsHint(ctx);
         }
 
+        ctx.restore();
+    }
+
+    /**
+     * Gold achievement toast, top-center under the cycle counter.
+     */
+    renderAchievementToast(ctx, toast) {
+        const fade = Math.min(1, toast.timer / 40, (300 - toast.timer) / 20 + 1);
+        const cx = this.width / 2;
+        const y = 96;
+
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, Math.min(1, fade));
+
+        const text = `${toast.icon}  ACHIEVEMENT: ${toast.name}  +${toast.cores}◆`;
+        ctx.font = 'bold 15px "Share Tech Mono", monospace';
+        const w = ctx.measureText(text).width + 36;
+
+        ctx.fillStyle = 'rgba(20, 16, 0, 0.85)';
+        ctx.strokeStyle = '#ffd700';
+        ctx.lineWidth = 1.5;
+        ctx.shadowColor = '#ffd700';
+        ctx.shadowBlur = 14;
+        ctx.beginPath();
+        ctx.roundRect(cx - w / 2, y - 18, w, 30, 4);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.shadowBlur = 8;
+        ctx.fillStyle = '#ffd700';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'alphabetic';
+        ctx.fillText(text, cx, y + 3);
+        ctx.restore();
+    }
+
+    /**
+     * Boss Rush: gauntlet progress + live timer, top-center.
+     */
+    renderBossRushStatus(ctx, rush) {
+        const cx = this.width / 2;
+        const y = 128;
+        const elapsed = ((Date.now() - rush.startTime) / 1000).toFixed(1);
+        const pips = rush.sequence.map((_, i) =>
+            i < rush.index ? '◆' : (i === rush.index ? '◈' : '◇')
+        ).join(' ');
+
+        ctx.save();
+        ctx.textAlign = 'center';
+        ctx.font = 'bold 14px "Share Tech Mono", monospace';
+        ctx.fillStyle = '#ffd700';
+        ctx.shadowColor = '#ffd700';
+        ctx.shadowBlur = 8;
+        ctx.fillText(`BOSS RUSH  ${pips}  ${elapsed}s`, cx, y);
+        ctx.restore();
+    }
+
+    /**
+     * Queue a one-time tutorial hint (called via game.showHintOnce).
+     */
+    showHint(text) {
+        this.activeHint = { text, timer: 330 }; // ~5.5s
+    }
+
+    updateAndRenderHint(ctx) {
+        if (!this.activeHint) return;
+        const hint = this.activeHint;
+        hint.timer--;
+        if (hint.timer <= 0) {
+            this.activeHint = null;
+            return;
+        }
+
+        const fade = Math.min(1, hint.timer / 30, (330 - hint.timer) / 15 + 0.2);
+        const cx = this.width / 2;
+        const y = this.height - 120;
+
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, Math.min(1, fade));
+
+        ctx.font = 'bold 16px "Share Tech Mono", monospace';
+        const w = ctx.measureText(hint.text).width + 44;
+
+        ctx.fillStyle = 'rgba(0, 12, 18, 0.88)';
+        ctx.strokeStyle = '#00f0ff';
+        ctx.lineWidth = 1.5;
+        ctx.shadowColor = '#00f0ff';
+        ctx.shadowBlur = 16;
+        ctx.beginPath();
+        ctx.roundRect(cx - w / 2, y - 20, w, 34, 5);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.shadowBlur = 10;
+        ctx.fillStyle = '#00f0ff';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'alphabetic';
+        ctx.fillText(hint.text, cx, y + 4);
         ctx.restore();
     }
 

@@ -143,6 +143,9 @@ class Player extends Entity {
         if (input.isActionJustPressed('dash') && !this.isDashing) {
             this.isDashing = true;
             this.dashTimer = 0;
+            if (window.game && window.game.achievements) {
+                window.game.achievements.count('dashes', window.game);
+            }
             this.dashDirection = this.facingRight ? 1 : -1;
             this.dashCooldown = this.dashCooldownMax;
             // Give slight vertical boost if in air for better aerial mobility
@@ -205,6 +208,9 @@ class Player extends Entity {
             input.consumeJumpBuffer();
             if (window.game && window.game.audio) {
                 window.game.audio.playJump?.();
+            }
+            if (window.game && window.game.achievements) {
+                window.game.achievements.count('wallJumps', window.game);
             }
         }
 

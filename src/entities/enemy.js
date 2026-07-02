@@ -55,6 +55,10 @@ class Enemy extends Entity {
         this.hopCooldown = Utils.randomInt(60, 180);
         this.hopTimer = 0;
 
+        // Elite modifier (set by game.makeElite): corrupted/volatile/splitter
+        this.elite = null;
+        this.eliteAura = null;
+
         // Archetype-specific setup (drone, wasp, arc, aegis)
         this.flying = false;
         this.shieldHealth = 0;
@@ -451,6 +455,9 @@ class Enemy extends Entity {
             if (this.shieldHealth <= 0) {
                 this.shieldHealth = 0;
                 this.spawnShieldBreakParticles();
+                if (window.game && window.game.achievements) {
+                    window.game.achievements.count('shieldsBroken', window.game);
+                }
                 // Brief stagger once the shield pops
                 this.velocityX = knockDir * 10;
                 this.velocityY = -4;
@@ -737,6 +744,11 @@ class Enemy extends Entity {
 
         ctx.save();
 
+        // Elite aura ring under the body
+        if (this.elite) {
+            this.renderEliteAura(ctx, screenPos);
+        }
+
         // Draw based on archetype
         switch (this.type) {
             case 'wasp':
@@ -758,6 +770,38 @@ class Enemy extends Entity {
         // Status effect icons
         this.renderStatusEffects(ctx, screenPos);
 
+        ctx.restore();
+    }
+
+    /**
+     * Elite marker: pulsing aura ring + crown spikes in the modifier color
+     */
+    renderEliteAura(ctx, screenPos) {
+        const centerX = screenPos.x + this.width / 2;
+        const centerY = screenPos.y + this.height / 2;
+        const pulse = Math.sin(this.pulsePhase * 1.5) * 0.25 + 0.75;
+        const radius = Math.max(this.width, this.height) * 0.75;
+
+        ctx.save();
+        ctx.strokeStyle = this.eliteAura;
+        ctx.shadowColor = this.eliteAura;
+        ctx.shadowBlur = 16 * pulse;
+        ctx.globalAlpha = 0.65 * pulse;
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // Crown ticks orbiting the ring
+        for (let i = 0; i < 4; i++) {
+            const a = (i / 4) * Math.PI * 2 + this.pulsePhase * 0.5;
+            const tx = centerX + Math.cos(a) * radius;
+            const ty = centerY + Math.sin(a) * radius;
+            ctx.beginPath();
+            ctx.moveTo(tx, ty);
+            ctx.lineTo(centerX + Math.cos(a) * (radius + 7), centerY + Math.sin(a) * (radius + 7));
+            ctx.stroke();
+        }
         ctx.restore();
     }
 

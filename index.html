@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>ITERATION</title>
-    <link rel="stylesheet" href="styles.css?v=20260612c">
+    <link rel="stylesheet" href="styles.css?v=20260702a">
 </head>
 <body>
     <div id="game-container">
@@ -32,7 +32,7 @@
             </div>
             <div class="splash-content">
                 <div class="splash-glitch" data-text="ITERATION">ITERATION</div>
-                <div class="splash-subtitle">SIMULATION v4.3.0</div>
+                <div class="splash-subtitle">SIMULATION v4.4.0</div>
                 <button id="splash-enter-btn" class="splash-btn">
                     <span class="splash-btn-text">[ ENTER THE AXIOM ]</span>
                 </button>
@@ -81,7 +81,7 @@
                             <div class="logo-glitch-wrapper">
                                 <div class="logo-text" data-text="ITERATION">ITERATION</div>
                             </div>
-                            <div class="logo-version">v4.3.0</div>
+                            <div class="logo-version">v4.4.0</div>
                             <div class="logo-subtitle glitch-text">// BREAK THE LOOP</div>
                         </div>
                         <div class="logo-decoration">
@@ -106,7 +106,7 @@
                         <div class="footer-item">DEATHS: <span id="title-deaths" class="cyan">0</span></div>
                         <div class="footer-item">GHOSTS: <span id="title-ghosts" class="cyan">0</span></div>
                         <div class="footer-item">STATUS: <span class="status-ready">▶ READY</span></div>
-                        <div class="footer-item version">v4.3.0</div>
+                        <div class="footer-item version">v4.4.0</div>
                     </div>
                 </div>
             </div>
@@ -138,6 +138,10 @@
                         <button id="achievements-btn" class="dropdown-item">
                             <span class="btn-icon">🏅</span>
                             <span class="btn-text">ACHIEVEMENTS</span>
+                        </button>
+                        <button id="boss-rush-btn" class="dropdown-item">
+                            <span class="btn-icon">⚡</span>
+                            <span class="btn-text">BOSS RUSH</span>
                         </button>
                     </div>
                 </div>
@@ -1134,8 +1138,8 @@
     <script src="src/core/physics.js?v=20260612a"></script>
     <script src="src/core/camera.js?v=20260107a"></script>
     <script src="src/entities/entity.js?v=20260107a"></script>
-    <script src="src/entities/player.js?v=20260612a"></script>
-    <script src="src/entities/enemy.js?v=20260612a"></script>
+    <script src="src/entities/player.js?v=20260702a"></script>
+    <script src="src/entities/enemy.js?v=20260702a"></script>
     <script src="src/entities/boss.js?v=20260612b"></script>
     <script src="src/entities/interactable.js?v=20260107a"></script>
     <script src="src/levels/platform.js?v=20260107a"></script>
@@ -1159,12 +1163,13 @@
         };
     </script>
     <script src="src/systems/leaderboard-remote.js?v=20260612b"></script>
-    <script src="src/systems/leaderboard.js?v=20260612b"></script>
+    <script src="src/systems/leaderboard.js?v=20260702a"></script>
+    <script src="src/systems/achievements.js?v=20260702a"></script>
     <script src="src/systems/audio.js?v=20260107a"></script>
     <script src="src/systems/voice.js?v=20260109a"></script>
     <script src="src/systems/ghosts.js?v=20260108a"></script>
     <script src="src/systems/cutscene.js?v=20260108a"></script>
-    <script src="src/ui/hud.js?v=20260612c"></script>
+    <script src="src/ui/hud.js?v=20260702a"></script>
     <script src="src/core/renderer.js?v=20260611a"></script>
     <!-- Three.js (vendored r147) + post-processing for the 3D renderer -->
     <script src="vendor/three/three.min.js"></script>
@@ -1175,8 +1180,8 @@
     <script src="vendor/three/RenderPass.js"></script>
     <script src="vendor/three/ShaderPass.js"></script>
     <script src="vendor/three/UnrealBloomPass.js"></script>
-    <script src="src/core/renderer3d.js?v=20260612c"></script>
-    <script src="src/core/game.js?v=20260612c"></script>
+    <script src="src/core/renderer3d.js?v=20260702a"></script>
+    <script src="src/core/game.js?v=20260702a"></script>
     <script src="main.js?v=20260611a"></script>
 </body>
 </html>

@@ -1292,6 +1292,27 @@ class Renderer3D {
                 0
             );
 
+            // Elite halo: pulsing colored ring + upscaled body
+            if (enemy.elite && !u.eliteRing) {
+                u.eliteRing = new THREE.Mesh(
+                    new THREE.TorusGeometry(Math.max(enemy.width, enemy.height) * 0.85, 2.2, 8, 32),
+                    new THREE.MeshBasicMaterial({
+                        color: this.color(enemy.eliteAura || '#ff0044'),
+                        transparent: true,
+                        opacity: 0.8,
+                        blending: THREE.AdditiveBlending,
+                        depthWrite: false
+                    })
+                );
+                mesh.add(u.eliteRing);
+                mesh.scale.setScalar(1.18);
+            }
+            if (u.eliteRing) {
+                u.eliteRing.rotation.z += 0.03;
+                u.eliteRing.rotation.x = Math.sin(this.time * 0.03) * 0.5;
+                u.eliteRing.material.opacity = 0.55 + Math.sin(this.time * 0.12) * 0.25;
+            }
+
             // Archetype animation
             if (u.wings) {
                 // Wasp: face travel direction, beat wings, swoop glow

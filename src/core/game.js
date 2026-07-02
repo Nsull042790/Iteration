@@ -68,6 +68,18 @@ class Game {
         // Hit-stop (impact freeze frames)
         this.hitStopFrames = 0;
 
+        // Per-zone challenge tracking (no-hit / speedrun achievements)
+        this.damageTakenInZone = false;
+        this.zoneStartTime = null;
+
+        // Boss Rush mode state
+        this.bossRush = null;
+        this.bossRushPending = false;
+
+        // One-time tutorial hints (persisted per profile)
+        this.hintsSeen = this.loadHintsSeen();
+        this.activeHintCooldown = 0;
+
         // Game objects
         this.player = null;
         this.currentRoom = null;
@@ -85,6 +97,7 @@ class Game {
         this.leaderboard = new LeaderboardSystem();
         this.runStats = new RunStatsSystem();
         this.ghostSystem = new GhostSystem();
+        this.achievements = new AchievementSystem();
         this.audio = window.audioSystem;
         this.voiceSystem = new VoiceSystem(this.audio);
         this.cutsceneSystem = new CutsceneSystem(this.canvas, this); // Initialize cutscene system
@@ -356,6 +369,19 @@ class Game {
             }
 
             this.enemies.push(enemy);
+        }
+
+        // Elites: one likely per room from level 4, a possible second from level 8
+        if (this.currentLevel >= 4 && this.enemies.length > 0) {
+            if (Math.random() < 0.6) {
+                this.makeElite(this.enemies[Utils.randomInt(0, this.enemies.length - 1)]);
+            }
+            if (this.currentLevel >= 8 && Math.random() < 0.35) {
+                const candidates = this.enemies.filter(e => !e.elite);
+                if (candidates.length > 0) {
+                    this.makeElite(candidates[Utils.randomInt(0, candidates.length - 1)]);
+                }
+            }
         }
     }
 
@@ -805,6 +831,7 @@ class Game {
         if (completedLevel >= FINAL_LEVEL) {
             // Player beat the game! Enter victory wait state (prevents pausing)
             this.victoryWaiting = true;
+            this.achievements.unlock('victory', this);
             this.hud.addMessage('◈ SIMULATION COLLAPSE IMMINENT ◈', 'warning');
 
             setTimeout(() => {
@@ -825,10 +852,21 @@ class Game {
 
         // Zone progression every 3 levels
         if (this.currentLevel % 3 === 1 && this.currentLevel > 1) {
+            // Judge the zone just completed (no-hit / speedrun achievements)
+            if (!this.damageTakenInZone) {
+                this.achievements.unlock('no_hit_zone', this);
+            }
+            if (this.zoneStartTime && (Date.now() - this.zoneStartTime) < 240000) {
+                this.achievements.unlock('speedrun_zone', this);
+            }
+            this.damageTakenInZone = false;
+            this.zoneStartTime = Date.now();
+
             this.currentZoneIndex = Math.min(this.currentZoneIndex + 1, this.zones.length - 1);
             this.currentZone = this.zones[this.currentZoneIndex];
             // Voice line for entering new zone
             this.voiceSystem.onZoneEnter(this.currentZoneIndex);
+            this.achievements.checkMeta(this);
         }
 
         // Bonus cycles for completing level (tracked for summary, no HUD spam)
@@ -2219,6 +2257,16 @@ class Game {
         }
 
         // Achievements button
+        const bossRushBtn = document.getElementById('boss-rush-btn');
+        if (bossRushBtn) {
+            bossRushBtn.onclick = () => {
+                this.audio.playUIClick();
+                // Close the title screen the same way the start button does
+                document.getElementById('title-screen').classList.add('hidden');
+                this.startBossRushFromTitle();
+            };
+        }
+
         const achievementsBtn = document.getElementById('achievements-btn');
         if (achievementsBtn) {
             achievementsBtn.onclick = () => this.showAchievementsModal();
@@ -2953,49 +3001,36 @@ class Game {
         const percentEl = document.getElementById('achievements-percent');
         const closeBtn = document.getElementById('achievements-close-btn');
 
-        // Achievement definitions
-        const achievements = [
-            { id: 'first_blood', name: 'FIRST BLOOD', desc: 'Kill your first enemy', icon: '⚔️' },
-            { id: 'kill_100', name: 'CENTURION', desc: 'Kill 100 enemies total', icon: '💀' },
-            { id: 'kill_1000', name: 'MASSACRE', desc: 'Kill 1000 enemies total', icon: '☠️' },
-            { id: 'streak_10', name: 'COMBO STARTER', desc: 'Get a 10 kill streak', icon: '🔥' },
-            { id: 'streak_50', name: 'UNSTOPPABLE', desc: 'Get a 50 kill streak', icon: '💥' },
-            { id: 'no_hit_zone', name: 'UNTOUCHABLE', desc: 'Clear a zone without taking damage', icon: '🛡️' },
-            { id: 'boss_kill', name: 'BOSS SLAYER', desc: 'Defeat a boss', icon: '👑' },
-            { id: 'boss_no_hit', name: 'PERFECT KILL', desc: 'Defeat a boss without taking damage', icon: '✨' },
-            { id: 'die_once', name: 'LEARNING CURVE', desc: 'Die for the first time', icon: '💔' },
-            { id: 'die_100', name: 'PERSISTENT', desc: 'Die 100 times', icon: '🔄' },
-            { id: 'reach_zone_2', name: 'DEEPER', desc: 'Reach Zone 2', icon: '📍' },
-            { id: 'reach_zone_3', name: 'RESTRICTED', desc: 'Reach Zone 3', icon: '🚫' },
-            { id: 'reach_zone_4', name: 'THE CORE', desc: 'Reach Zone 4', icon: '🌀' },
-            { id: 'unlock_char', name: 'RECRUITMENT', desc: 'Unlock a new operative', icon: '👤' },
-            { id: 'unlock_all_chars', name: 'FULL ROSTER', desc: 'Unlock all operatives', icon: '👥' },
-            { id: 'collect_hat', name: 'FASHIONISTA', desc: 'Collect a hat', icon: '🎩' },
-            { id: 'collect_suit', name: 'SUITED UP', desc: 'Collect a suit', icon: '👔' },
-            { id: 'speedrun_zone', name: 'SPEEDRUNNER', desc: 'Clear a zone in under 60 seconds', icon: '⚡' },
-            { id: 'victory', name: 'BREAK THE LOOP', desc: 'Complete the game', icon: '🏆' },
-            { id: 'secret_ending', name: 'TRUTH SEEKER', desc: 'Discover the secret ending', icon: '🔮' }
-        ];
-
-        // Load unlocked achievements from storage
-        const unlockedAchievements = this.getUnlockedAchievements();
-        const unlocked = unlockedAchievements.length;
-        const total = achievements.length;
-        const percent = Math.round((unlocked / total) * 100);
+        const defs = this.achievements.definitions;
+        const unlocked = defs.filter(d => this.achievements.isUnlocked(d.id)).length;
+        const total = defs.length;
 
         unlockedEl.textContent = unlocked;
         totalEl.textContent = total;
-        percentEl.textContent = `${percent}%`;
+        percentEl.textContent = `${Math.round((unlocked / total) * 100)}%`;
 
-        grid.innerHTML = achievements.map(ach => {
-            const isUnlocked = unlockedAchievements.includes(ach.id);
+        grid.innerHTML = defs.map(ach => {
+            const isUnlocked = this.achievements.isUnlocked(ach.id);
+            const progress = this.achievements.getProgress(ach.id);
+            const hideDetails = ach.secret && !isUnlocked;
+            let progressHtml = '';
+            if (!isUnlocked && progress) {
+                const pct = Math.min(100, Math.round((progress[0] / progress[1]) * 100));
+                progressHtml = `
+                    <div class="achievement-progress">
+                        <div class="achievement-progress-fill" style="width:${pct}%"></div>
+                        <span class="achievement-progress-text">${Math.min(progress[0], progress[1])}/${progress[1]}</span>
+                    </div>`;
+            }
             return `
                 <div class="achievement-card ${isUnlocked ? 'unlocked' : 'locked'}">
-                    <div class="achievement-icon">${ach.icon}</div>
+                    <div class="achievement-icon">${hideDetails ? '❓' : ach.icon}</div>
                     <div class="achievement-info">
-                        <div class="achievement-name">${isUnlocked ? ach.name : '???'}</div>
-                        <div class="achievement-desc">${isUnlocked ? ach.desc : 'Achievement locked'}</div>
+                        <div class="achievement-name">${hideDetails ? '???' : ach.name}</div>
+                        <div class="achievement-desc">${hideDetails ? 'Hidden — find it yourself' : ach.desc}</div>
+                        ${progressHtml}
                     </div>
+                    <div class="achievement-cores">${isUnlocked ? '✓' : '+' + ach.cores + '◆'}</div>
                 </div>
             `;
         }).join('');
@@ -3020,26 +3055,14 @@ class Game {
      * Get unlocked achievements from storage
      */
     getUnlockedAchievements() {
-        try {
-            return JSON.parse(localStorage.getItem('iteration_achievements') || '[]');
-        } catch (e) {
-            return [];
-        }
+        return this.achievements.unlocked;
     }
 
     /**
      * Unlock an achievement
      */
     unlockAchievement(id) {
-        const achievements = this.getUnlockedAchievements();
-        if (!achievements.includes(id)) {
-            achievements.push(id);
-            try {
-                localStorage.setItem('iteration_achievements', JSON.stringify(achievements));
-            } catch (e) {}
-            // Show notification
-            this.hud.addMessage('ACHIEVEMENT UNLOCKED!', 'evolution');
-        }
+        this.achievements.unlock(id, this);
     }
 
     /**
@@ -3551,6 +3574,8 @@ class Game {
     startGame() {
         this.state = 'playing';
         this.runStartTime = Date.now();
+        this.zoneStartTime = Date.now();
+        this.damageTakenInZone = false;
         const char = this.characterSystem.getSelected();
 
         // Defensive cleanup - ensure no stale handlers or callbacks
@@ -3608,6 +3633,12 @@ class Game {
         setTimeout(() => {
             this.audio.startGameplayMusic();
         }, 2500);
+
+        // Boss Rush entry point (queued from the title screen)
+        if (this.bossRushPending) {
+            this.bossRushPending = false;
+            this.beginBossRush();
+        }
     }
 
     /**
@@ -3710,6 +3741,269 @@ class Game {
     }
 
     /**
+     * Promote an enemy to an elite variant: a random modifier, boosted
+     * stats, and a visible aura. Elites drop boss-tier loot.
+     */
+    makeElite(enemy, type = null) {
+        const pool = enemy.type === 'drone'
+            ? ['corrupted', 'volatile', 'splitter']
+            : ['corrupted', 'volatile'];
+        enemy.elite = type || pool[Utils.randomInt(0, pool.length - 1)];
+
+        // Stat boost (on top of level scaling)
+        enemy.health = Math.floor(enemy.health * 1.5);
+        enemy.maxHealth = enemy.health;
+        enemy.damage = Math.floor(enemy.damage * 1.3);
+        enemy.speed *= 1.15;
+        if (enemy.shieldMax > 0) {
+            enemy.shieldHealth = Math.floor(enemy.shieldHealth * 1.5);
+            enemy.shieldMax = enemy.shieldHealth;
+        }
+
+        enemy.eliteAura = {
+            corrupted: '#ff0044',
+            volatile: '#ff8800',
+            splitter: '#00ff88'
+        }[enemy.elite];
+    }
+
+    /**
+     * Centralized enemy-death effects. Runs exactly once per enemy for
+     * every kill path (blade, waves, lasers, chain, DoT).
+     */
+    onEnemyDeath(enemy) {
+        this.achievements.count('kills', this);
+
+        if (!enemy.elite) return;
+        this.achievements.count('elitesKilled', this);
+
+        const cx = enemy.x + enemy.width / 2;
+        const cy = enemy.y + enemy.height / 2;
+
+        switch (enemy.elite) {
+            case 'corrupted':
+                // Guaranteed boss-tier loot burst
+                this.dropSystem.rollDrops(cx, cy, 'boss');
+                this.hud.addMessage('ELITE PURGED — LOOT SECURED', 'success');
+                break;
+
+            case 'volatile': {
+                // Death explosion: hurts the player if they linger
+                this.spawnExplosionParticles(cx, cy, 110);
+                this.camera.addShake(6, 12);
+                if (this.player.active) {
+                    const dx = (this.player.x + this.player.width / 2) - cx;
+                    const dy = (this.player.y + this.player.height / 2) - cy;
+                    if (Math.sqrt(dx * dx + dy * dy) < 110) {
+                        const dmg = this.calculateDamageTaken(12);
+                        if (dmg > 0 && this.player.takeDamage(dmg)) {
+                            this.audio.playPlayerHurt();
+                            this.cycles.applyDamagePenalty();
+                            this.breakCombo();
+                            this.currentKillStreak = 0;
+                            if (this.player.health <= 0) this.handlePlayerDeath('enemy');
+                        }
+                    }
+                }
+                // Splash nearby enemies too
+                for (const other of this.enemies) {
+                    if (!other.active || other === enemy) continue;
+                    const ox = (other.x + other.width / 2) - cx;
+                    const oy = (other.y + other.height / 2) - cy;
+                    if (Math.sqrt(ox * ox + oy * oy) < 110) {
+                        other.takeDamage(20);
+                    }
+                }
+                break;
+            }
+
+            case 'splitter': {
+                // Splits into two weakened minis (which never split again)
+                for (const dir of [-1, 1]) {
+                    const mini = new Enemy(cx + dir * 24, cy - 10, 'drone');
+                    mini.width = 24;
+                    mini.height = 24;
+                    mini.health = Math.max(10, Math.floor(enemy.maxHealth * 0.2));
+                    mini.maxHealth = mini.health;
+                    mini.damage = Math.max(4, Math.floor(enemy.damage * 0.5));
+                    mini.speed = enemy.speed * 1.3;
+                    mini.velocityX = dir * 5;
+                    mini.velocityY = -6;
+                    this.enemies.push(mini);
+                    // New spawns count toward the room's kill quota
+                    this.maxEnemiesInLevel++;
+                }
+                this.hud.addMessage('SPLITTER FRAGMENTS!', 'warning');
+                break;
+            }
+        }
+    }
+
+    /* ============================================================
+       BOSS RUSH
+       All five guardians back to back, timed, on one arena.
+       ============================================================ */
+
+    startBossRushFromTitle() {
+        this.bossRushPending = true;
+        this.showCharacterSelect();
+    }
+
+    beginBossRush() {
+        this.bossRush = {
+            active: true,
+            index: 0,
+            sequence: [1, 2, 3, 4, 12],
+            startTime: Date.now()
+        };
+
+        // Clean arena: no trash mobs, no exit
+        this.enemies = [];
+        this.maxEnemiesInLevel = 0;
+        this.enemiesKilledInLevel = 0;
+        this.interactables = this.interactables.filter(i => i.type === 'health_potion');
+
+        this.hud.addMessage('◈ BOSS RUSH — FIVE GUARDIANS, ONE ARENA ◈', 'warning');
+        setTimeout(() => this.spawnRushBoss(), 1500);
+    }
+
+    spawnRushBoss() {
+        if (!this.bossRush || !this.bossRush.active || this.state !== 'playing') return;
+
+        const level = this.bossRush.sequence[this.bossRush.index];
+        // Level 12 is the final boss; getNameForLevel wraps, so pin the name
+        const bossName = level === 12 ? 'CORRUPTED CORE' : Boss.getNameForLevel(level);
+
+        this.hud.showBossWarning(bossName);
+        this.audio.playBossWarning();
+        this.audio.startBossMusic();
+        this.renderer.triggerBossKanjiRain(120);
+        this.camera.addShake(10, 40);
+
+        const roomWidth = this.currentRoom ? this.currentRoom.width : 1600;
+        this.boss = new Boss(roomWidth - 200, 400, level);
+        this.boss.name = bossName;
+        this.bossSpawned = true;
+        this.bossStartTime = Date.now();
+        this.damageTakenDuringBoss = false;
+        this.hud.addMessage(
+            `GAUNTLET ${this.bossRush.index + 1}/${this.bossRush.sequence.length}: ${bossName}`,
+            'warning'
+        );
+    }
+
+    advanceBossRush() {
+        this.bossRush.index++;
+        this.boss = null;
+        this.bossSpawned = false;
+
+        if (this.bossRush.index >= this.bossRush.sequence.length) {
+            this.finishBossRush();
+            return;
+        }
+
+        const remaining = this.bossRush.sequence.length - this.bossRush.index;
+        this.hud.addMessage(`GUARDIAN DOWN — ${remaining} REMAIN`, 'evolution');
+        setTimeout(() => this.spawnRushBoss(), 2500);
+    }
+
+    finishBossRush() {
+        const timeMs = Date.now() - this.bossRush.startTime;
+        this.bossRush.active = false;
+
+        this.achievements.unlock('boss_rush_complete', this);
+        const result = this.leaderboard.submitBossRush(
+            timeMs,
+            this.characterSystem.getSelected().name
+        );
+
+        const secs = (timeMs / 1000).toFixed(1);
+        this.renderer.flash('#ffd700', 0.7);
+        this.hud.addMessage(`◈ GAUNTLET COMPLETE — ${secs}s ◈`, 'evolution');
+        if (result && result.rank === 1) {
+            this.hud.addMessage('NEW BOSS RUSH RECORD!', 'evolution');
+        }
+
+        // Cores payout scales with speed (faster = more)
+        const cores = Math.max(50, Math.floor(300 - timeMs / 2000));
+        this.metaProgression.dataCores += cores;
+        this.metaProgression.saveToStorage();
+        this.hud.addMessage(`+${cores} DATA CORES`, 'success');
+
+        setTimeout(() => {
+            this.bossRush = null;
+            this.returnToMainMenu();
+        }, 5000);
+    }
+
+    /* ============================================================
+       TUTORIAL HINTS
+       One-time contextual prompts that fire the moment a mechanic
+       becomes relevant, instead of hoping players read the codex.
+       ============================================================ */
+
+    loadHintsSeen() {
+        try {
+            return JSON.parse(localStorage.getItem('iteration_hints_seen') || '{}');
+        } catch (e) {
+            return {};
+        }
+    }
+
+    showHintOnce(id, text) {
+        if (this.hintsSeen[id] || this.activeHintCooldown > 0) return;
+        this.hintsSeen[id] = true;
+        try {
+            localStorage.setItem('iteration_hints_seen', JSON.stringify(this.hintsSeen));
+        } catch (e) {}
+        this.hud.showHint(text);
+        this.activeHintCooldown = 420; // 7s gap so hints never stack
+    }
+
+    updateTutorialHints() {
+        if (this.activeHintCooldown > 0) this.activeHintCooldown--;
+        if (!this.player || !this.player.active) return;
+
+        const runTime = Date.now() - (this.runStartTime || Date.now());
+
+        // Movement basics, right at spawn
+        if (runTime > 1200) {
+            this.showHintOnce('move', '[A/D] MOVE · [SPACE] JUMP — HOLD FOR FULL HEIGHT');
+        }
+
+        // Charge attack when the first enemy gets close
+        const nearEnemy = this.enemies.some(e => {
+            if (!e.active) return false;
+            const dx = e.x - this.player.x;
+            const dy = e.y - this.player.y;
+            return Math.sqrt(dx * dx + dy * dy) < 320;
+        });
+        if (nearEnemy && runTime > 3000) {
+            this.showHintOnce('charge', 'HOLD ATTACK TO CHARGE A HEAVY STRIKE — RELEASE TO UNLEASH');
+        }
+
+        // Dash once they have been in the fight a few seconds
+        if (nearEnemy && runTime > 9000) {
+            this.showHintOnce('dash', '[SHIFT] DASH — INVINCIBLE WHILE PHASING');
+        }
+
+        // Wall jump the first time they wall slide
+        if (this.player.isWallSliding) {
+            this.showHintOnce('wallslide', 'WALL SLIDE! PRESS [SPACE] TO KICK OFF THE WALL');
+        }
+
+        // Limit break the first time the meter fills
+        if (this.player.specialMeter >= this.player.specialMeterMax) {
+            this.showHintOnce('special', 'LIMIT BREAK READY — PRESS [↓] FOR MASSIVE DAMAGE');
+        }
+
+        // Elites announce themselves once
+        if (this.enemies.some(e => e.active && e.elite)) {
+            this.showHintOnce('elite', '⚠ ELITE HOSTILE — TOUGHER, DEADLIER, BETTER LOOT');
+        }
+    }
+
+    /**
      * Trigger hit-stop: freeze the simulation for a few frames on big
      * impacts (kills, crits, taking damage) while rendering continues
      */
@@ -3724,6 +4018,9 @@ class Game {
         this.comboCount++;
         this.comboTimer = this.comboWindow;
         this.comboBest = Math.max(this.comboBest, this.comboCount);
+        if (this.comboCount === 10 || this.comboCount === 30) {
+            this.achievements.checkMeta(this);
+        }
 
         // OVERSEER milestones: every 5 combo, AXIOM acknowledges you
         if (this.comboCount % 5 === 0 && this.comboCount > this.comboMilestone) {
@@ -3749,6 +4046,8 @@ class Game {
      * Break the combo (player took damage)
      */
     breakCombo() {
+        // Any combo break comes from taking damage - mark the zone challenge
+        this.damageTakenInZone = true;
         if (this.comboCount >= 5) {
             this.hud.addMessage(`COMBO BROKEN [${this.comboCount}x]`, 'warning');
             if (this.renderer3d) {
@@ -4035,6 +4334,14 @@ class Game {
             }
         }
 
+        // Centralized death effects (all kill paths: blade, waves, lasers, DoT)
+        for (const e of this.enemies) {
+            if (!e.active && !e._deathHandled) {
+                e._deathHandled = true;
+                this.onEnemyDeath(e);
+            }
+        }
+
         // Remove dead enemies and track kills
         const prevEnemyCount = this.enemies.length;
         this.enemies = this.enemies.filter(e => e.active);
@@ -4044,7 +4351,9 @@ class Game {
         }
 
         // Check if all enemies killed - spawn boss
-        if (this.enemies.length === 0 && !this.bossSpawned && !this.levelComplete) {
+        // (Boss Rush manages its own spawn cadence)
+        if (this.enemies.length === 0 && !this.bossSpawned && !this.levelComplete &&
+            !(this.bossRush && this.bossRush.active) && !this.bossRushPending) {
             this.spawnBoss();
         }
 
@@ -4112,6 +4421,22 @@ class Game {
             // Boss defeated!
             this.cycles.gain(this.boss.cycleReward);
             this.totalKills++;
+            this.achievements.count('bossKills', this);
+            if (!this.damageTakenDuringBoss) {
+                this.achievements.unlock('boss_no_hit', this);
+            }
+            this.achievements.checkMeta(this);
+
+            // Boss Rush: advance the gauntlet instead of the level flow
+            if (this.bossRush && this.bossRush.active) {
+                this.player.addSpecialMeter(50);
+                this.player.health = Math.min(
+                    this.player.health + Math.floor(this.player.maxHealth * 0.5),
+                    this.player.maxHealth
+                );
+                this.advanceBossRush();
+                return;
+            }
 
             // Track boss kill time in run stats
             if (this.runStats && this.bossStartTime) {
@@ -4239,6 +4564,9 @@ class Game {
 
         // Tick the combo window
         this.updateCombo();
+
+        // Contextual one-time tutorial hints
+        this.updateTutorialHints();
 
         // Update blade evolution
         this.bladeEvolution.update();
@@ -5284,7 +5612,9 @@ class Game {
             comboCount: this.comboCount,
             comboTimer: this.comboTimer,
             comboWindow: this.comboWindow,
-            renderMode: use3D ? '3D' : '2D'
+            renderMode: use3D ? '3D' : '2D',
+            achievementToast: this.achievements.updateToast(),
+            bossRush: this.bossRush
         });
 
         // Render active buff indicators
@@ -5489,6 +5819,7 @@ class Game {
 
         this.player.active = false;
         this.state = 'gameover';
+        this.achievements.count('deaths', this);
 
         // The Overseer closes its eye on you
         if (this.renderer3d) {
@@ -5692,6 +6023,10 @@ class Game {
         this.comboCount = 0;
         this.comboTimer = 0;
         this.comboMilestone = 0;
+        this.bossRush = null;
+        this.bossRushPending = false;
+        this.zoneStartTime = Date.now();
+        this.damageTakenInZone = false;
 
         // Reset player
         this.player.active = true;
@@ -5774,6 +6109,10 @@ class Game {
         this.comboCount = 0;
         this.comboTimer = 0;
         this.comboMilestone = 0;
+        this.bossRush = null;
+        this.bossRushPending = false;
+        this.zoneStartTime = Date.now();
+        this.damageTakenInZone = false;
 
         // Reset player
         this.player.active = true;

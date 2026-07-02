@@ -197,6 +197,45 @@ class LeaderboardSystem {
     }
 
     /**
+     * Submit a completed Boss Rush time directly (bypasses the run-stats
+     * qualification path since Boss Rush is its own mode).
+     */
+    submitBossRush(timeMs, characterName) {
+        const boardId = 'boss_rush';
+        const definition = this.boardDefinitions[boardId];
+        if (!definition) return { submitted: false };
+
+        const entry = {
+            id: Date.now() + Math.random(),
+            timestamp: Date.now(),
+            date: new Date().toLocaleDateString(),
+            score: timeMs,
+            displayScore: this.formatScore(timeMs, definition.scoreType),
+            character: (characterName || 'ECHO').toUpperCase(),
+            finalLevel: 12,
+            deaths: 0,
+            timeMs: timeMs,
+            weekId: null
+        };
+
+        const board = this.boards[boardId] || [];
+        board.push(entry);
+        board.sort((a, b) => a.score - b.score); // asc: fastest first
+        this.boards[boardId] = board.slice(0, this.maxEntriesPerBoard);
+        this.saveBoard(boardId);
+
+        if (this.steamEnabled) {
+            this.submitToSteam(definition.steamName, timeMs);
+        }
+        if (this.remote && this.remote.isEnabled()) {
+            this.remote.submit(boardId, entry);
+        }
+
+        const rank = this.boards[boardId].findIndex(e => e.id === entry.id) + 1;
+        return { submitted: true, rank, score: timeMs };
+    }
+
+    /**
      * Fetch the global top-N for a board (async). Returns [] when no remote
      * backend is configured or on any error, so callers fall back to local.
      */
